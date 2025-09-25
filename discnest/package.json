@@ -6,13 +6,18 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "ts-node -P tsconfig.seed.json scripts/seed/seedDiscs.ts"
   },
   "dependencies": {
+    "chart.js": "^4.5.0",
+    "dotenv": "^17.2.2",
     "mongodb": "^6.20.0",
     "mongoose": "^8.18.2",
     "next": "15.5.4",
+    "node-fetch": "^2.7.0",
     "react": "19.1.0",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "19.1.0"
   },
   "devDependencies": {
@@ -20,11 +25,13 @@
     "@tailwindcss/postcss": "^4",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^20",
+    "@types/node-fetch": "^2.6.13",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }
