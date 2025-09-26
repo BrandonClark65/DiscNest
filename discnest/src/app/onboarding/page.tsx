@@ -1,9 +1,25 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+
+  const handleFinishSetup = async () => {
+    if (!session?.user?.email) return;
+
+    await fetch('/api/user/onboarded', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: session.user.email }),
+    });
+
+    router.push('/profile'); // or wherever you want to land after onboarding
+    };
+
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-8">
@@ -30,6 +46,12 @@ export default function OnboardingPage() {
           className="w-full bg-yellow-500 text-white py-3 rounded hover:bg-yellow-600"
         >
           Browse Marketplace
+        </button>
+        <button
+            onClick={handleFinishSetup}
+            className="w-full bg-gray-800 text-white py-3 rounded hover:bg-gray-900 mt-6"
+            >
+            Finish Setup
         </button>
       </div>
 

@@ -59,10 +59,13 @@ const handler = NextAuth({
                 name: user.name,
                 email: user.email,
                 image: user.image,
+                hasOnboarded: false,
             });
             token.sub = newUser._id.toString();
+            token.hasOnboarded = false;
             } else {
             token.sub = existingUser._id.toString();
+            token.hasOnboarded = existingUser.hasOnboarded;
             }
         }
         return token;
@@ -70,6 +73,7 @@ const handler = NextAuth({
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;
+        session.user.hasOnboarded = token.hasOnboarded as boolean;
       }
       return session;
     },
