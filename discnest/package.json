@@ -10,11 +10,13 @@
     "seed": "ts-node -P tsconfig.seed.json scripts/seed/seedDiscs.ts"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "chart.js": "^4.5.0",
     "dotenv": "^17.2.2",
     "mongodb": "^6.20.0",
     "mongoose": "^8.18.2",
     "next": "15.5.4",
+    "next-auth": "^4.24.11",
     "node-fetch": "^2.7.0",
     "react": "19.1.0",
     "react-chartjs-2": "^5.3.0",
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^20",
     "@types/node-fetch": "^2.6.13",
