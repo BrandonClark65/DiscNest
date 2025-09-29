@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema({
   discShelf: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Disc' }],
   bag: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Disc' }],
   hasOnboarded: { type: Boolean, default: false },
-});
+  role: { type: String, default: 'user' }, // 'user' or 'admin'
+}, { timestamps: true });
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);

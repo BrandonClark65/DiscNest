@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 
 import {
@@ -26,23 +28,88 @@ ChartJS.register(
 
 type DiscStat = { date: string; count: number };
 type Disc = { name: string; brand: string; type?: string; addedAt: string };
+type User = {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  createdAt: string;
+};
+
 
 export default function AdminDashboard() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const [stats, setStats] = useState<DiscStat[]>([]);
   const [discs, setDiscs] = useState<Disc[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-const [filterBrand, setFilterBrand] = useState('');
+  const [filterBrand, setFilterBrand] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+
 
   useEffect(() => {
-    fetch('/api/disc-stats').then(res => res.json()).then(setStats);
-    fetch('/api/discs').then(res => res.json()).then(setDiscs);
-  }, []);
+    if (status === 'loading') return;
+
+    if (session?.user?.role !== 'admin') {
+      router.push('/');
+    } else {
+      console.log('✅ Admin access granted — fetching data');
+
+      fetch('/api/disc-stats', {
+        method: 'GET',
+        credentials: 'include',
+      })
+        .then(async res => {
+          console.log('📊 /api/disc-stats response:', res.status);
+          const body = await res.json();
+
+          if (!res.ok) {
+            console.error('❌ Error body:', body);
+            throw new Error(`Failed to fetch stats: ${res.status}`);
+          }
+
+          console.log('📈 Stats data:', body);
+          setStats(body);
+        })
+        .catch(err => console.error('❌ Error fetching stats:', err));
+
+      fetch('/api/discs', {
+        method: 'GET',
+        credentials: 'include', // ✅ same fix here
+      })
+        .then(res => {
+          console.log('📦 /api/discs response:', res.status);
+          if (!res.ok) throw new Error(`Failed to fetch discs: ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          console.log('📋 Discs data:', data);
+          setDiscs(data);
+        })
+        .catch(err => console.error('❌ Error fetching discs:', err));
+      fetch('/api/admin/users')
+        .then((res) => res.json())
+        .then((data) => setUsers(data.users || []));
+
+    }
+  }, [session, status]);
 
   const handleSeed = async () => {
+    console.log('🌱 Seeding started');
     setLoading(true);
-    await fetch('/api/seed', { method: 'POST' });
+
+    try {
+      const res = await fetch('/api/seed', { method: 'POST' });
+      console.log('🌱 Seed response:', res.status);
+      if (!res.ok) throw new Error(`Seed failed: ${res.status}`);
+    } catch (err) {
+      console.error('❌ Seed error:', err);
+    }
+
     setLoading(false);
+    console.log('🌱 Seeding complete');
   };
 
   const chartData = {
@@ -69,33 +136,35 @@ const [filterBrand, setFilterBrand] = useState('');
         {loading ? 'Seeding...' : 'Run Seed Script'}
       </button>
 
-      <div>
+      <div className="max-w-4xl">
         <h2 className="text-xl font-semibold mb-2">Discs Added Over Time</h2>
-        <Line data={chartData} />
+        <div className="bg-white p-4 rounded shadow-sm">
+          <Line data={chartData} />
+        </div>
       </div>
 
-      <div>
+      <div className="max-w-4xl">
         <h2 className="text-xl font-semibold mb-2">Current Disc Catalog</h2>
         <div className="flex flex-wrap gap-4 mb-4">
-            <input
-                type="text"
-                placeholder="Search by name or type"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="border px-3 py-2 rounded w-full sm:w-64"
-            />
-            <select
-                value={filterBrand}
-                onChange={e => setFilterBrand(e.target.value)}
-                className="border px-3 py-2 rounded w-full sm:w-64"
-            >
-                <option value="">All Brands</option>
-                {[...new Set(discs.map(d => d.brand))].sort().map(brand => (
-                <option key={brand} value={brand}>{brand}</option>
-                ))}
-            </select>
+          <input
+            type="text"
+            placeholder="Search by name or type"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="border px-3 py-2 rounded w-full sm:w-64"
+          />
+          <select
+            value={filterBrand}
+            onChange={e => setFilterBrand(e.target.value)}
+            className="border px-3 py-2 rounded w-full sm:w-64"
+          >
+            <option value="">All Brands</option>
+            {[...new Set(discs.map(d => d.brand))].sort().map(brand => (
+              <option key={brand} value={brand}>{brand}</option>
+            ))}
+          </select>
         </div>
-        <div className="overflow-auto max-h-[500px] border rounded">
+        <div className="overflow-auto max-h-[400px] border rounded">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-100 sticky top-0">
               <tr>
@@ -108,17 +177,68 @@ const [filterBrand, setFilterBrand] = useState('');
             <tbody>
               {discs
                 .filter(d =>
-                    (!filterBrand || d.brand === filterBrand) &&
-                    (d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (!filterBrand || d.brand === filterBrand) &&
+                  (d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     (d.type?.toLowerCase() || '').includes(searchTerm.toLowerCase()))
                 )
                 .map((disc, i) => (
-                    <tr key={i} className="border-t">
+                  <tr key={i} className="border-t">
                     <td className="px-4 py-2">{disc.name}</td>
                     <td className="px-4 py-2">{disc.brand}</td>
                     <td className="px-4 py-2">{disc.type || '—'}</td>
                     <td className="px-4 py-2">{new Date(disc.addedAt).toLocaleDateString()}</td>
-                    </tr>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="max-w-4xl">
+        <h2 className="text-xl font-semibold mb-2">All Users</h2>
+        <div className="flex flex-wrap gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Search by name or email"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="border px-3 py-2 rounded w-full sm:w-64"
+          />
+          <select
+            value={filterBrand}
+            onChange={e => setFilterBrand(e.target.value)}
+            className="border px-3 py-2 rounded w-full sm:w-64"
+          >
+            <option value="">All Roles</option>
+            {[...new Set(users.map(u => u.role))].sort().map(role => (
+              <option key={role} value={role}>{role}</option>
+            ))}
+          </select>
+        </div>
+        <div className="overflow-auto max-h-[400px] border rounded">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-100 sticky top-0">
+              <tr>
+                <th className="text-left px-4 py-2">Name</th>
+                <th className="text-left px-4 py-2">Email</th>
+                <th className="text-left px-4 py-2">Role</th>
+                <th className="text-left px-4 py-2">Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users
+                .filter(u =>
+                  (!filterBrand || u.role === filterBrand) &&
+                  (u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    u.email.toLowerCase().includes(searchTerm.toLowerCase()))
+                )
+                .map((user, i) => (
+                  <tr key={i} className="border-t">
+                    <td className="px-4 py-2">{user.name}</td>
+                    <td className="px-4 py-2">{user.email}</td>
+                    <td className="px-4 py-2">{user.role}</td>
+                    <td className="px-4 py-2">{new Date(user.createdAt).toLocaleDateString()}</td>
+                  </tr>
                 ))}
             </tbody>
           </table>
