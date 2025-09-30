@@ -8,7 +8,8 @@ export async function GET(req: Request) {
   if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 });
 
   await connectToDatabase();
-  const user = await User.findOne({ email });
+
+  const user = await User.findOne({ email }).populate('bag'); // ✅ populate full disc objects
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
   return NextResponse.json({ bag: user.bag || [] });

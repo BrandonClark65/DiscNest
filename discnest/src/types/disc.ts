@@ -12,4 +12,5 @@ export type Disc = {
     turn?: number;
     fade?: number;
   };
+  userId?: string;
 };

@@ -9,6 +9,7 @@ type DiscCardProps = {
   disc: Disc;
   actionLabel?: string;
   onAction?: () => void;
+  onDelete?: () => void;
   onHover?: (disc: Disc | null) => void;
   isRecentlyAdded?: boolean;
 };
@@ -17,6 +18,7 @@ export default function DiscCard({
   disc,
   actionLabel,
   onAction,
+  onDelete,
   onHover,
   isRecentlyAdded,
 }: DiscCardProps) {
@@ -46,6 +48,7 @@ export default function DiscCard({
       <p className="text-sm text-gray-500">
         {disc.brand} • {disc.type} • {disc.stability}
       </p>
+
       {actionLabel && onAction && (
         <button
           onClick={onAction}
@@ -54,6 +57,16 @@ export default function DiscCard({
           {actionLabel}
         </button>
       )}
+
+      {onDelete && (
+        <button
+          onClick={onDelete}
+          className="mt-2 text-red-600 hover:underline text-sm"
+        >
+          🗑️ Remove
+        </button>
+      )}
+
       <Tooltip id={`disc-${disc._id}`} place="top" />
     </div>
   );
