@@ -5,7 +5,21 @@ import 'react-tooltip/dist/react-tooltip.css';
 import { useDraggable } from '@dnd-kit/core';
 import type { Disc } from '@/types/disc';
 
-export default function DiscCard({ disc, actionLabel, onAction }: { disc: Disc; actionLabel?: string; onAction?: () => void }) {
+type DiscCardProps = {
+  disc: Disc;
+  actionLabel?: string;
+  onAction?: () => void;
+  onHover?: (disc: Disc | null) => void;
+  isRecentlyAdded?: boolean;
+};
+
+export default function DiscCard({
+  disc,
+  actionLabel,
+  onAction,
+  onHover,
+  isRecentlyAdded,
+}: DiscCardProps) {
   const { attributes, listeners, setNodeRef } = useDraggable({ id: disc._id });
 
   return (
@@ -13,14 +27,20 @@ export default function DiscCard({ disc, actionLabel, onAction }: { disc: Disc; 
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onMouseEnter={() => onHover?.(disc)}
+      onMouseLeave={() => onHover?.(null)}
       data-tooltip-id={`disc-${disc._id}`}
-      data-tooltip-content={
-        `Speed: ${disc.flight?.speed ?? '-'}, Glide: ${disc.flight?.glide ?? '-'}, Turn: ${disc.flight?.turn ?? '-'}, Fade: ${disc.flight?.fade ?? '-'}${disc.notes ? `\nNotes: ${disc.notes}` : ''}`
-      }
-      className="border p-4 rounded shadow text-center bg-white cursor-grab hover:ring-2 hover:ring-green-500 transition"
+      data-tooltip-content={`Speed: ${disc.flight?.speed ?? '-'}, Glide: ${disc.flight?.glide ?? '-'}, Turn: ${disc.flight?.turn ?? '-'}, Fade: ${disc.flight?.fade ?? '-'}${disc.notes ? `\nNotes: ${disc.notes}` : ''}`}
+      className={`border p-4 rounded shadow text-center bg-white cursor-grab transition ${
+        isRecentlyAdded ? 'ring-2 ring-green-500' : 'hover:ring-2 hover:ring-green-500'
+      }`}
     >
       {disc.image && (
-        <img src={disc.image} alt={disc.name} className="w-20 h-20 mx-auto object-contain" />
+        <img
+          src={disc.image}
+          alt={disc.name}
+          className="w-20 h-20 mx-auto object-contain"
+        />
       )}
       <h3 className="font-bold mt-2">{disc.name}</h3>
       <p className="text-sm text-gray-500">

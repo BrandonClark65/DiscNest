@@ -27,6 +27,9 @@ export const authOptions: NextAuthOptions = {
         const isValid = await bcrypt.compare(credentials.password, userInDb.password);
         if (!isValid) return null;
 
+        userInDb.lastLogin = new Date();
+        await userInDb.save();
+
         return {
           id: userInDb._id.toString(),
           email: userInDb.email,

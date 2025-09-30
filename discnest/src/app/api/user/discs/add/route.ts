@@ -5,8 +5,8 @@ import { connectToDatabase } from '@/lib/mongodb';
 
 export async function POST(req: Request) {
   const { email, discId, target } = await req.json();
-  if (!email || !discId || !target) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  if (!email || !discId || !target || !['shelf', 'bag'].includes(target)) {
+    return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 });
   }
 
   await connectToDatabase();
@@ -28,8 +28,13 @@ export async function POST(req: Request) {
   });
 
   await userDisc.save();
-  user[target].push(userDisc);
-  await user.save();
+
+  // Add to user's shelf or bag using $addToSet
+  const updateField = target === 'shelf' ? 'discShelf' : 'bag';
+  await User.updateOne(
+    { email },
+    { $push: { [updateField]: userDisc._id } }
+  );
 
   return NextResponse.json({ success: true });
 }
