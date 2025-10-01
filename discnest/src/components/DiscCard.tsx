@@ -2,7 +2,6 @@
 
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { useDraggable } from '@dnd-kit/core';
 import type { Disc } from '@/types/disc';
 
 type DiscCardProps = {
@@ -22,18 +21,13 @@ export default function DiscCard({
   onHover,
   isRecentlyAdded,
 }: DiscCardProps) {
-  const { attributes, listeners, setNodeRef } = useDraggable({ id: disc._id });
-
   return (
     <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
       onMouseEnter={() => onHover?.(disc)}
       onMouseLeave={() => onHover?.(null)}
       data-tooltip-id={`disc-${disc._id}`}
       data-tooltip-content={`Speed: ${disc.flight?.speed ?? '-'}, Glide: ${disc.flight?.glide ?? '-'}, Turn: ${disc.flight?.turn ?? '-'}, Fade: ${disc.flight?.fade ?? '-'}${disc.notes ? `\nNotes: ${disc.notes}` : ''}`}
-      className={`border p-4 rounded shadow text-center bg-white cursor-grab transition ${
+      className={`border p-4 rounded shadow text-center bg-white transition ${
         isRecentlyAdded ? 'ring-2 ring-green-500' : 'hover:ring-2 hover:ring-green-500'
       }`}
     >

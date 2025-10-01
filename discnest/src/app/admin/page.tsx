@@ -4,6 +4,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
+import type { DiscNestUser } from '@/types/user';
+import type { Disc } from '@/types/disc'; 
 
 import {
   Chart as ChartJS,
@@ -27,14 +29,7 @@ ChartJS.register(
 );
 
 type DiscStat = { date: string; count: number };
-type Disc = { name: string; brand: string; type?: string; addedAt: string };
-type User = {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-  createdAt: string;
-};
+// type Disc = { name: string; brand: string; type?: string; addedAt: string };
 
 
 export default function AdminDashboard() {
@@ -46,7 +41,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBrand, setFilterBrand] = useState('');
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<DiscNestUser[]>([]);
 
 
   useEffect(() => {
@@ -186,7 +181,7 @@ export default function AdminDashboard() {
                     <td className="px-4 py-2">{disc.name}</td>
                     <td className="px-4 py-2">{disc.brand}</td>
                     <td className="px-4 py-2">{disc.type || '—'}</td>
-                    <td className="px-4 py-2">{new Date(disc.addedAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-2">{disc.addedAt ? new Date(disc.addedAt).toLocaleDateString() : '—'}</td>
                   </tr>
                 ))}
             </tbody>
@@ -222,6 +217,7 @@ export default function AdminDashboard() {
                 <th className="text-left px-4 py-2">Name</th>
                 <th className="text-left px-4 py-2">Email</th>
                 <th className="text-left px-4 py-2">Role</th>
+                <th className="text-left px-4 py-2">Last Login</th>
                 <th className="text-left px-4 py-2">Joined</th>
               </tr>
             </thead>
@@ -229,15 +225,24 @@ export default function AdminDashboard() {
               {users
                 .filter(u =>
                   (!filterBrand || u.role === filterBrand) &&
-                  (u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    u.email.toLowerCase().includes(searchTerm.toLowerCase()))
+                  (
+                    (u.name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+                    (u.email?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
+                  )
                 )
                 .map((user, i) => (
                   <tr key={i} className="border-t">
                     <td className="px-4 py-2">{user.name}</td>
                     <td className="px-4 py-2">{user.email}</td>
                     <td className="px-4 py-2">{user.role}</td>
-                    <td className="px-4 py-2">{new Date(user.createdAt).toLocaleDateString()}</td>
+                    <td className="text-sm text-gray-600">
+                      {user.lastLogin
+                        ? new Date(user.lastLogin).toLocaleString()
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-2">{user.createdAt
+                        ? new Date(user.createdAt).toLocaleDateString()
+                        : '—'}</td>
                   </tr>
                 ))}
             </tbody>

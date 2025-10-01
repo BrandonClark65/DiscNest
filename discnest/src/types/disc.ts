@@ -13,4 +13,5 @@ export type Disc = {
     fade?: number;
   };
   userId?: string;
+  addedAt?: string;
 };

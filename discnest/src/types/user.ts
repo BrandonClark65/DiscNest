@@ -16,4 +16,5 @@ export interface DiscNestUser {
   lastLogin?: Date | null;
   discShelf?: string[];
   bag?: string[];
+  createdAt?: Date | string;
 }

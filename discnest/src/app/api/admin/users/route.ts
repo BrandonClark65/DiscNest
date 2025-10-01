@@ -11,7 +11,9 @@ export async function GET() {
   }
 
   await connectToDatabase();
-  const users = await User.find({}, 'name email role createdAt').lean();
+
+  // ✅ Include lastLogin in the projection
+  const users = await User.find({}, 'name email role createdAt lastLogin').lean();
 
   return NextResponse.json({ users });
 }

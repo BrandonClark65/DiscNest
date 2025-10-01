@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
   password: String, // hashed password for credentials login
 
   createdAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date }, // ✅ new field
+  lastLogin: { type: Date, default: null }, 
 
   discShelf: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Disc' }],
   bag: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Disc' }],
