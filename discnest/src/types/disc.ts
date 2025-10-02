@@ -14,4 +14,7 @@ export type Disc = {
   };
   userId?: string;
   addedAt?: string;
+  plastic?: string;
+  wearLevel?: number;
+  color?: string; // hex code
 };

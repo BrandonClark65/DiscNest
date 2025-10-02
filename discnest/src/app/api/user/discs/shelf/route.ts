@@ -1,16 +1,28 @@
 import { NextResponse } from 'next/server';
-import User from '@/models/User';
+import { User, Disc } from '@/models';  // ✅ safe import
 import { connectToDatabase } from '@/lib/mongodb';
 
+
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const email = searchParams.get('email');
-  if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 });
+  try {
+    const { searchParams } = new URL(req.url);
+    const email = searchParams.get('email');
 
-  await connectToDatabase();
-  const user = await User.findOne({ email }).populate('discShelf');
+    if (!email) {
+      return NextResponse.json({ error: 'Missing email' }, { status: 400 });
+    }
 
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  
-  return NextResponse.json({ shelf: user.discShelf || [] });
+    await connectToDatabase();
+
+    const user = await User.findOne({ email }).populate('discShelf');
+
+    if (!user) {
+      return NextResponse.json({ shelf: [] }, { status: 200 }); // ✅ return empty array instead of error
+    }
+
+    return NextResponse.json({ shelf: user.discShelf || [] }, { status: 200 });
+  } catch (err) {
+    console.error('❌ Error in shelf route:', err);
+    return NextResponse.json({ shelf: [] }, { status: 500 }); // ✅ always return JSON
+  }
 }

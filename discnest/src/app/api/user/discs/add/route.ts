@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import User from '@/models/User';
-import Disc from '@/models/Disc';
+import { User, Disc } from '@/models';  // ✅ safe import
 import { connectToDatabase } from '@/lib/mongodb';
 
 export async function POST(req: Request) {

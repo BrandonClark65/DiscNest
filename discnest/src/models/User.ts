@@ -1,22 +1,18 @@
+// models/User.ts
 import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
   image: String,
-  password: String, // hashed password for credentials login
-
+  password: String,
   createdAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date, default: null }, 
-
+  lastLogin: { type: Date, default: null },
   discShelf: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Disc' }],
   bag: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Disc' }],
-  discCount: { type: Number, default: 0 }, // ✅ for badge logic
-
+  discCount: { type: Number, default: 0 },
   hasOnboarded: { type: Boolean, default: false },
-  role: { type: String, default: 'user' }, // 'user' or 'admin'
-
-  // ✅ Profile preferences
+  role: { type: String, default: 'user' },
   favoriteBrands: [String],
   preferredTypes: [String],
   stability: String,

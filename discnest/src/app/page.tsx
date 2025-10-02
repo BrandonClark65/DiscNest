@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import DiscbagDisplay from '@/components/DiscbagDisplay';
+
 
 export default function HomePage() {
   return (
@@ -9,6 +11,7 @@ export default function HomePage() {
       <p className="text-lg text-gray-600">
         Track your disc golf gear, build your bag, and explore new discs.
       </p>
+      <DiscbagDisplay />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8">
         <NavCard href="/gear" title="Your Gear" description="View your shelf and bag, move discs, and manage your collection." />

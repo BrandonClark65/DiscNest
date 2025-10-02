@@ -1,26 +1,25 @@
+// models/Disc.ts
 import mongoose from 'mongoose';
 
 const DiscSchema = new mongoose.Schema({
   name: { type: String, required: true },
   brand: { type: String },
-  type: { type: String }, // e.g., putter, midrange, driver
-  stability: { type: String }, // e.g., overstable, stable, understable
-  plastic: { type: String }, // optional, not in DiscIt API
-  wearLevel: { type: Number, default: 0 }, // 0–100 scale
-  notes: { type: String },
-
+  type: { type: String, default: '' },
+  stability: { type: String, default: '' },
+  plastic: { type: String, default: '' },
+  wearLevel: { type: Number, min: 0, max: 100, default: 0 }, // changed to number 0-100
+  notes: { type: String, default: '' },
+  color: { type: String, default: '#ffffff' },
   flight: {
     speed: { type: Number },
     glide: { type: Number },
     turn: { type: Number },
     fade: { type: Number },
   },
-
-  image: { type: String }, // URL to flight chart
-  storeLink: { type: String }, // Marshall Street product page
-
+  image: { type: String },
+  storeLink: { type: String },
   addedAt: { type: Date, default: Date.now },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // optional for user-owned discs
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 });
 
 export default mongoose.models.Disc || mongoose.model('Disc', DiscSchema);
