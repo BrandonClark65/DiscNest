@@ -15,6 +15,7 @@ export default function DiscBagDisplay() {
   const email = session?.user?.email;
   const isLoggedIn = !!email;
   const [bagDiscs, setBagDiscs] = useState<Disc[]>([]);
+  const [visibleCount, setVisibleCount] = useState(0);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -23,15 +24,30 @@ export default function DiscBagDisplay() {
       const res = await fetch(`/api/user/discs/bag?email=${email}`);
       const data = await res.json();
       setBagDiscs(data.bag || []);
+      setVisibleCount(0); // reset visibility for animation
     };
     fetchBagDiscs();
   }, [isLoggedIn, email]);
 
-  const DISC_SIZE = 150;       // desired display size
-  const DISC_OVERLAP = .89;    // overlap by 50%
+  // Animate discs fading in one by one
+  useEffect(() => {
+    if (bagDiscs.length === 0) return;
+
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setVisibleCount(i);
+      if (i >= bagDiscs.length) clearInterval(interval);
+    }, 250); // delay (ms) between discs fading in
+
+    return () => clearInterval(interval);
+  }, [bagDiscs]);
+
+  const DISC_SIZE = 150;
+  const DISC_OVERLAP = 0.89;
   const MAX_DISCS = 9;
-  const START_LEFT = 75;      // starting x position
-  const START_TOP = 300;       // starting y position
+  const START_LEFT = 75;
+  const START_TOP = 300;
 
   return (
     <div className="flex justify-center items-center w-full">
@@ -45,11 +61,13 @@ export default function DiscBagDisplay() {
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
         />
 
-        {/* Discs */}
+        {/* Discs with fade-in */}
         {bagDiscs.slice(0, MAX_DISCS).map((disc, i) => (
           <div
             key={disc._id}
-            className="absolute"
+            className={`absolute transition-opacity duration-700 ${
+              i < visibleCount ? "opacity-100" : "opacity-0"
+            }`}
             style={{
               top: START_TOP,
               left: START_LEFT + i * DISC_SIZE * (1 - DISC_OVERLAP),
@@ -80,6 +98,7 @@ export default function DiscBagDisplay() {
     </div>
   );
 }
+
 
 
 
