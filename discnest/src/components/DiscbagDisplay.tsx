@@ -1,85 +1,83 @@
 'use client';
 
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
-import { Tooltip } from 'react-tooltip';
-import 'react-tooltip/dist/react-tooltip.css';
 
 type Disc = {
   _id: string;
   name: string;
-  flight: { speed: number; glide: number; turn: number; fade: number };
-  image: string;
+  color: string;
 };
 
 export default function DiscBagDisplay() {
   const { data: session } = useSession();
-  const isLoggedIn = !!session?.user;
   const email = session?.user?.email;
+  const isLoggedIn = !!email;
   const [bagDiscs, setBagDiscs] = useState<Disc[]>([]);
 
-  const pocketPositions = [
-    { top: '30%', left: '20%' },
-    { top: '30%', left: '40%' },
-    { top: '30%', left: '60%' },
-    { top: '60%', left: '25%' },
-    { top: '60%', left: '45%' },
-    { top: '60%', left: '65%' },
-  ];
-
   useEffect(() => {
-    if (!isLoggedIn || !email) return;
+    if (!isLoggedIn) return;
 
     const fetchBagDiscs = async () => {
-      try {
-        const res = await fetch(`/api/user/discs/bag?email=${email}`);
-
-        if (!res.ok) {
-          const text = await res.text(); // capture error body
-          throw new Error(`Fetch failed: ${res.status} ${res.statusText} — ${text}`);
-        }
-
-        const data = await res.json();
-        setBagDiscs(data.bag || []);
-      } catch (err) {
-        console.error('❌ Error fetching bag discs:', err);
-      }
+      const res = await fetch(`/api/user/discs/bag?email=${email}`);
+      const data = await res.json();
+      setBagDiscs(data.bag || []);
     };
-
     fetchBagDiscs();
   }, [isLoggedIn, email]);
 
-  return (
-    <div className="relative w-full max-w-2xl mx-auto">
-      <img src="/images/disc-bag.png" alt="Disc Golf Bag" className="w-full" />
+  {/* Configurable constants */}
+  const DISC_SIZE = 200;       // much smaller so they fit in the 500px bag
+  const DISC_OFFSET = 5;     // distance between discs
+  const MAX_DISCS = 9;        // maximum discs shown
 
-      {isLoggedIn ? (
-        bagDiscs.map((disc, i) => (
+  return (
+    <div className="flex justify-center items-center w-full">
+      <div className="relative">
+        {/* Background square */}
+        <Image
+          src="/images/square-xxl.png"
+          alt="Background"
+          width={400}
+          height={400}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
+        />
+
+        {/* Render discs */}
+        {bagDiscs.slice(0, MAX_DISCS).map((disc, i) => (
           <div
             key={disc._id}
-            className="absolute"
+            className="absolute z-5"
             style={{
-              top: pocketPositions[i % pocketPositions.length].top,
-              left: pocketPositions[i % pocketPositions.length].left,
+              top: "55%", // tweak to sit correctly in the bag
+              left: `${140 + i * DISC_OFFSET}px`, // starting point + offset
+              transform: "translateY(-50%)",
             }}
-            data-tooltip-id={`disc-${disc._id}`}
-            data-tooltip-content={`${disc.name} • Speed: ${disc.flight.speed}, Glide: ${disc.flight.glide}, Turn: ${disc.flight.turn}, Fade: ${disc.flight.fade}`}
           >
-            <img
-              src={disc.image}
+            <Image
+              src="/images/solo-disc.png"
               alt={disc.name}
-              className="w-12 h-12 rounded-full hover:scale-105 transition"
+              width={DISC_SIZE}
+              height={DISC_SIZE}
+              className="rounded-full"
             />
-            <Tooltip id={`disc-${disc._id}`} place="top" />
           </div>
-        ))
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-xl text-gray-500 bg-white bg-opacity-80 p-4 rounded shadow">
-            Log in to fill your bag!
-          </p>
-        </div>
-      )}
+        ))}
+
+        {/* Bag image */}
+        <Image
+          src="/images/bag-no-discs.png"
+          alt="Disc Golf Bag"
+          width={500}
+          height={500}
+          className="relative z-10"
+        />
+      </div>
     </div>
   );
 }
+
+
+
+
