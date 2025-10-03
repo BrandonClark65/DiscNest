@@ -27,11 +27,11 @@ export default function DiscBagDisplay() {
     fetchBagDiscs();
   }, [isLoggedIn, email]);
 
-  const DISC_SIZE = 600;       // desired display size
-  const DISC_OVERLAP = .98;    // overlap by 50%
+  const DISC_SIZE = 150;       // desired display size
+  const DISC_OVERLAP = .89;    // overlap by 50%
   const MAX_DISCS = 9;
-  const START_LEFT = -140;      // starting x position
-  const START_TOP = -40;       // starting y position
+  const START_LEFT = 75;      // starting x position
+  const START_TOP = 300;       // starting y position
 
   return (
     <div className="flex justify-center items-center w-full">
