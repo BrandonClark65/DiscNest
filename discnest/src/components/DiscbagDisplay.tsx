@@ -28,8 +28,8 @@ export default function DiscBagDisplay() {
   }, [isLoggedIn, email]);
 
   {/* Configurable constants */}
-  const DISC_SIZE = 200;       // much smaller so they fit in the 500px bag
-  const DISC_OFFSET = 5;     // distance between discs
+  const DISC_SIZE = 400;       // much smaller so they fit in the 500px bag
+  const DISC_OFFSET = 12;     // distance between discs
   const MAX_DISCS = 9;        // maximum discs shown
 
   return (
@@ -49,8 +49,8 @@ export default function DiscBagDisplay() {
           <div
             key={disc._id}
             className="absolute z-5"
-            style={{
-              top: "55%", // tweak to sit correctly in the bag
+            style={{ 
+              top: "270px", // tweak to sit correctly in the bag
               left: `${140 + i * DISC_OFFSET}px`, // starting point + offset
               transform: "translateY(-50%)",
             }}
