@@ -27,10 +27,11 @@ export default function DiscBagDisplay() {
     fetchBagDiscs();
   }, [isLoggedIn, email]);
 
-  {/* Configurable constants */}
-  const DISC_SIZE = 400;       // much smaller so they fit in the 500px bag
-  const DISC_OFFSET = 12;     // distance between discs
-  const MAX_DISCS = 9;        // maximum discs shown
+  const DISC_SIZE = 600;       // desired display size
+  const DISC_OVERLAP = .98;    // overlap by 50%
+  const MAX_DISCS = 9;
+  const START_LEFT = -140;      // starting x position
+  const START_TOP = -40;       // starting y position
 
   return (
     <div className="flex justify-center items-center w-full">
@@ -44,22 +45,24 @@ export default function DiscBagDisplay() {
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
         />
 
-        {/* Render discs */}
+        {/* Discs */}
         {bagDiscs.slice(0, MAX_DISCS).map((disc, i) => (
           <div
             key={disc._id}
-            className="absolute z-5"
-            style={{ 
-              top: "270px", // tweak to sit correctly in the bag
-              left: `${140 + i * DISC_OFFSET}px`, // starting point + offset
-              transform: "translateY(-50%)",
+            className="absolute"
+            style={{
+              top: START_TOP,
+              left: START_LEFT + i * DISC_SIZE * (1 - DISC_OVERLAP),
+              width: DISC_SIZE,
+              height: DISC_SIZE,
+              zIndex: i,
             }}
           >
             <Image
               src="/images/solo-disc.png"
               alt={disc.name}
-              width={DISC_SIZE}
-              height={DISC_SIZE}
+              style={{ objectFit: "contain" }}
+              fill
               className="rounded-full"
             />
           </div>
