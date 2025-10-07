@@ -35,9 +35,11 @@ export default function DiscBagDisplay() {
   }, [bagDiscs]);
 
   const DISC_SIZE = 150;
-  const DISC_OVERLAP = 0.9;
+  const DISC_HEIGHT = 150;
+  const DISC_WIDTH = 19;
+  const DISC_OVERLAP = 0.3;
   const MAX_DISCS = 9;
-  const START_LEFT = 75;
+  const START_LEFT = 140;
   const START_TOP = 300;
 
   const CONTAINER_WIDTH = 500;
@@ -54,6 +56,13 @@ export default function DiscBagDisplay() {
           src="/images/square-xxl.png"
           alt="Background"
           className="absolute top-0 left-0 w-full h-full z-0"
+          style={{
+            width: '250px',
+            height: '300px',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
         />
 
         {/* Message when not logged in */}
@@ -78,12 +87,13 @@ export default function DiscBagDisplay() {
             return (
               <div
                 key={disc._id}
-                className="absolute z-10"
+                className="absolute z-10 flex justify-center items-center"
                 style={{
                   top: START_TOP,
-                  left: START_LEFT + i * DISC_SIZE * (1 - DISC_OVERLAP),
-                  width: DISC_SIZE,
-                  height: DISC_SIZE,
+                  left: START_LEFT + i * DISC_WIDTH * (1 - DISC_OVERLAP),
+                  width: DISC_WIDTH,
+                  height: DISC_HEIGHT,
+                  // backgroundColor: disc.color 
                 }}
                 onMouseEnter={() => setHoveredIndex(i)}
                 onMouseLeave={() => setHoveredIndex(null)}
@@ -94,8 +104,12 @@ export default function DiscBagDisplay() {
                   height={DISC_SIZE}
                   className="transition-transform duration-300"
                   style={{
-                    transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: `translate(-50%, -50%) ${hoveredIndex === i ? 'scale(1.1)' : 'scale(1)'}`,
                     filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))',
+                    pointerEvents: 'none', // so the div captures hover
                   }}
                 >
                   <path
@@ -106,7 +120,7 @@ export default function DiscBagDisplay() {
 
                 {/* Tooltip */}
                 {isHovered && (
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded z-30">
                     {disc.name}
                   </div>
                 )}
