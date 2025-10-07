@@ -63,7 +63,7 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
   const DISC_HEIGHT = 150;
   const DISC_WIDTH = 19;
   const DISC_OVERLAP = 0.3;
-  const MAX_DISCS = 9;
+  const MAX_DISCS = 16;
   const START_LEFT = 140;
   const START_TOP = 300;
   const CONTAINER_WIDTH = 500;
