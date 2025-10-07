@@ -70,8 +70,8 @@ export default function DiscBagDisplay() {
           <div
             className="absolute text-gray-600 text-lg font-medium text-center z-20"
             style={{
-              top: START_TOP - 40,
-              left: START_LEFT + 30,
+              top: START_TOP - 10,
+              left: START_LEFT - 40,
               width: 300,
             }}
           >
