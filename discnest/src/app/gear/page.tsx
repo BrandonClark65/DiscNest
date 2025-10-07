@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import type { Disc } from '@/types/disc';
 import DiscCard from '@/components/DiscCard';
 import DiscEditModal from '@/components/DiscEditModal';
+import DiscBagDisplay from '@/components/DiscbagDisplay';
 import {
   DndContext,
   closestCenter,
@@ -38,15 +39,8 @@ export default function GearPage() {
       const data = await res.json();
       const updatedDisc = data.disc;
 
-      // Update shelf state
-      setShelf(prev =>
-        prev.map(d => (d._id === updatedDisc._id ? updatedDisc : d))
-      );
-
-      // Update bag state
-      setBag(prev =>
-        prev.map(d => (d._id === updatedDisc._id ? updatedDisc : d))
-      );
+      setShelf(prev => prev.map(d => (d._id === updatedDisc._id ? updatedDisc : d)));
+      setBag(prev => prev.map(d => (d._id === updatedDisc._id ? updatedDisc : d)));
 
       toast.success('Disc updated!');
       closeModal();
@@ -55,7 +49,6 @@ export default function GearPage() {
       toast.error(`Failed to update disc: ${error?.error || 'Unknown error'}`);
     }
   };
-
 
   useEffect(() => {
     if (!email) return;
@@ -67,14 +60,8 @@ export default function GearPage() {
           fetch(`/api/user/discs/bag?email=${email}`),
         ]);
 
-        if (!shelfRes.ok) {
-          const text = await shelfRes.text();
-          throw new Error(`Shelf fetch failed: ${shelfRes.status} ${text}`);
-        }
-
-        if (!bagRes.ok) {
-          const text = await bagRes.text();
-          throw new Error(`Bag fetch failed: ${bagRes.status} ${text}`);
+        if (!shelfRes.ok || !bagRes.ok) {
+          throw new Error('Failed to fetch discs');
         }
 
         const shelfData = await shelfRes.json();
@@ -91,12 +78,21 @@ export default function GearPage() {
     fetchDiscs();
   }, [email]);
 
+  const refreshDiscs = async () => {
+    const [shelfRes, bagRes] = await Promise.all([
+      fetch(`/api/user/discs/shelf?email=${email}`),
+      fetch(`/api/user/discs/bag?email=${email}`),
+    ]);
+    const shelfData = await shelfRes.json();
+    const bagData = await bagRes.json();
+    setShelf(shelfData.shelf || []);
+    setBag(bagData.bag || []);
+  };
+
   const moveDisc = async (discId: string, from: 'shelf' | 'bag', to: 'shelf' | 'bag') => {
     if (!email) return;
 
-    const disc = from === 'shelf'
-      ? shelf.find(d => d._id === discId)
-      : bag.find(d => d._id === discId);
+    const disc = from === 'shelf' ? shelf.find(d => d._id === discId) : bag.find(d => d._id === discId);
 
     const res = await fetch('/api/user/discs/move', {
       method: 'POST',
@@ -140,17 +136,6 @@ export default function GearPage() {
     }
   };
 
-  const refreshDiscs = async () => {
-    const [shelfRes, bagRes] = await Promise.all([
-      fetch(`/api/user/discs/shelf?email=${email}`),
-      fetch(`/api/user/discs/bag?email=${email}`),
-    ]);
-    const shelfData = await shelfRes.json();
-    const bagData = await bagRes.json();
-    setShelf(shelfData.shelf || []);
-    setBag(bagData.bag || []);
-  };
-
   const handleDragEnd = (event: DragEndEvent) => {
     const discId = event.active.id as string;
     const targetZone = event.over?.id;
@@ -165,18 +150,12 @@ export default function GearPage() {
 
   return (
     <div className="relative">
-      {/* Slide-in modal */}
       {editingDisc && (
-        <DiscEditModal
-          disc={editingDisc}
-          onClose={closeModal}
-          onSave={saveDiscDetails}
-        />
+        <DiscEditModal disc={editingDisc} onClose={closeModal} onSave={saveDiscDetails} />
       )}
 
-      {/* Main content with margin shift */}
       <div
-        className={`max-w-5xl mx-auto p-6 space-y-10 transition-all duration-300 ${
+        className={`max-w-6xl mx-auto p-6 space-y-10 transition-all duration-300 ${
           editingDisc ? 'mr-[24rem]' : ''
         }`}
       >
@@ -201,15 +180,30 @@ export default function GearPage() {
             onDelete={(id) => deleteDisc(id, 'shelf')}
             onEdit={handleEdit}
           />
-          <GearSection
-            title="Disc Bag"
-            discs={bag}
-            zoneId="bag"
-            actionLabel="Move to Shelf"
-            onAction={(id) => moveDisc(id, 'bag', 'shelf')}
-            onDelete={(id) => deleteDisc(id, 'bag')}
-            onEdit={handleEdit}
-          />
+
+          {/* New layout: Bag grid and visual next to each other */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div>
+              <GearSection
+                title="Disc Bag"
+                discs={bag}
+                zoneId="bag"
+                actionLabel="Move to Shelf"
+                onAction={(id) => moveDisc(id, 'bag', 'shelf')}
+                onDelete={(id) => deleteDisc(id, 'bag')}
+                onEdit={handleEdit}
+              />
+            </div>
+
+            {/* Visual bag display */}
+            <div className="flex-1 flex justify-center items-center">
+              {bag.length > 0 ? (
+                <DiscBagDisplay bag={bag} /> 
+              ) : (
+                <p className="text-gray-500 italic">No discs in your bag yet.</p>
+              )}
+            </div>
+          </div>
         </DndContext>
       </div>
     </div>
@@ -240,24 +234,24 @@ function GearSection({
       <h2 className="text-xl font-semibold mb-3">{title}</h2>
       <div
         ref={setNodeRef}
-        className={`transition p-2 rounded ${isOver ? 'bg-green-50 ring-2 ring-green-400' : ''}`}
+        className={`transition p-2 rounded ${
+          isOver ? 'bg-green-50 ring-2 ring-green-400' : ''
+        }`}
       >
         {discs.length === 0 ? (
           <p className="text-gray-500 italic">No discs here yet.</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-fr">
-            {discs.map((disc, index) => (
-              <div key={`${disc._id}-${index}`} className="flex">
-                <DiscCard
-                  disc={disc}
-                  actionLabel={actionLabel}
-                  onAction={() => onAction(disc._id)}
-                  onDelete={() => onDelete(disc._id)}
-                  onEdit={() => onEdit(disc)}
-                  isRecentlyAdded={false}
-                  className="flex-1"
-                />
-              </div>
+            {discs.map((disc) => (
+              <DiscCard
+                key={disc._id}
+                disc={disc}
+                actionLabel={actionLabel}
+                onAction={() => onAction(disc._id)}
+                onDelete={() => onDelete(disc._id)}
+                onEdit={() => onEdit(disc)}
+                isRecentlyAdded={false}
+              />
             ))}
           </div>
         )}
@@ -265,5 +259,3 @@ function GearSection({
     </div>
   );
 }
-
-
