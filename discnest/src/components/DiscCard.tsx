@@ -49,7 +49,10 @@ export default function DiscCard({
       className={`border p-4 rounded shadow flex flex-col justify-between transition ${className} ${
         isRecentlyAdded ? 'ring-2 ring-green-500' : 'hover:ring-2 hover:ring-green-500'
       }`}
-      style={{ backgroundColor: disc.color ?? '#ffffff', color: textColor }}
+      style={{ backgroundColor: disc.color ?? '#ffffff', 
+        color: textColor,
+        filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.4))',
+      }}
     >
       {/* Disc Image */}
       {disc.image && (

@@ -194,9 +194,12 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
               src="/images/bag-no-discs.png"
               alt="Disc Golf Bag"
               className="absolute top-0 left-0 z-20 w-full h-full pointer-events-none"
+              style={{
+                filter: 'drop-shadow(0 8px 12px rgba(0, 0, 0, 0.4))',
+              }}
             />
           </div>
-        )}
+        )} 
       </div>
     </div>
   );
