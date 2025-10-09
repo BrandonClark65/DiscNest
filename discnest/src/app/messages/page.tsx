@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState } from "react";
 import { DiscNestUser as User } from '@/types/user';
 import { Listing } from '@/types/listing';

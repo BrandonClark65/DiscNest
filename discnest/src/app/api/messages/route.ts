@@ -27,23 +27,27 @@ export async function POST(req: Request) {
   const senderId = session.user.id;
   const { recipientId, listingId, content } = await req.json();
 
-  if (!recipientId || !listingId || !content) {
+  if (!recipientId || !listingId) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  // Find or create thread
+  // Find existing thread between these two users for this listing
   let thread = await MessageThread.findOne({
     participants: { $all: [senderId, recipientId] },
     listingId,
   });
 
   if (!thread) {
+    // Create new thread
     thread = await MessageThread.create({
       participants: [senderId, recipientId],
       listingId,
-      messages: [{ sender: senderId, content }],
+      messages: content
+        ? [{ sender: senderId, content }]
+        : [], // no message yet if just starting
     });
-  } else {
+  } else if (content) {
+    // Append message if provided
     thread.messages.push({ sender: senderId, content });
     thread.updatedAt = new Date();
     await thread.save();
@@ -51,3 +55,4 @@ export async function POST(req: Request) {
 
   return NextResponse.json(thread);
 }
+

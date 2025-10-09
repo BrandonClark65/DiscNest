@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   if (condition) query.condition = condition;
 
   // Only include listings near the given location
-  if (lat && lng) {
+  if (lat !== 0 && lng !== 0) {
     query.location = {
       $geoWithin: {
         $centerSphere: [[lng, lat], radius / 3963.2], // convert miles to radians
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     };
   }
 
-  const listings = await Listing.find(query).sort({ createdAt: -1 });
+  const listings = await Listing.find(query).populate("userId", "name").sort({ createdAt: -1 });
   return NextResponse.json(listings);
 }
 
