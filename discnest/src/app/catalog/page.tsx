@@ -194,12 +194,12 @@ const typeOrder = [
             </button>
             {openSections.type && (
               <div className="p-3 space-y-1">
-                {uniqueTypes.map(type => (
+                {uniqueTypes.filter(Boolean).map(type => (
                   <label key={type} className="block text-sm">
                     <input
                       type="checkbox"
-                      checked={filter.types.includes(type)}
-                      onChange={() => handleCheckboxChange('types', type)}
+                      checked={filter.types.includes(type!)} // type! asserts it is not undefined
+                      onChange={() => handleCheckboxChange('types', type!)}
                       className="mr-2"
                     />
                     {type}
