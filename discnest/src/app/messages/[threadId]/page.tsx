@@ -1,43 +1,80 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import type { DiscNestUser as User } from "@/types/user";
+import type { Thread, Participant } from "@/types/thread";
 import type { Message } from "@/types/message";
-import type { Thread } from "@/types/thread";
-
 
 export default function ChatPage() {
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id;
   const { threadId } = useParams();
   const [thread, setThread] = useState<Thread | null>(null);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  async function fetchThread() {
-    const res = await fetch(`/api/messages/${threadId}`);
-    const data = await res.json();
-    setThread(data);
-    setLoading(false);
-  }
-
+  // Fetch thread when the ID changes
   useEffect(() => {
-    fetchThread();
+    if (threadId) fetchThread();
   }, [threadId]);
 
+  // Auto-scroll to bottom whenever messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [thread?.messages]);
+
+  async function fetchThread() {
+    try {
+      const res = await fetch(`/api/messages/${threadId}`);
+      if (!res.ok) throw new Error("Failed to fetch thread");
+      const data: Thread = await res.json();
+      setThread(data);
+    } catch (err) {
+      console.error(err);
+      setThread(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function sendMessage() {
-    if (!newMessage.trim() || !thread) return;
-    const recipientId = thread.participants.find(p => p._id !== thread.participants[0]._id)?._id; // assuming first is current user
-    await fetch("/api/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        recipientId,
-        listingId: thread.listingId._id,
-        content: newMessage,
-      }),
+    if (!newMessage.trim() || !thread || !currentUserId) return;
+
+    const recipient = thread.participants.find(
+      p => p._id !== currentUserId
+    );
+    if (!recipient) return;
+
+    const tempMsg: Message = {
+      sender: { _id: currentUserId, name: session?.user?.name || "You" },
+      content: newMessage,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Optimistic UI update
+    setThread({
+      ...thread,
+      messages: [...thread.messages, tempMsg],
     });
     setNewMessage("");
-    fetchThread(); // refresh messages
+
+    try {
+      await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientId: recipient._id,
+          listingId: thread.listingId._id,
+          content: tempMsg.content,
+        }),
+      });
+      // Sync latest thread after sending
+      fetchThread();
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    }
   }
 
   if (loading) return <p>Loading chat...</p>;
@@ -52,14 +89,19 @@ export default function ChatPage() {
           <div
             key={i}
             className={`p-2 rounded ${
-              msg.sender._id === thread.participants[0]._id ? "bg-blue-100 self-end" : "bg-gray-100 self-start"
+              msg.sender._id === currentUserId
+                ? "bg-blue-100 self-end"
+                : "bg-gray-100 self-start"
             }`}
           >
-            <p className="text-sm"><strong>{msg.sender.name}</strong></p>
+            <p className="text-sm font-semibold">{msg.sender.name}</p>
             <p>{msg.content}</p>
-            <p className="text-xs text-gray-400">{new Date(msg.timestamp).toLocaleString()}</p>
+            <p className="text-xs text-gray-400">
+              {new Date(msg.timestamp).toLocaleString()}
+            </p>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="flex gap-2">
@@ -71,10 +113,15 @@ export default function ChatPage() {
           className="flex-1 border p-2 rounded"
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
-        <button onClick={sendMessage} className="bg-blue-600 text-white px-3 rounded">
+        <button
+          onClick={sendMessage}
+          className="bg-blue-600 text-white px-3 rounded"
+        >
           Send
         </button>
       </div>
     </div>
   );
 }
+
+

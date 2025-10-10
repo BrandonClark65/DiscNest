@@ -9,3 +9,14 @@ export type Thread = {
   messages: Message[];
   updatedAt: string;
 };
+
+export type Participant = {
+  _id: string;
+  name: string;
+};
+
+export type ListingRef = {
+  _id: string;
+  title: string;
+  imageUrls?: string[];
+};
