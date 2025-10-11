@@ -20,6 +20,7 @@ export default function NavBar() {
       </Link>
 
       <div className="space-x-4 text-sm flex items-center">
+        <Link href='/marketplace' className="hover:text-green-200">Marketplace</Link>
         <Link href="/gear" className="hover:text-green-200">Gear</Link>
         <Link href="/catalog" className="hover:text-green-200">Catalog</Link>
         <Link href="/profile" className="hover:text-green-200">Profile</Link>
