@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import type { Thread, Participant } from "@/types/thread";
+import type { Thread } from "@/types/thread";
 import type { Message } from "@/types/message";
 
 export default function ChatPage() {
@@ -15,12 +15,12 @@ export default function ChatPage() {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Fetch thread when the ID changes
+  // Fetch thread when ID changes
   useEffect(() => {
     if (threadId) fetchThread();
   }, [threadId]);
 
-  // Auto-scroll to bottom whenever messages change
+  // Auto-scroll when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread?.messages]);
@@ -42,11 +42,6 @@ export default function ChatPage() {
   async function sendMessage() {
     if (!newMessage.trim() || !thread || !currentUserId) return;
 
-    const recipient = thread.participants.find(
-      p => p._id !== currentUserId
-    );
-    if (!recipient) return;
-
     const tempMsg: Message = {
       sender: { _id: currentUserId, name: session?.user?.name || "You" },
       content: newMessage,
@@ -61,16 +56,18 @@ export default function ChatPage() {
     setNewMessage("");
 
     try {
-      await fetch("/api/messages", {
+      const res = await fetch(`/api/messages/${threadId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientId: recipient._id,
-          listingId: thread.listingId._id,
-          content: tempMsg.content,
-        }),
+        body: JSON.stringify({ content: newMessage }),
       });
-      // Sync latest thread after sending
+
+      if (!res.ok) {
+        console.error("Failed to send message:", await res.text());
+        return;
+      }
+
+      // Refresh thread to sync with DB
       fetchThread();
     } catch (err) {
       console.error("Failed to send message:", err);
@@ -84,26 +81,43 @@ export default function ChatPage() {
     <div className="max-w-3xl mx-auto p-4 flex flex-col h-[80vh]">
       <h1 className="text-2xl font-bold mb-2">{thread.listingId.title}</h1>
 
-      <div className="flex-1 overflow-y-auto border rounded p-4 mb-4 flex flex-col gap-2">
-        {thread.messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`p-2 rounded ${
-              msg.sender._id === currentUserId
-                ? "bg-blue-100 self-end"
-                : "bg-gray-100 self-start"
-            }`}
-          >
-            <p className="text-sm font-semibold">{msg.sender.name}</p>
-            <p>{msg.content}</p>
-            <p className="text-xs text-gray-400">
-              {new Date(msg.timestamp).toLocaleString()}
-            </p>
-          </div>
-        ))}
+      <div className="flex-1 overflow-y-auto border rounded p-4 mb-4 flex flex-col gap-3 bg-gray-50">
+        {thread.messages.map((msg, i) => {
+          const isOwn = msg.sender._id === currentUserId;
+          return (
+            <div
+              key={i}
+              className={`flex ${isOwn ? "justify-end" : "justify-start"} items-end`}
+            >
+              <div
+                className={`max-w-[75%] p-3 rounded-2xl shadow-sm ${
+                  isOwn
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-white text-gray-900 rounded-bl-none border"
+                }`}
+              >
+                <p className="text-sm font-semibold mb-1 opacity-90">
+                  {isOwn ? "You" : msg.sender.name}
+                </p>
+                <p className="whitespace-pre-wrap break-words leading-relaxed">
+                  {msg.content}
+                </p>
+                <p
+                  className={`text-[0.7rem] mt-1 ${
+                    isOwn ? "text-blue-200 text-right" : "text-gray-400 text-left"
+                  }`}
+                >
+                  {new Date(msg.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
-
       <div className="flex gap-2">
         <input
           type="text"
@@ -123,5 +137,6 @@ export default function ChatPage() {
     </div>
   );
 }
+
 
 

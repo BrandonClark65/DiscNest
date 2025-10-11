@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import type { Thread } from "@/types/thread";
+import { useSession } from "next-auth/react";
+
 
 type ChatModalProps = {
   threadId: string;
@@ -14,12 +16,16 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Fetch thread on mount or threadId change
+  const { data: session, status } = useSession();
+  const currentUserId = session?.user?.id;
+
+  if (status !== "authenticated" || !currentUserId) return;
+
+
   useEffect(() => {
     fetchThread();
   }, [threadId]);
 
-  // Scroll to bottom whenever messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread?.messages]);
@@ -39,36 +45,24 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
   async function sendMessage() {
     if (!newMessage.trim() || !thread) return;
 
-    const sender = thread.participants?.[0];
-    const recipient = thread.participants?.[1];
-    const listingId = thread.listingId?._id;
-
-    if (!sender || !recipient || !listingId) {
-      console.warn("Cannot send message: missing sender, recipient, or listingId");
-      return;
-    }
-
+    if (!currentUserId) return;
     const tempMsg = {
-      sender,
+      sender: { _id: currentUserId, name: "You" },
       content: newMessage,
       timestamp: new Date().toISOString(),
     };
 
-    // Optimistically update UI
+    // Optimistic UI
     setThread({ ...thread, messages: [...(thread.messages ?? []), tempMsg] });
     setNewMessage("");
 
     try {
-      await fetch("/api/messages", {
+      await fetch(`/api/messages/${thread._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientId: recipient._id,
-          listingId,
-          content: newMessage,
-        }),
+        body: JSON.stringify({ content: newMessage }),
       });
-      fetchThread(); // Refresh thread after sending
+      fetchThread();
     } catch (error) {
       console.error("Failed to send message:", error);
     }
@@ -88,23 +82,27 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-          {thread.messages?.map((msg, i) => (
-            <div
-              key={i}
-              className={`p-2 rounded max-w-[80%] ${
-                msg.sender._id === thread.participants?.[0]?._id
-                  ? "bg-blue-100 self-end"
-                  : "bg-gray-100 self-start"
-              }`}
-            >
-              <p className="text-sm font-medium">{msg.sender.name}</p>
-              <p>{msg.content}</p>
-              <p className="text-xs text-gray-400">
-                {new Date(msg.timestamp).toLocaleTimeString()}
-              </p>
-            </div>
-          ))}
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-gray-50">
+          {thread.messages?.map((msg, i) => {
+            const isOwn = msg.sender._id === currentUserId;
+            return (
+              <div key={i} className={`flex ${isOwn ? "justify-end" : "justify-start"} items-end`}>
+                <div className={`max-w-[75%] p-3 rounded-2xl shadow-sm ${
+                  isOwn
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-white text-gray-900 rounded-bl-none border"
+                }`}>
+                  <p className="text-sm font-semibold mb-1 opacity-90">
+                    {isOwn ? "You" : msg.sender.name}
+                  </p>
+                  <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                  <p className={`text-[0.7rem] mt-1 ${isOwn ? "text-blue-200 text-right" : "text-gray-400 text-left"}`}>
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
 
@@ -129,4 +127,5 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
     </div>
   );
 }
+
 

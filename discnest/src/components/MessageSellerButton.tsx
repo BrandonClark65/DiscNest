@@ -1,56 +1,65 @@
 'use client';
 
-import { useState } from "react";
-import { useSession, signIn } from "next-auth/react";
-import ChatModal from "@/components/ChatModal";
+import { useState } from 'react';
+import ChatModal from '@/components/ChatModal';
 
 type MessageSellerButtonProps = {
   sellerId: string;
   listingId: string;
 };
 
-export default function MessageSellerButton({ sellerId, listingId }: MessageSellerButtonProps) {
-  const { data: session } = useSession();
+export default function MessageSellerButton({
+  sellerId,
+  listingId,
+}: MessageSellerButtonProps) {
   const [threadId, setThreadId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  async function handleMessageSeller() {
-    if (!session) {
-      signIn();
-      return;
-    }
-
-    setLoading(true);
+  async function handleClick() {
+    setIsLoading(true);
     try {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipientId: sellerId, listingId }),
+      // Create or get existing thread
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientId: sellerId,
+          listingId,
+        }),
       });
-      if (!res.ok) throw new Error("Failed to start message thread");
-      const thread = await res.json();
-      setThreadId(thread._id); // opens modal
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error('Error creating or finding thread:', data.error);
+        return;
+      }
+
+      // Open chat modal with the thread
+      setThreadId(data._id);
     } catch (err) {
-      console.error(err);
-      alert("Could not open chat.");
+      console.error('Failed to start chat:', err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
   return (
     <>
       <button
-        onClick={handleMessageSeller}
-        disabled={loading}
-        className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        onClick={handleClick}
+        disabled={isLoading}
+        className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700"
       >
-        {loading ? "Opening chat..." : "Message Seller"}
+        {isLoading ? 'Loading...' : 'Message Seller'}
       </button>
 
-      {threadId && <ChatModal threadId={threadId} onClose={() => setThreadId(null)} />}
+      {threadId && (
+        <ChatModal threadId={threadId} onClose={() => setThreadId(null)} />
+      )}
     </>
   );
 }
+
 
 
