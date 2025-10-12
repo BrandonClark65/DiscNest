@@ -16,11 +16,16 @@ export async function GET(req: Request) {
   const lat = parseFloat(searchParams.get("lat") || "0");
   const lng = parseFloat(searchParams.get("lng") || "0");
   const radius = parseFloat(searchParams.get("radius") || "25"); // miles
+  const userId = searchParams.get("userId"); // optional: filter by owner
+  const excludeUserId = searchParams.get("excludeUserId"); // optional: exclude a specific user
 
   const query: any = { pendingReview: { $ne: true } }; // exclude pending review
 
   if (brand) query.brand = brand;
   if (condition) query.condition = condition;
+
+  if (userId) query.userId = userId;
+  if (excludeUserId) query.userId = { $ne: excludeUserId };
 
   if (lat !== 0 && lng !== 0) {
     query.location = {

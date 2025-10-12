@@ -9,32 +9,48 @@ import { useSession } from 'next-auth/react';
 
 export default function MarketplacePage() {
   const { data: session } = useSession();
-  const [listings, setListings] = useState<Listing[]>([]);
+  const userId = session?.user?.id;
+  const [marketListings, setMarketListings] = useState<Listing[]>([]);
+  const [myListings, setMyListings] = useState<Listing[]>([]);
   const [radius, setRadius] = useState(25);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'market' | 'myListings'>('market');
   const router = useRouter();
 
-  // Fetch listings near user's current location
+  // Fetch listings whenever tab or radius changes
   useEffect(() => {
+    if (!userId) return;
+
+    setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        fetchListings(pos.coords.latitude, pos.coords.longitude, radius);
+        fetchListings(pos.coords.latitude, pos.coords.longitude);
       },
       (err) => {
         console.error('Location error:', err);
-        // fallback: fetch all listings if no geolocation permission
-        fetchListings(0, 0, radius);
+        fetchListings(0, 0);
       }
     );
-  }, [radius]);
+  }, [activeTab, radius, userId]);
 
-  async function fetchListings(lat: number, lng: number, r: number) {
-    setLoading(true);
+  async function fetchListings(lat: number, lng: number) {
     try {
-      const res = await fetch(`/api/listings?lat=${lat}&lng=${lng}&radius=${r}`);
+      let url = `/api/listings?`;
+      if (activeTab === 'market') {
+        url += `lat=${lat}&lng=${lng}&radius=${radius}&excludeUserId=${userId}`;
+      } else {
+        url += `userId=${userId}`;
+      }
+
+      const res = await fetch(url);
       const data = await res.json();
-      setListings(data);
+
+      if (activeTab === 'market') {
+        setMarketListings(data);
+      } else {
+        setMyListings(data);
+      }
     } catch (err) {
       console.error('Error fetching listings:', err);
     } finally {
@@ -42,12 +58,13 @@ export default function MarketplacePage() {
     }
   }
 
+  const listingsToShow = activeTab === 'market' ? marketListings : myListings;
+
   return (
     <div className="max-w-6xl mx-auto p-4">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-semibold">Disc Marketplace</h1>
-
         <div className="flex gap-2">
           <button
             onClick={() => router.push('/messages')}
@@ -64,35 +81,59 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      {/* Radius Filter */}
-      <div className="mb-4 flex items-center gap-2">
-        <label className="font-medium">Search radius:</label>
-        <input
-          type="range"
-          min="5"
-          max="100"
-          step="5"
-          value={radius}
-          onChange={(e) => setRadius(Number(e.target.value))}
-        />
-        <span>{radius} miles</span>
+      {/* Tabs */}
+      <div className="mb-4 flex gap-2">
+        <button
+          onClick={() => setActiveTab('market')}
+          className={`px-3 py-1 rounded ${
+            activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+          }`}
+        >
+          Marketplace
+        </button>
+        <button
+          onClick={() => setActiveTab('myListings')}
+          className={`px-3 py-1 rounded ${
+            activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+          }`}
+        >
+          My Listings
+        </button>
       </div>
 
+      {/* Radius Filter */}
+      {activeTab === 'market' && (
+        <div className="mb-4 flex items-center gap-2">
+          <label className="font-medium">Search radius:</label>
+          <input
+            type="range"
+            min="5"
+            max="100"
+            step="5"
+            value={radius}
+            onChange={(e) => setRadius(Number(e.target.value))}
+          />
+          <span>{radius} miles</span>
+        </div>
+      )}
+
       {/* Create Listing Form */}
-      {isCreating && session?.user &&(
+      {isCreating && session?.user && (
         <div className="border rounded p-4 mb-6 bg-gray-50">
-          <CreateListingForm user={session?.user} onClose={() => setIsCreating(false)} />
+          <CreateListingForm user={session.user} onClose={() => setIsCreating(false)} />
         </div>
       )}
 
       {/* Listings Grid */}
       {loading ? (
         <p>Loading listings...</p>
-      ) : listings.length === 0 ? (
-        <p className="text-gray-500 italic">No listings found in this area.</p>
+      ) : listingsToShow.length === 0 ? (
+        <p className="text-gray-500 italic">
+          {activeTab === 'market' ? 'No listings found in this area.' : 'You have no listings yet.'}
+        </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {listings.map((listing) => (
+          {listingsToShow.map((listing) => (
             <ListingCard key={listing._id} listing={listing} />
           ))}
         </div>
@@ -100,4 +141,3 @@ export default function MarketplacePage() {
     </div>
   );
 }
-
