@@ -17,4 +17,6 @@ export interface DiscNestUser {
   discShelf?: string[];
   bag?: string[];
   createdAt?: Date | string;
+  moderationFlags?: number;
+  lastFlaggedAt?: Date | null;
 }

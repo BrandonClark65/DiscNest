@@ -17,6 +17,7 @@ const ListingSchema = new Schema({
   city: String,
   radiusVisibility: { type: Number, default: 5 }, // miles
   createdAt: { type: Date, default: Date.now },
+  pendingReview: { type: Boolean, default: false },
 });
 
 ListingSchema.index({ location: "2dsphere" }); // enable geo queries

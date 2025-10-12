@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import CreateListingForm from '@/components/CreateListingForm';
 import ListingCard from '@/components/ListingCard';
 import type { Listing } from '@/types/listing';
+import { useSession } from 'next-auth/react';
 
 export default function MarketplacePage() {
+  const { data: session } = useSession();
   const [listings, setListings] = useState<Listing[]>([]);
   const [radius, setRadius] = useState(25);
   const [isCreating, setIsCreating] = useState(false);
@@ -77,9 +79,9 @@ export default function MarketplacePage() {
       </div>
 
       {/* Create Listing Form */}
-      {isCreating && (
+      {isCreating && session?.user &&(
         <div className="border rounded p-4 mb-6 bg-gray-50">
-          <CreateListingForm onClose={() => setIsCreating(false)} />
+          <CreateListingForm user={session?.user} onClose={() => setIsCreating(false)} />
         </div>
       )}
 

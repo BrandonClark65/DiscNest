@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import Listing from "@/models/Listing";
 import { connectToDatabase } from "@/lib/mongodb";
+import User from "@/models/User";
+import { Resend } from "resend";
 
-// GET listings (with filters)
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// GET listings (only approved, with optional filters)
 export async function GET(req: Request) {
   await connectToDatabase();
 
@@ -13,11 +17,11 @@ export async function GET(req: Request) {
   const lng = parseFloat(searchParams.get("lng") || "0");
   const radius = parseFloat(searchParams.get("radius") || "25"); // miles
 
-  const query: any = {};
+  const query: any = { pendingReview: { $ne: true } }; // exclude pending review
+
   if (brand) query.brand = brand;
   if (condition) query.condition = condition;
 
-  // Only include listings near the given location
   if (lat !== 0 && lng !== 0) {
     query.location = {
       $geoWithin: {
@@ -32,8 +36,37 @@ export async function GET(req: Request) {
 
 // POST new listing
 export async function POST(req: Request) {
-  await connectToDatabase();
-  const body = await req.json();
-  const newListing = await Listing.create(body);
-  return NextResponse.json(newListing, { status: 201 });
+  try {
+    await connectToDatabase();
+    const body = await req.json();
+
+    const pendingReview = body.pendingReview || false;
+
+    const listing = await Listing.create({
+      ...body,
+      pendingReview,
+    });
+
+    if (pendingReview) {
+      const user = await User.findById(body.userId);
+      await resend.emails.send({
+        from: "alerts@yourdomain.com",
+        to: process.env.ADMIN_ALERT_EMAIL!,
+        subject: `⚠️ Listing from ${user?.name || "Unknown"} requires review`,
+        html: `
+          <p><strong>User:</strong> ${user?.name} (${user?.email})</p>
+          <p><strong>Listing:</strong> ${listing.title}</p>
+          <p><strong>Images:</strong> ${body.imageUrls
+            .map((url: string) => `<a href="${url}">${url}</a>`)
+            .join("<br>")}</p>
+          <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+        `,
+      });
+    }
+
+    return NextResponse.json(listing, { status: 201 });
+  } catch (err: any) {
+    console.error(err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }

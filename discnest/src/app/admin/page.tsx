@@ -42,6 +42,8 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBrand, setFilterBrand] = useState('');
   const [users, setUsers] = useState<DiscNestUser[]>([]);
+  const [flagFilter, setFlagFilter] = useState('');
+
 
 
   useEffect(() => {
@@ -189,27 +191,51 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* 🧑‍💼 All Users Section */}
       <div className="max-w-4xl">
         <h2 className="text-xl font-semibold mb-2">All Users</h2>
+
         <div className="flex flex-wrap gap-4 mb-4">
+          {/* Search Field */}
           <input
             type="text"
             placeholder="Search by name or email"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="border px-3 py-2 rounded w-full sm:w-64"
           />
+
+          {/* Role Filter */}
           <select
             value={filterBrand}
-            onChange={e => setFilterBrand(e.target.value)}
+            onChange={(e) => setFilterBrand(e.target.value)}
             className="border px-3 py-2 rounded w-full sm:w-64"
           >
             <option value="">All Roles</option>
-            {[...new Set(users.map(u => u.role))].sort().map(role => (
-              <option key={role} value={role}>{role}</option>
+            {[...new Set(users.map((u) => u.role))].sort().map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
             ))}
           </select>
+
+          {/* 🧠 New Flag Filter */}
+          <select
+            value={flagFilter}
+            onChange={(e) => setFlagFilter(e.target.value)}
+            className="border px-3 py-2 rounded w-full sm:w-64"
+          >
+            <option value="">All Users</option>
+            <option value="flagged">Flagged Only</option>
+            <option value="clean">Clean Only</option>
+          </select>
         </div>
+
+        {/* Flagged user counter (optional but helpful) */}
+        <div className="mb-2 text-sm text-gray-600">
+          <strong>⚠️ {users.filter(u => (u.moderationFlags ?? 0) > 0).length}</strong> flagged users total
+        </div>
+
         <div className="overflow-auto max-h-[400px] border rounded">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-100 sticky top-0">
@@ -217,32 +243,52 @@ export default function AdminDashboard() {
                 <th className="text-left px-4 py-2">Name</th>
                 <th className="text-left px-4 py-2">Email</th>
                 <th className="text-left px-4 py-2">Role</th>
+                <th className="text-left px-4 py-2 text-center">Flags</th>
+                <th className="text-left px-4 py-2">Last Flagged</th>
                 <th className="text-left px-4 py-2">Last Login</th>
                 <th className="text-left px-4 py-2">Joined</th>
               </tr>
             </thead>
             <tbody>
               {users
-                .filter(u =>
-                  (!filterBrand || u.role === filterBrand) &&
-                  (
+                .filter((u) => {
+                  const matchesRole = !filterBrand || u.role === filterBrand;
+                  const matchesSearch =
                     (u.name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-                    (u.email?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
-                  )
-                )
+                    (u.email?.toLowerCase() ?? '').includes(searchTerm.toLowerCase());
+                  const matchesFlag =
+                    flagFilter === ''
+                      ? true
+                      : flagFilter === 'flagged'
+                      ? (u.moderationFlags ?? 0) > 0
+                      : (u.moderationFlags ?? 0) === 0;
+                  return matchesRole && matchesSearch && matchesFlag;
+                })
                 .map((user, i) => (
                   <tr key={i} className="border-t">
                     <td className="px-4 py-2">{user.name}</td>
                     <td className="px-4 py-2">{user.email}</td>
                     <td className="px-4 py-2">{user.role}</td>
-                    <td className="text-sm text-gray-600">
-                      {user.lastLogin
-                        ? new Date(user.lastLogin).toLocaleString()
+                    <td
+                      className={`px-4 py-2 text-center font-semibold ${
+                        (user.moderationFlags ?? 0) > 0 ? 'text-red-600' : 'text-green-600'
+                      }`}
+                    >
+                      {user.moderationFlags || 0}
+                    </td>
+                    <td className="px-4 py-2">
+                      {user.lastFlaggedAt
+                        ? new Date(user.lastFlaggedAt).toLocaleDateString()
                         : '—'}
                     </td>
-                    <td className="px-4 py-2">{user.createdAt
+                    <td className="text-sm text-gray-600">
+                      {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : '—'}
+                    </td>
+                    <td className="px-4 py-2">
+                      {user.createdAt
                         ? new Date(user.createdAt).toLocaleDateString()
-                        : '—'}</td>
+                        : '—'}
+                    </td>
                   </tr>
                 ))}
             </tbody>

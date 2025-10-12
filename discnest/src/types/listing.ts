@@ -8,4 +8,5 @@ export type Listing = {
   location: { coordinates: [number, number] };
   imageUrls: string[];
   userId: string;
+  pendingReview?: boolean;
 };

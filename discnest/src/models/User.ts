@@ -19,6 +19,9 @@ const UserSchema = new mongoose.Schema({
   throwingStyle: String,
   maxDistance: Number,
   favoriteCourse: String,
+  moderationFlags: { type: Number, default: 0 },
+  lastFlaggedAt: { type: Date },
+
 }, { timestamps: true });
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);
