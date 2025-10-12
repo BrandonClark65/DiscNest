@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import type { Disc } from '@/types/disc';
 
 type CreateListingFormProps = {
   user: { id: string; name?: string; email?: string };
@@ -9,10 +10,10 @@ type CreateListingFormProps = {
 
 export default function CreateListingForm({ user, onClose }: CreateListingFormProps) {
   const [form, setForm] = useState({
-    discId: '',
     title: '',
     description: '',
     brand: '',
+    plastic: '',
     condition: 'Used - Like New',
     type: 'Sell',
     price: 0,
@@ -23,8 +24,52 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     pendingReview: false,
   });
 
+  const [touchedFields, setTouchedFields] = useState({
+    title: false,
+    brand: false,
+    plastic: false,
+  });
+
+  const [discs, setDiscs] = useState<Disc[]>([]);
+  const [selectedDisc, setSelectedDisc] = useState<string>(''); // _id of selected disc
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Fetch user's discs
+  useEffect(() => {
+    async function fetchDiscs() {
+      if (!user?.email) return;
+      try {
+        const res = await fetch(`/api/user/discs/bag?email=${encodeURIComponent(user.email)}`);
+        const data = await res.json();
+        setDiscs(data.bag || []);
+      } catch (err) {
+        console.error('Failed to fetch discs:', err);
+      }
+    }
+    fetchDiscs();
+  }, [user?.email]);
+
+  // Autofill form when a disc is selected (only fields not manually edited)
+  useEffect(() => {
+    if (!selectedDisc) return;
+    const disc = discs.find((d) => d._id === selectedDisc);
+    if (!disc) return;
+
+    setForm((prev) => ({
+      ...prev,
+      title: touchedFields.title ? prev.title : disc.name || '',
+      brand: touchedFields.brand ? prev.brand : disc.brand || '',
+      plastic: touchedFields.plastic ? prev.plastic : disc.plastic || '',
+    }));
+  }, [selectedDisc, discs, touchedFields]);
+
+  function handleFieldChange<K extends keyof typeof form>(field: K, value: any) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (['title', 'brand', 'plastic'].includes(field)) {
+      setTouchedFields((prev) => ({ ...prev, [field]: true }));
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -89,7 +134,6 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       if (!res.ok) throw new Error(data.error || 'Upload failed');
 
       if (data.status === 'flagged') {
-        // Mark flagged images for internal tracking
         setForm((prev) => ({
           ...prev,
           flaggedImages: [...prev.flaggedImages, data.imageUrl || file.name],
@@ -98,7 +142,6 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       }
 
       if (data.status === 'pendingReview') {
-        // Mark listing as pending review
         setForm((prev) => ({
           ...prev,
           imageUrls: [...prev.imageUrls, data.imageUrl],
@@ -107,7 +150,6 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         return;
       }
 
-      // Approved image
       setForm((prev) => ({
         ...prev,
         imageUrls: [...prev.imageUrls, data.imageUrl],
@@ -137,10 +179,10 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
 
   function resetForm() {
     setForm({
-      discId: '',
       title: '',
       description: '',
       brand: '',
+      plastic: '',
       condition: 'Used - Like New',
       type: 'Sell',
       price: 0,
@@ -150,6 +192,8 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       flaggedImages: [],
       pendingReview: false,
     });
+    setTouchedFields({ title: false, brand: false, plastic: false });
+    setSelectedDisc('');
   }
 
   return (
@@ -170,18 +214,27 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Disc ID (optional, from bag) */}
-        <div>
-          <label htmlFor="discId" className="block font-medium mb-1">Disc (optional)</label>
-          <input
-            id="discId"
-            type="text"
-            placeholder="Disc ID (if from bag)"
-            value={form.discId}
-            onChange={(e) => setForm({ ...form, discId: e.target.value })}
-            className="border px-3 py-2 rounded w-full"
-          />
-        </div>
+        {/* Disc selector (optional) */}
+        {discs.length > 0 && (
+          <div>
+            <label htmlFor="discSelect" className="block font-medium mb-1">
+              Select a disc from your bag (optional)
+            </label>
+            <select
+              id="discSelect"
+              value={selectedDisc}
+              onChange={(e) => setSelectedDisc(e.target.value)}
+              className="border px-3 py-2 rounded w-full"
+            >
+              <option value="">-- None --</option>
+              {discs.map((disc) => (
+                <option key={disc._id} value={disc._id}>
+                  {disc.name} {disc.brand ? `(${disc.brand})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Title */}
         <div>
@@ -191,7 +244,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             type="text"
             required
             value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            onChange={(e) => handleFieldChange('title', e.target.value)}
             className="border px-3 py-2 rounded w-full"
           />
         </div>
@@ -202,7 +255,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           <textarea
             id="description"
             value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            onChange={(e) => handleFieldChange('description', e.target.value)}
             className="border px-3 py-2 rounded w-full"
             rows={3}
           />
@@ -215,7 +268,19 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             id="brand"
             type="text"
             value={form.brand}
-            onChange={(e) => setForm({ ...form, brand: e.target.value })}
+            onChange={(e) => handleFieldChange('brand', e.target.value)}
+            className="border px-3 py-2 rounded w-full"
+          />
+        </div>
+
+        {/* Plastic */}
+        <div>
+          <label htmlFor="plastic" className="block font-medium mb-1">Plastic</label>
+          <input
+            id="plastic"
+            type="text"
+            value={form.plastic}
+            onChange={(e) => handleFieldChange('plastic', e.target.value)}
             className="border px-3 py-2 rounded w-full"
           />
         </div>
@@ -226,7 +291,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           <select
             id="condition"
             value={form.condition}
-            onChange={(e) => setForm({ ...form, condition: e.target.value })}
+            onChange={(e) => handleFieldChange('condition', e.target.value)}
             className="border px-3 py-2 rounded w-full"
           >
             <option>New</option>
@@ -241,7 +306,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           <select
             id="type"
             value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value })}
+            onChange={(e) => handleFieldChange('type', e.target.value)}
             className="border px-3 py-2 rounded w-full"
           >
             <option>Sell</option>
@@ -257,7 +322,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
               id="price"
               type="number"
               value={form.price}
-              onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) })}
+              onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
               className="border px-3 py-2 rounded w-full"
             />
           </div>
@@ -270,7 +335,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             id="city"
             type="text"
             value={form.city}
-            onChange={(e) => setForm({ ...form, city: e.target.value })}
+            onChange={(e) => handleFieldChange('city', e.target.value)}
             className="border px-3 py-2 rounded w-full"
           />
         </div>
@@ -284,7 +349,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             min={1}
             max={100}
             value={form.radiusVisibility}
-            onChange={(e) => setForm({ ...form, radiusVisibility: parseInt(e.target.value) })}
+            onChange={(e) => handleFieldChange('radiusVisibility', parseInt(e.target.value))}
             className="border px-3 py-2 rounded w-full"
           />
         </div>

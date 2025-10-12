@@ -2,7 +2,7 @@ import mongoose, { Schema, model, models } from "mongoose";
 
 const ListingSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  discId: { type: Schema.Types.ObjectId, ref: "Disc", required: false }, // from bag
+  // discId: { type: Schema.Types.ObjectId, ref: "Disc", required: false }, // from bag
   title: { type: String, required: true },
   description: String,
   brand: String,
@@ -18,6 +18,7 @@ const ListingSchema = new Schema({
   radiusVisibility: { type: Number, default: 5 }, // miles
   createdAt: { type: Date, default: Date.now },
   pendingReview: { type: Boolean, default: false },
+  plastic: { type: String, default: '' },
 });
 
 ListingSchema.index({ location: "2dsphere" }); // enable geo queries
