@@ -15,3 +15,12 @@ export type Listing = {
   pendingReview?: boolean;
   plastic?: string;
 };
+
+export type ListingAdmin = Listing & {
+  userId: {
+    _id: string;
+    name?: string;
+    email?: string;
+  };
+};
+
