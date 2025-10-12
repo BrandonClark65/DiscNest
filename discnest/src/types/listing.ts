@@ -1,12 +1,17 @@
 export type Listing = {
   _id: string;
-  sellerId: { _id: string; name: string };
+  userId: string; // reference to the seller
   title: string;
-  brand: string;
-  condition: string;
-  price: number;
-  location: { coordinates: [number, number] };
+  description?: string;
+  brand?: string;
+  condition: "New" | "Used - Like New" | "Used - Fair";
+  type: "Sell" | "Trade";
+  price?: number;
   imageUrls: string[];
-  userId: string;
+  location?: { coordinates: [number, number] };
+  city?: string;
+  radiusVisibility?: number;
+  createdAt?: string;
   pendingReview?: boolean;
+  plastic?: string;
 };
