@@ -2,7 +2,14 @@ import type { Listing } from "@/types/listing";
 import Image from "next/image";
 import Link from "next/link";
 
-function ListingCard({ listing }: { listing: Listing }) {
+type ListingCardProps = {
+  listing: Listing;
+  isOwner?: boolean;
+  onDelete?: () => void;
+  onMarkSold?: () => void;
+};
+
+function ListingCard({ listing, isOwner, onDelete, onMarkSold }: ListingCardProps) {
   return (
     <div className="border rounded-lg p-4 shadow hover:shadow-lg transition-shadow duration-200 flex flex-col">
       {listing.imageUrls && listing.imageUrls.length > 0 && (
@@ -30,14 +37,37 @@ function ListingCard({ listing }: { listing: Listing }) {
         {listing.price ? `$${listing.price.toFixed(2)}` : 'Price not listed'}
       </p>
 
-
       <Link href={`/listing/${listing._id}`}>
-        <button className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
+        <button className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition mb-2 w-full">
           View Listing
         </button>
       </Link>
+
+      {/* Owner actions */}
+      {isOwner && !listing.sold && (
+        <div className="flex gap-2">
+          <button
+            onClick={onMarkSold}
+            className="bg-green-500 text-white px-2 py-1 rounded flex-1"
+          >
+            Mark as Sold
+          </button>
+          <button
+            onClick={onDelete}
+            className="bg-red-500 text-white px-2 py-1 rounded flex-1"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+
+      {/* Sold badge */}
+      {listing.sold && (
+        <span className="text-gray-500 italic mt-2">Sold</span>
+      )}
     </div>
   );
 }
+
 
 export default ListingCard;

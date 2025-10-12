@@ -19,6 +19,7 @@ const ListingSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
   pendingReview: { type: Boolean, default: false },
   plastic: { type: String, default: '' },
+  sold: { type: Boolean, default: false },
 });
 
 ListingSchema.index({ location: "2dsphere" }); // enable geo queries

@@ -18,15 +18,12 @@ export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState<'market' | 'myListings'>('market');
   const router = useRouter();
 
-  // Fetch listings whenever tab or radius changes
   useEffect(() => {
     if (!userId) return;
 
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        fetchListings(pos.coords.latitude, pos.coords.longitude);
-      },
+      (pos) => fetchListings(pos.coords.latitude, pos.coords.longitude),
       (err) => {
         console.error('Location error:', err);
         fetchListings(0, 0);
@@ -46,17 +43,51 @@ export default function MarketplacePage() {
       const res = await fetch(url);
       const data = await res.json();
 
-      if (activeTab === 'market') {
-        setMarketListings(data);
-      } else {
-        setMyListings(data);
-      }
+      if (activeTab === 'market') setMarketListings(data);
+      else setMyListings(data);
     } catch (err) {
       console.error('Error fetching listings:', err);
     } finally {
       setLoading(false);
     }
   }
+
+  // --- NEW: delete a listing ---
+  async function handleDelete(listingId: string) {
+    if (!confirm('Are you sure you want to delete this listing?')) return;
+    try {
+      const res = await fetch(`/api/listings/${listingId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete listing');
+
+      // Remove from state
+      setMyListings((prev) => prev.filter((l) => l._id !== listingId));
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting listing');
+    }
+  }
+
+  // --- NEW: mark as sold ---
+  async function handleMarkSold(listingId: string) {
+    try {
+      const res = await fetch(`/api/listings/${listingId}/sold`, { method: 'PATCH' });
+      if (!res.ok) throw new Error('Failed to mark as sold');
+
+      // Update listing in state
+      setMyListings((prev) =>
+        prev.map((l) => (l._id === listingId ? { ...l, sold: true } : l))
+      );
+    } catch (err) {
+      console.error(err);
+      alert('Error marking listing as sold');
+    }
+  }
+
+  function isOwner(listingUserId: string | { _id: string }, sessionUserId: string) {
+    if (typeof listingUserId === 'string') return listingUserId === sessionUserId;
+    return listingUserId._id === sessionUserId;
+  }
+
 
   const listingsToShow = activeTab === 'market' ? marketListings : myListings;
 
@@ -85,17 +116,13 @@ export default function MarketplacePage() {
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => setActiveTab('market')}
-          className={`px-3 py-1 rounded ${
-            activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-          }`}
+          className={`px-3 py-1 rounded ${activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
         >
           Marketplace
         </button>
         <button
           onClick={() => setActiveTab('myListings')}
-          className={`px-3 py-1 rounded ${
-            activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-          }`}
+          className={`px-3 py-1 rounded ${activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
         >
           My Listings
         </button>
@@ -134,7 +161,13 @@ export default function MarketplacePage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {listingsToShow.map((listing) => (
-            <ListingCard key={listing._id} listing={listing} />
+            <ListingCard
+              key={listing._id}
+              listing={listing}
+              isOwner={isOwner(listing.userId, userId!)}
+              onDelete={() => handleDelete(listing._id)}
+              onMarkSold={() => handleMarkSold(listing._id)}
+            />
           ))}
         </div>
       )}

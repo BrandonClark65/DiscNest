@@ -14,6 +14,7 @@ export type Listing = {
   createdAt?: string;
   pendingReview?: boolean;
   plastic?: string;
+  sold?: boolean;
 };
 
 export type ListingAdmin = Listing & {
