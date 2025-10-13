@@ -97,33 +97,55 @@ export async function DELETE(
 
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
     const listing = await Listing.findById(id);
-    if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+    if (!listing)
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
 
     // Check ownership
-    const listingUserId = typeof listing.userId === 'string' ? listing.userId : listing.userId._id.toString();
+    const listingUserId =
+      typeof listing.userId === "string"
+        ? listing.userId
+        : listing.userId._id.toString();
     if (listingUserId !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Delete images from Cloudinary if they exist
-    if (listing.imageUrls && listing.imageUrls.length > 0) {
+    // Delete images from Cloudinary
+    // Prefer using stored publicIds if available
+    if (listing.publicIds && listing.publicIds.length > 0) {
+      for (const publicId of listing.publicIds) {
+        try {
+          await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+          console.warn(`⚠️ Failed to delete Cloudinary image ${publicId}:`, err);
+        }
+      }
+    } 
+    // Fallback: attempt to derive publicId from URL if no publicIds stored
+    else if (listing.imageUrls && listing.imageUrls.length > 0) {
       for (const url of listing.imageUrls) {
-        const parts = url.split('/');
-        const lastPart = parts[parts.length - 1];
-        const publicId = lastPart.split('.')[0]; // simple extraction
-        if (publicId) await cloudinary.uploader.destroy(publicId);
+        try {
+          const match = url.match(/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/);
+          const derivedPublicId = match ? match[1] : null;
+          if (derivedPublicId) {
+            await cloudinary.uploader.destroy(derivedPublicId);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Failed to derive/delete image from URL ${url}:`, err);
+        }
       }
     }
 
+    // Finally delete the listing itself
     await listing.deleteOne();
 
-    return NextResponse.json({ message: 'Listing deleted successfully' });
+    return NextResponse.json({ message: "Listing deleted successfully" });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    console.error("❌ Error deleting listing:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

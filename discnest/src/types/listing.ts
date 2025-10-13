@@ -8,6 +8,7 @@ export type Listing = {
   type: "Sell" | "Trade";
   price?: number;
   imageUrls: string[];
+  publicIds?: string[];
   location?: { coordinates: [number, number] };
   city?: string;
   radiusVisibility?: number;

@@ -6,7 +6,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// GET listings (only approved, with optional filters)
+// GET listings (marketplace or user-specific)
 export async function GET(req: Request) {
   await connectToDatabase();
 
@@ -15,14 +15,18 @@ export async function GET(req: Request) {
   const condition = searchParams.get("condition");
   const lat = parseFloat(searchParams.get("lat") || "0");
   const lng = parseFloat(searchParams.get("lng") || "0");
-  const radius = parseFloat(searchParams.get("radius") || "25"); // miles
-  const userId = searchParams.get("userId"); // optional: filter by owner
-  const excludeUserId = searchParams.get("excludeUserId"); // optional: exclude a specific user
+  const radius = parseFloat(searchParams.get("radius") || "25");
+  const userId = searchParams.get("userId"); // optional: show listings by user
+  const excludeUserId = searchParams.get("excludeUserId"); // optional: exclude
+  const includeSold = searchParams.get("includeSold") === "true"; // 👈 new flag
 
-   const query: any = {
+  // Default: exclude sold listings (for marketplace)
+  const query: any = {
     pendingReview: { $ne: true },
-    sold: { $ne: true },
   };
+  if (!includeSold) {
+    query.sold = { $ne: true };
+  }
 
   if (brand) query.brand = brand;
   if (condition) query.condition = condition;
@@ -33,12 +37,15 @@ export async function GET(req: Request) {
   if (lat !== 0 && lng !== 0) {
     query.location = {
       $geoWithin: {
-        $centerSphere: [[lng, lat], radius / 3963.2], // convert miles to radians
+        $centerSphere: [[lng, lat], radius / 3963.2],
       },
     };
   }
 
-  const listings = await Listing.find(query).populate("userId", "name").sort({ createdAt: -1 });
+  const listings = await Listing.find(query)
+    .populate("userId", "name")
+    .sort({ createdAt: -1 });
+
   return NextResponse.json(listings);
 }
 

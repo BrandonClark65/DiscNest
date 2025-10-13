@@ -20,6 +20,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     city: '',
     radiusVisibility: 5,
     imageUrls: [] as string[],
+    publicIds: [] as string[],
     flaggedImages: [] as string[],
     pendingReview: false,
   });
@@ -137,6 +138,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         setForm((prev) => ({
           ...prev,
           flaggedImages: [...prev.flaggedImages, data.imageUrl || file.name],
+          publicIds: [...(prev.publicIds || []), data.publicId],
         }));
         return;
       }
@@ -145,6 +147,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         setForm((prev) => ({
           ...prev,
           imageUrls: [...prev.imageUrls, data.imageUrl],
+          publicIds: [...(prev.publicIds || []), data.publicId],
           pendingReview: true,
         }));
         return;
@@ -153,6 +156,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       setForm((prev) => ({
         ...prev,
         imageUrls: [...prev.imageUrls, data.imageUrl],
+        publicIds: [...(prev.publicIds || []), data.publicId],
       }));
     } catch (err: any) {
       console.error(err);
@@ -189,6 +193,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       city: '',
       radiusVisibility: 5,
       imageUrls: [],
+      publicIds: [],
       flaggedImages: [],
       pendingReview: false,
     });

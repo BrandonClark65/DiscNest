@@ -16,6 +16,7 @@ export default function MarketplacePage() {
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'market' | 'myListings'>('market');
+  const [myListingsTab, setMyListingsTab] = useState<'active' | 'sold'>('active');
   const router = useRouter();
 
   useEffect(() => {
@@ -34,10 +35,13 @@ export default function MarketplacePage() {
   async function fetchListings(lat: number, lng: number) {
     try {
       let url = `/api/listings?`;
+
       if (activeTab === 'market') {
+        // Marketplace: exclude sold listings
         url += `lat=${lat}&lng=${lng}&radius=${radius}&excludeUserId=${userId}`;
       } else {
-        url += `userId=${userId}`;
+        // My Listings: include sold listings
+        url += `userId=${userId}&includeSold=true`;
       }
 
       const res = await fetch(url);
@@ -73,10 +77,10 @@ export default function MarketplacePage() {
   async function handleMarkSold(listingId: string) {
     try {
       const res = await fetch(`/api/listings/${listingId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'markSold' })
-        });
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markSold' }),
+      });
       if (res.status === 401) return alert('You must be logged in to mark this listing as sold.');
       if (res.status === 403) return alert('You are not allowed to mark this listing as sold.');
       if (!res.ok) throw new Error('Failed to mark as sold');
@@ -90,14 +94,20 @@ export default function MarketplacePage() {
     }
   }
 
-
   function isOwner(listingUserId: string | { _id: string }, sessionUserId: string) {
     if (typeof listingUserId === 'string') return listingUserId === sessionUserId;
     return listingUserId._id === sessionUserId;
   }
 
-
-  const listingsToShow = activeTab === 'market' ? marketListings : myListings;
+  // --- Determine listings to show ---
+  let listingsToShow: Listing[] = [];
+  if (activeTab === 'market') listingsToShow = marketListings;
+  else {
+    listingsToShow =
+      myListingsTab === 'active'
+        ? myListings.filter((l) => !l.sold)
+        : myListings.filter((l) => l.sold);
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -125,8 +135,8 @@ export default function MarketplacePage() {
         <button
           onClick={() => setActiveTab('market')}
           className={`px-3 py-1 rounded 
-                    ${activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}
-                    transition-colors duration-150`}
+            ${activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}
+            transition-colors duration-150`}
         >
           Marketplace
         </button>
@@ -134,12 +144,38 @@ export default function MarketplacePage() {
         <button
           onClick={() => setActiveTab('myListings')}
           className={`px-3 py-1 rounded 
-                    ${activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}
-                    transition-colors duration-150`}
+            ${activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}
+            transition-colors duration-150`}
         >
           My Listings
         </button>
       </div>
+
+      {/* Subtabs for My Listings */}
+      {activeTab === 'myListings' && (
+        <div className="flex gap-2 mb-4 ml-2">
+          <button
+            onClick={() => setMyListingsTab('active')}
+            className={`px-3 py-1 rounded text-sm ${
+              myListingsTab === 'active'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 hover:bg-gray-300'
+            } transition-colors duration-150`}
+          >
+            Active
+          </button>
+          <button
+            onClick={() => setMyListingsTab('sold')}
+            className={`px-3 py-1 rounded text-sm ${
+              myListingsTab === 'sold'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 hover:bg-gray-300'
+            } transition-colors duration-150`}
+          >
+            Sold
+          </button>
+        </div>
+      )}
 
       {/* Radius Filter */}
       {activeTab === 'market' && (
@@ -169,7 +205,11 @@ export default function MarketplacePage() {
         <p>Loading listings...</p>
       ) : listingsToShow.length === 0 ? (
         <p className="text-gray-500 italic">
-          {activeTab === 'market' ? 'No listings found in this area.' : 'You have no listings yet.'}
+          {activeTab === 'market'
+            ? 'No listings found in this area.'
+            : myListingsTab === 'sold'
+            ? 'No sold listings yet.'
+            : 'No active listings yet.'}
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

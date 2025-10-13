@@ -10,6 +10,7 @@ const ListingSchema = new Schema({
   type: { type: String, enum: ["Sell", "Trade"], required: true },
   price: Number,
   imageUrls: [String],
+  publicIds: [String],
   location: {
     type: { type: String, enum: ["Point"], default: "Point" },
     coordinates: { type: [Number], required: true }, // [lng, lat]
