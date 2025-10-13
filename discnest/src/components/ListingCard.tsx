@@ -38,7 +38,12 @@ function ListingCard({ listing, isOwner, onDelete, onMarkSold }: ListingCardProp
       </p>
 
       <Link href={`/listing/${listing._id}`}>
-        <button className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition mb-2 w-full">
+        <button
+          className="bg-blue-600 text-white py-2 px-4 rounded w-full mb-2
+                    hover:bg-blue-700 active:bg-blue-800
+                    hover:scale-105 active:scale-95
+                    transition duration-150 transform"
+        >
           View Listing
         </button>
       </Link>
@@ -48,13 +53,20 @@ function ListingCard({ listing, isOwner, onDelete, onMarkSold }: ListingCardProp
         <div className="flex gap-2">
           <button
             onClick={onMarkSold}
-            className="bg-green-500 text-white px-2 py-1 rounded flex-1"
+            className="bg-green-500 text-white px-2 py-1 rounded flex-1
+                      hover:bg-green-600 active:bg-green-700
+                      hover:scale-105 active:scale-95
+                      transition duration-150 transform"
           >
             Mark as Sold
           </button>
+
           <button
             onClick={onDelete}
-            className="bg-red-500 text-white px-2 py-1 rounded flex-1"
+            className="bg-red-500 text-white px-2 py-1 rounded flex-1
+                      hover:bg-red-600 active:bg-red-700
+                      hover:scale-105 active:scale-95
+                      transition duration-150 transform"
           >
             Delete
           </button>

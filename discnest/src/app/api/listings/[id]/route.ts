@@ -37,34 +37,56 @@ export async function GET(
 // PATCH: mark as sold
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // 👈 must use Promise type
 ) {
-  await connectToDatabase();
+  const { action } = await req.json();
 
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (action === "markSold") {
+    await connectToDatabase();
 
-    const { id } = params;
+    try {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id)
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const listing = await Listing.findById(id);
-    if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+      // ✅ Await params before accessing id
+      const { id } = await context.params;
 
-    // Check ownership
-    const listingUserId = typeof listing.userId === 'string' ? listing.userId : listing.userId._id.toString();
-    if (listingUserId !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+      const listing = await Listing.findById(id);
+      if (!listing)
+        return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+
+      // Check ownership
+      const listingUserId =
+        typeof listing.userId === "string"
+          ? listing.userId
+          : listing.userId._id.toString();
+
+      if (listingUserId !== session.user.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
 
     listing.sold = true;
+    listing.markModified("sold"); // ✅ force Mongoose to recognize the change
+    try {
     await listing.save();
+    console.log("✅ Listing marked as sold:", listing._id);
+    } catch (err) {
+    console.error("❌ Error saving listing:", err);
+    }
 
-    return NextResponse.json({ listing });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+
+
+      return NextResponse.json({ listing });
+    } catch (err) {
+      console.error(err);
+      return NextResponse.json({ error: "Server error" }, { status: 500 });
+    }
+  } else {
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
 }
+
 
 // DELETE: remove listing + image from Cloudinary
 export async function DELETE(

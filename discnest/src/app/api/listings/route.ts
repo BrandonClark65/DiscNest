@@ -19,7 +19,10 @@ export async function GET(req: Request) {
   const userId = searchParams.get("userId"); // optional: filter by owner
   const excludeUserId = searchParams.get("excludeUserId"); // optional: exclude a specific user
 
-  const query: any = { pendingReview: { $ne: true } }; // exclude pending review
+   const query: any = {
+    pendingReview: { $ne: true },
+    sold: { $ne: true },
+  };
 
   if (brand) query.brand = brand;
   if (condition) query.condition = condition;

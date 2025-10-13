@@ -52,36 +52,44 @@ export default function MarketplacePage() {
     }
   }
 
-  // --- NEW: delete a listing ---
+  // --- Delete a listing ---
   async function handleDelete(listingId: string) {
     if (!confirm('Are you sure you want to delete this listing?')) return;
+
     try {
       const res = await fetch(`/api/listings/${listingId}`, { method: 'DELETE' });
+      if (res.status === 401) return alert('You must be logged in to delete this listing.');
+      if (res.status === 403) return alert('You are not allowed to delete this listing.');
       if (!res.ok) throw new Error('Failed to delete listing');
 
-      // Remove from state
       setMyListings((prev) => prev.filter((l) => l._id !== listingId));
     } catch (err) {
       console.error(err);
-      alert('Error deleting listing');
+      alert('Error deleting listing.');
     }
   }
 
-  // --- NEW: mark as sold ---
+  // --- Mark as sold ---
   async function handleMarkSold(listingId: string) {
     try {
-      const res = await fetch(`/api/listings/${listingId}/sold`, { method: 'PATCH' });
+      const res = await fetch(`/api/listings/${listingId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'markSold' })
+        });
+      if (res.status === 401) return alert('You must be logged in to mark this listing as sold.');
+      if (res.status === 403) return alert('You are not allowed to mark this listing as sold.');
       if (!res.ok) throw new Error('Failed to mark as sold');
 
-      // Update listing in state
       setMyListings((prev) =>
         prev.map((l) => (l._id === listingId ? { ...l, sold: true } : l))
       );
     } catch (err) {
       console.error(err);
-      alert('Error marking listing as sold');
+      alert('Error marking listing as sold.');
     }
   }
+
 
   function isOwner(listingUserId: string | { _id: string }, sessionUserId: string) {
     if (typeof listingUserId === 'string') return listingUserId === sessionUserId;
@@ -116,13 +124,18 @@ export default function MarketplacePage() {
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => setActiveTab('market')}
-          className={`px-3 py-1 rounded ${activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          className={`px-3 py-1 rounded 
+                    ${activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}
+                    transition-colors duration-150`}
         >
           Marketplace
         </button>
+
         <button
           onClick={() => setActiveTab('myListings')}
-          className={`px-3 py-1 rounded ${activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          className={`px-3 py-1 rounded 
+                    ${activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}
+                    transition-colors duration-150`}
         >
           My Listings
         </button>
