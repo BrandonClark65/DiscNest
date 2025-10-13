@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Disc } from '@/types/disc';
+import imageCompression from 'browser-image-compression';
 
 type CreateListingFormProps = {
   user: { id: string; name?: string; email?: string };
@@ -32,7 +33,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
   });
 
   const [discs, setDiscs] = useState<Disc[]>([]);
-  const [selectedDisc, setSelectedDisc] = useState<string>(''); // _id of selected disc
+  const [selectedDisc, setSelectedDisc] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -51,7 +52,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     fetchDiscs();
   }, [user?.email]);
 
-  // Autofill form when a disc is selected (only fields not manually edited)
+  // Autofill form when a disc is selected
   useEffect(() => {
     if (!selectedDisc) return;
     const disc = discs.find((d) => d._id === selectedDisc);
@@ -119,14 +120,25 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     }
   }
 
+  // 🧠 UPDATED: Compress image before upload
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
 
     setUploading(true);
     try {
+      // 1️⃣ Compress client-side
+      const options = {
+        maxSizeMB: 0.6, // target ~600KB max
+        maxWidthOrHeight: 1280, // resize if too large
+        useWebWorker: true,
+        initialQuality: 0.8,
+      };
+      const compressedFile = await imageCompression(file, options);
+
+      // 2️⃣ Upload to API
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedFile);
       formData.append('userId', user.id);
 
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -134,6 +146,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
 
       if (!res.ok) throw new Error(data.error || 'Upload failed');
 
+      // 3️⃣ Handle NSFW / pending review / approved
       if (data.status === 'flagged') {
         setForm((prev) => ({
           ...prev,
