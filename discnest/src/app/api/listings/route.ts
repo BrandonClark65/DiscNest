@@ -21,6 +21,7 @@ async function reverseGeocode(lat: number, lng: number) {
 }
 
 // GET listings (marketplace or user-specific)
+// GET listings (marketplace or user-specific)
 export async function GET(req: Request) {
   await connectToDatabase();
   const { searchParams } = new URL(req.url);
@@ -38,16 +39,13 @@ export async function GET(req: Request) {
 
   const query: any = { pendingReview: { $ne: true } };
 
-  // Marketplace: exclude current user's listings, filter out sold
   if (mode === "marketplace" && currentUserId) {
     query.userId = { $ne: new mongoose.Types.ObjectId(currentUserId) };
-    query.sold = { $ne: true }; // only show active listings
+    query.sold = { $ne: true };
   }
 
-  // My Listings: include only current user's listings
   if (mode === "myListings" && currentUserId) {
     query.userId = new mongoose.Types.ObjectId(currentUserId);
-    // sold filter handled in front-end (active vs sold)
   }
 
   if (brand) query.brand = brand;
@@ -61,11 +59,12 @@ export async function GET(req: Request) {
     ];
   }
 
-  let listings;
+  let listings: any[] = [];
+  let totalCount = 0;
 
   // Geo sorting only for marketplace
   if (lat !== 0 && lng !== 0 && mode === "marketplace") {
-    listings = await Listing.aggregate([
+    const aggregateResult = await Listing.aggregate([
       {
         $geoNear: {
           near: { type: "Point", coordinates: [lng, lat] },
@@ -75,12 +74,14 @@ export async function GET(req: Request) {
         },
       },
       { $sort: { distance: 1, createdAt: -1 } },
-      { $skip: skip },
-      { $limit: limit },
     ]);
-    const listingIds = listings.map((r) => r._id);
+
+    totalCount = aggregateResult.length;
+    const paginated = aggregateResult.slice(skip, skip + limit);
+    const listingIds = paginated.map((r) => r._id);
     listings = await Listing.find({ _id: { $in: listingIds } }).lean();
   } else {
+    totalCount = await Listing.countDocuments(query);
     listings = await Listing.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -108,8 +109,11 @@ export async function GET(req: Request) {
       : l.location,
   }));
 
-  return NextResponse.json(listings);
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return NextResponse.json({ listings, totalPages });
 }
+
 
 
 // POST new listing

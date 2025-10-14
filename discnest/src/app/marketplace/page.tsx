@@ -24,9 +24,9 @@ export default function MarketplacePage() {
   const [conditionFilter, setConditionFilter] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Pagination state for marketplace
+  // Pagination state
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
 
   const router = useRouter();
 
@@ -47,14 +47,13 @@ export default function MarketplacePage() {
   const fetchListings = async (
     mode: 'marketplace' | 'myListings',
     pageToFetch = 1
-  ): Promise<Listing[]> => {
-    if (!userId) return [];
+  ): Promise<{ listings: Listing[]; totalPages: number }> => {
+    if (!userId) return { listings: [], totalPages: 1 };
 
     setLoading(true);
     try {
-      let url = `/api/listings?mode=${mode}&excludeUserId=${userId}&page=${pageToFetch}&limit=${
-        mode === 'marketplace' ? 20 : 100
-      }`;
+      const limit = mode === 'marketplace' ? 20 : 100;
+      let url = `/api/listings?mode=${mode}&excludeUserId=${userId}&page=${pageToFetch}&limit=${limit}`;
       if (mode === 'marketplace' && userLocation)
         url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
       if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
@@ -62,11 +61,10 @@ export default function MarketplacePage() {
       if (conditionFilter) url += `&condition=${encodeURIComponent(conditionFilter)}`;
 
       const res = await fetch(url);
-      const data: Listing[] = await res.json();
+      const data = await res.json();
 
-      // Only keep listings with proper coordinates
-      return (data || []).filter(
-        (l) =>
+      const listings: Listing[] = (data.listings || []).filter(
+        (l: Listing) =>
           l &&
           typeof l._id === 'string' &&
           l.title &&
@@ -74,9 +72,11 @@ export default function MarketplacePage() {
           Array.isArray(l.location.coordinates) &&
           l.location.coordinates.length === 2
       );
+
+      return { listings, totalPages: data.totalPages || 1 };
     } catch (err) {
       console.error('Error fetching listings:', err);
-      return [];
+      return { listings: [], totalPages: 1 };
     } finally {
       setLoading(false);
     }
@@ -87,10 +87,9 @@ export default function MarketplacePage() {
     if (activeTab !== 'market') return;
 
     const fetchMarket = async () => {
-      const data = await fetchListings('marketplace', page);
-      if (page === 1) setMarketListings(data);
-      else setMarketListings((prev) => [...prev, ...data]);
-      setHasMore(data.length === 20);
+      const { listings, totalPages } = await fetchListings('marketplace', page);
+      setMarketListings(listings);
+      setTotalPages(totalPages);
     };
 
     fetchMarket();
@@ -101,8 +100,8 @@ export default function MarketplacePage() {
     if (activeTab !== 'myListings') return;
 
     const fetchMine = async () => {
-      const data = await fetchListings('myListings', 1);
-      setMyListings(data);
+      const { listings } = await fetchListings('myListings', 1);
+      setMyListings(listings);
     };
 
     fetchMine();
@@ -321,13 +320,32 @@ export default function MarketplacePage() {
           </div>
 
           {/* Pagination */}
-          {hasMore && activeTab === 'market' && (
-            <div className="flex justify-center mt-6">
+          {activeTab === 'market' && totalPages > 1 && (
+            <div className="flex justify-center mt-6 gap-2 flex-wrap">
               <button
-                onClick={() => setPage((prev) => prev + 1)}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
               >
-                Load More
+                Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`px-3 py-1 rounded ${
+                    page === p ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+              >
+                Next
               </button>
             </div>
           )}
