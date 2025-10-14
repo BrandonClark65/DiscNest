@@ -24,7 +24,7 @@ export default function MarketplacePage() {
   const [conditionFilter, setConditionFilter] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Pagination state
+  // Pagination state for marketplace
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
@@ -43,49 +43,72 @@ export default function MarketplacePage() {
     );
   }, [userId]);
 
-  // --- Fetch listings ---
+  // --- Generic fetch function ---
+  const fetchListings = async (
+    mode: 'marketplace' | 'myListings',
+    pageToFetch = 1
+  ): Promise<Listing[]> => {
+    if (!userId) return [];
+
+    setLoading(true);
+    try {
+      let url = `/api/listings?mode=${mode}&excludeUserId=${userId}&page=${pageToFetch}&limit=${
+        mode === 'marketplace' ? 20 : 100
+      }`;
+      if (mode === 'marketplace' && userLocation)
+        url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
+      if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+      if (brandFilter) url += `&brand=${encodeURIComponent(brandFilter)}`;
+      if (conditionFilter) url += `&condition=${encodeURIComponent(conditionFilter)}`;
+
+      const res = await fetch(url);
+      const data: Listing[] = await res.json();
+
+      // Only keep listings with proper coordinates
+      return (data || []).filter(
+        (l) =>
+          l &&
+          typeof l._id === 'string' &&
+          l.title &&
+          l.location &&
+          Array.isArray(l.location.coordinates) &&
+          l.location.coordinates.length === 2
+      );
+    } catch (err) {
+      console.error('Error fetching listings:', err);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Fetch marketplace listings ---
   useEffect(() => {
-    if (!userId) return;
+    if (activeTab !== 'market') return;
 
-    const fetchListings = async (pageToFetch = 1) => {
-      setLoading(true);
-      try {
-        let url = `/api/listings?`;
-        url += `excludeUserId=${userId}`;
-        url += `&page=${pageToFetch}&limit=20`; // pagination
-
-        if (userLocation) url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
-        if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
-        if (brandFilter) url += `&brand=${encodeURIComponent(brandFilter)}`;
-        if (conditionFilter) url += `&condition=${encodeURIComponent(conditionFilter)}`;
-
-        const res = await fetch(url);
-        const data: Listing[] = await res.json();
-
-        if (data.length < 20) setHasMore(false); // no more pages
-        else setHasMore(true);
-
-        if (pageToFetch === 1) setMarketListings(data);
-        else setMarketListings((prev) => [...prev, ...data]);
-      } catch (err) {
-        console.error('Error fetching listings:', err);
-      } finally {
-        setLoading(false);
-      }
+    const fetchMarket = async () => {
+      const data = await fetchListings('marketplace', page);
+      if (page === 1) setMarketListings(data);
+      else setMarketListings((prev) => [...prev, ...data]);
+      setHasMore(data.length === 20);
     };
 
-    if (activeTab === 'market') fetchListings(page);
-  }, [
-    activeTab,
-    userId,
-    userLocation,
-    searchQuery,
-    brandFilter,
-    conditionFilter,
-    page,
-  ]);
+    fetchMarket();
+  }, [activeTab, userId, userLocation, searchQuery, brandFilter, conditionFilter, page]);
 
-  // --- Reset page when filters/search changes ---
+  // --- Fetch current user's listings ---
+  useEffect(() => {
+    if (activeTab !== 'myListings') return;
+
+    const fetchMine = async () => {
+      const data = await fetchListings('myListings', 1);
+      setMyListings(data);
+    };
+
+    fetchMine();
+  }, [activeTab, userId, searchQuery, brandFilter, conditionFilter]);
+
+  // --- Reset marketplace page when filters/search changes ---
   useEffect(() => {
     setPage(1);
   }, [searchQuery, brandFilter, conditionFilter]);
@@ -267,11 +290,10 @@ export default function MarketplacePage() {
           {!userLocation ? (
             <p className="text-gray-500 italic">Loading map based on your location...</p>
           ) : (
-            <Map listings={marketListings}/>
+            <Map listings={marketListings} />
           )}
         </div>
       )}
-
 
       {/* Listings Grid */}
       {loading ? (
@@ -299,7 +321,7 @@ export default function MarketplacePage() {
           </div>
 
           {/* Pagination */}
-          {hasMore && (
+          {hasMore && activeTab === 'market' && (
             <div className="flex justify-center mt-6">
               <button
                 onClick={() => setPage((prev) => prev + 1)}

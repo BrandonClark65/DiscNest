@@ -3,6 +3,7 @@ import Listing from "@/models/Listing";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { Resend } from "resend";
+import mongoose from "mongoose";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -22,26 +23,35 @@ async function reverseGeocode(lat: number, lng: number) {
 // GET listings (marketplace or user-specific)
 export async function GET(req: Request) {
   await connectToDatabase();
-
   const { searchParams } = new URL(req.url);
+
   const brand = searchParams.get("brand");
   const condition = searchParams.get("condition");
   const search = searchParams.get("search");
   const lat = parseFloat(searchParams.get("lat") || "0");
   const lng = parseFloat(searchParams.get("lng") || "0");
-  const userId = searchParams.get("excludeUserId"); // current user
-  const includeSold = searchParams.get("includeSold") === "true";
-
+  const currentUserId = searchParams.get("excludeUserId"); // current user ID
+  const mode = searchParams.get("mode"); // 'marketplace' | 'myListings'
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "20", 10);
   const skip = (page - 1) * limit;
 
-  // Base query
   const query: any = { pendingReview: { $ne: true } };
-  if (!includeSold) query.sold = { $ne: true };
+
+  // Marketplace: exclude current user's listings, filter out sold
+  if (mode === "marketplace" && currentUserId) {
+    query.userId = { $ne: new mongoose.Types.ObjectId(currentUserId) };
+    query.sold = { $ne: true }; // only show active listings
+  }
+
+  // My Listings: include only current user's listings
+  if (mode === "myListings" && currentUserId) {
+    query.userId = new mongoose.Types.ObjectId(currentUserId);
+    // sold filter handled in front-end (active vs sold)
+  }
+
   if (brand) query.brand = brand;
   if (condition) query.condition = condition;
-  if (userId) query.userId = { $ne: userId }; // exclude current user's listings
 
   if (search) {
     query.$or = [
@@ -53,8 +63,8 @@ export async function GET(req: Request) {
 
   let listings;
 
-  if (lat !== 0 && lng !== 0) {
-    // Sort by proximity
+  // Geo sorting only for marketplace
+  if (lat !== 0 && lng !== 0 && mode === "marketplace") {
     listings = await Listing.aggregate([
       {
         $geoNear: {
@@ -68,12 +78,14 @@ export async function GET(req: Request) {
       { $skip: skip },
       { $limit: limit },
     ]);
+    const listingIds = listings.map((r) => r._id);
+    listings = await Listing.find({ _id: { $in: listingIds } }).lean();
   } else {
-    // Sort by createdAt if no location
     listings = await Listing.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
   }
 
   // Populate user names
@@ -81,6 +93,7 @@ export async function GET(req: Request) {
   const users = await User.find({ _id: { $in: userIds } }, { _id: 1, name: 1 });
   const userMap = Object.fromEntries(users.map((u) => [u._id.toString(), u.name]));
 
+  // Randomize coordinates slightly for map obfuscation
   listings = listings.map((l) => ({
     ...l,
     userId: { _id: l.userId, name: userMap[l.userId?.toString()] || "Unknown" },
@@ -97,15 +110,15 @@ export async function GET(req: Request) {
 
   return NextResponse.json(listings);
 }
+
+
 // POST new listing
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
     const body = await req.json();
-
     const pendingReview = body.pendingReview || false;
 
-    // Reverse geocode coordinates
     let city = "";
     let state = "";
     if (body.location?.coordinates?.length === 2) {
