@@ -111,7 +111,7 @@ export async function GET(req: Request) {
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  return NextResponse.json({ listings, totalPages });
+  return NextResponse.json({ listings, totalPages, totalCount });
 }
 
 

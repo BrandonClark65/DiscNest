@@ -13,22 +13,31 @@ const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 export default function MarketplacePage() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
+  const router = useRouter();
+
+  // Listings
   const [marketListings, setMarketListings] = useState<Listing[]>([]);
   const [myListings, setMyListings] = useState<Listing[]>([]);
+
+  // UI
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'market' | 'myListings'>('market');
   const [myListingsTab, setMyListingsTab] = useState<'active' | 'sold'>('active');
+
+  // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [conditionFilter, setConditionFilter] = useState('');
+
+  // Location
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Pagination state
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
-  const router = useRouter();
+  const [marketPage, setMarketPage] = useState(1);
+  const [marketTotalPages, setMarketTotalPages] = useState(1);
+  const [myPage, setMyPage] = useState(1);
+  const [myTotalPages, setMyTotalPages] = useState(1);
 
   // --- Fetch user location ---
   useEffect(() => {
@@ -43,28 +52,31 @@ export default function MarketplacePage() {
     );
   }, [userId]);
 
-  // --- Generic fetch function ---
+  // --- Fetch listings ---
   const fetchListings = async (
     mode: 'marketplace' | 'myListings',
     pageToFetch = 1
   ): Promise<{ listings: Listing[]; totalPages: number }> => {
     if (!userId) return { listings: [], totalPages: 1 };
-
     setLoading(true);
+
     try {
-      const limit = mode === 'marketplace' ? 20 : 100;
-      let url = `/api/listings?mode=${mode}&excludeUserId=${userId}&page=${pageToFetch}&limit=${limit}`;
-      if (mode === 'marketplace' && userLocation)
-        url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
-      if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
-      if (brandFilter) url += `&brand=${encodeURIComponent(brandFilter)}`;
-      if (conditionFilter) url += `&condition=${encodeURIComponent(conditionFilter)}`;
+      let url = `/api/listings?mode=${mode}&excludeUserId=${userId}&page=${pageToFetch}&limit=${
+        mode === 'marketplace' ? 20 : 100
+      }`;
+
+      if (mode === 'marketplace') {
+        if (userLocation) url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
+        if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+        if (brandFilter) url += `&brand=${encodeURIComponent(brandFilter)}`;
+        if (conditionFilter) url += `&condition=${encodeURIComponent(conditionFilter)}`;
+      }
 
       const res = await fetch(url);
-      const data = await res.json();
+      const data: { listings: Listing[]; totalCount: number } = await res.json();
 
-      const listings: Listing[] = (data.listings || []).filter(
-        (l: Listing) =>
+      const validListings = (data.listings || []).filter(
+        (l) =>
           l &&
           typeof l._id === 'string' &&
           l.title &&
@@ -73,7 +85,11 @@ export default function MarketplacePage() {
           l.location.coordinates.length === 2
       );
 
-      return { listings, totalPages: data.totalPages || 1 };
+      const totalPages = Math.ceil(
+        (data.totalCount || validListings.length) / (mode === 'marketplace' ? 20 : 100)
+      );
+
+      return { listings: validListings, totalPages };
     } catch (err) {
       console.error('Error fetching listings:', err);
       return { listings: [], totalPages: 1 };
@@ -87,33 +103,34 @@ export default function MarketplacePage() {
     if (activeTab !== 'market') return;
 
     const fetchMarket = async () => {
-      const { listings, totalPages } = await fetchListings('marketplace', page);
+      const { listings, totalPages } = await fetchListings('marketplace', marketPage);
       setMarketListings(listings);
-      setTotalPages(totalPages);
+      setMarketTotalPages(totalPages);
     };
 
     fetchMarket();
-  }, [activeTab, userId, userLocation, searchQuery, brandFilter, conditionFilter, page]);
+  }, [activeTab, userId, userLocation, searchQuery, brandFilter, conditionFilter, marketPage]);
 
   // --- Fetch current user's listings ---
   useEffect(() => {
     if (activeTab !== 'myListings') return;
 
     const fetchMine = async () => {
-      const { listings } = await fetchListings('myListings', 1);
+      const { listings, totalPages } = await fetchListings('myListings', myPage);
       setMyListings(listings);
+      setMyTotalPages(totalPages);
     };
 
     fetchMine();
-  }, [activeTab, userId, searchQuery, brandFilter, conditionFilter]);
+  }, [activeTab, userId, myListingsTab, myPage]);
 
   // --- Reset marketplace page when filters/search changes ---
   useEffect(() => {
-    setPage(1);
+    setMarketPage(1);
   }, [searchQuery, brandFilter, conditionFilter]);
 
   // --- Delete a listing ---
-  async function handleDelete(listingId: string) {
+  const handleDelete = async (listingId: string) => {
     if (!confirm('Are you sure you want to delete this listing?')) return;
 
     try {
@@ -127,10 +144,10 @@ export default function MarketplacePage() {
       console.error(err);
       alert('Error deleting listing.');
     }
-  }
+  };
 
   // --- Mark as sold ---
-  async function handleMarkSold(listingId: string) {
+  const handleMarkSold = async (listingId: string) => {
     try {
       const res = await fetch(`/api/listings/${listingId}`, {
         method: 'PATCH',
@@ -148,22 +165,26 @@ export default function MarketplacePage() {
       console.error(err);
       alert('Error marking listing as sold.');
     }
-  }
+  };
 
-  function isOwner(listingUserId: string | { _id?: string } | undefined, sessionUserId: string) {
+  const isOwner = (listingUserId: string | { _id?: string } | undefined, sessionUserId: string) => {
     if (!listingUserId) return false;
     if (typeof listingUserId === 'string') return listingUserId === sessionUserId;
     return listingUserId._id === sessionUserId;
-  }
+  };
 
   // --- Determine listings to show ---
-  let listingsToShow: Listing[] = [];
-  if (activeTab === 'market') listingsToShow = marketListings;
-  else
-    listingsToShow =
-      myListingsTab === 'active'
-        ? myListings.filter((l) => !l.sold)
-        : myListings.filter((l) => l.sold);
+  const listingsToShow =
+    activeTab === 'market'
+      ? marketListings
+      : myListingsTab === 'active'
+      ? myListings.filter((l) => !l.sold)
+      : myListings.filter((l) => l.sold);
+
+  // --- Pagination controls ---
+  const currentPage = activeTab === 'market' ? marketPage : myPage;
+  const currentTotalPages = activeTab === 'market' ? marketTotalPages : myTotalPages;
+  const setCurrentPage = activeTab === 'market' ? setMarketPage : setMyPage;
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -199,9 +220,7 @@ export default function MarketplacePage() {
         <button
           onClick={() => setActiveTab('myListings')}
           className={`px-3 py-1 rounded ${
-            activeTab === 'myListings'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 hover:bg-gray-300'
+            activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
           } transition-colors duration-150`}
         >
           My Listings
@@ -214,9 +233,7 @@ export default function MarketplacePage() {
           <button
             onClick={() => setMyListingsTab('active')}
             className={`px-3 py-1 rounded text-sm ${
-              myListingsTab === 'active'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 hover:bg-gray-300'
+              myListingsTab === 'active' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
             } transition-colors duration-150`}
           >
             Active
@@ -224,9 +241,7 @@ export default function MarketplacePage() {
           <button
             onClick={() => setMyListingsTab('sold')}
             className={`px-3 py-1 rounded text-sm ${
-              myListingsTab === 'sold'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 hover:bg-gray-300'
+              myListingsTab === 'sold' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
             } transition-colors duration-150`}
           >
             Sold
@@ -320,29 +335,29 @@ export default function MarketplacePage() {
           </div>
 
           {/* Pagination */}
-          {activeTab === 'market' && totalPages > 1 && (
+          {currentTotalPages > 1 && (
             <div className="flex justify-center mt-6 gap-2 flex-wrap">
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
                 className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
               >
                 Prev
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              {Array.from({ length: currentTotalPages }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
-                  onClick={() => setPage(p)}
+                  onClick={() => setCurrentPage(p)}
                   className={`px-3 py-1 rounded ${
-                    page === p ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
+                    currentPage === p ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
                   }`}
                 >
                   {p}
                 </button>
               ))}
               <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(currentTotalPages, p + 1))}
+                disabled={currentPage === currentTotalPages}
                 className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
               >
                 Next
