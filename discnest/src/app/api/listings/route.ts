@@ -21,7 +21,6 @@ async function reverseGeocode(lat: number, lng: number) {
 }
 
 // GET listings (marketplace or user-specific)
-// GET listings (marketplace or user-specific)
 export async function GET(req: Request) {
   await connectToDatabase();
   const { searchParams } = new URL(req.url);
@@ -123,13 +122,18 @@ export async function POST(req: Request) {
     const body = await req.json();
     const pendingReview = body.pendingReview || false;
 
-    let city = "";
-    let state = "";
-    if (body.location?.coordinates?.length === 2) {
-      const [lng, lat] = body.location.coordinates;
-      const result = await reverseGeocode(lat, lng);
-      city = result.city;
-      state = result.state;
+    let city = body.city || "";
+    let state = body.state || "";
+
+    if ((!city || !state) && body.location?.coordinates?.length === 2) {
+      try {
+        const [lng, lat] = body.location.coordinates;
+        const result = await reverseGeocode(lat, lng);
+        city = city || result.city;
+        state = state || result.state;
+      } catch (err) {
+        console.warn("Reverse geocode failed:", err);
+      }
     }
 
     const listing = await Listing.create({
@@ -139,6 +143,7 @@ export async function POST(req: Request) {
       pendingReview,
     });
 
+    // (Optional) email admin if pending review
     if (pendingReview) {
       const user = await User.findById(body.userId);
       await resend.emails.send({
@@ -162,3 +167,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+

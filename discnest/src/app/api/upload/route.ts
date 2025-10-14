@@ -43,9 +43,20 @@ export async function POST(req: Request) {
     const predictions = await model.classify(imageTensor);
     imageTensor.dispose();
 
+    const flaggedClasses = [
+      // Explicit sexual content
+      'Porn', 'Hentai', 'Erotica', 'Sexual activity', 'Nude',
+
+      // Suggestive / adult content
+      'Sexy', 'Lewd', 'Suggestive', 'Adult content',
+
+      // Other risky / NSFW categories
+      'Graphic violence', 'Gore', 'Self-harm', 'Drug use'
+    ];
+
     const flagged = predictions.some(
       (p) =>
-        ['Porn', 'Sexy', 'Hentai'].includes(p.className) &&
+        flaggedClasses.includes(p.className) &&
         p.probability > 0.6
     );
 

@@ -87,6 +87,7 @@ export default function ListingPage() {
           {listing.price !== undefined ? `$${listing.price.toFixed(2)}` : 'Not listed'}
         </p>
         <p><span className="font-semibold">City:</span> {listing.city || '-'}</p>
+        <p><span className="font-semibold">State:</span> {listing.state || '-'}</p>
       </div>
 
       {/* Map showing listing */}

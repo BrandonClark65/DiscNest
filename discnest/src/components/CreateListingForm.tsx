@@ -9,6 +9,11 @@ type CreateListingFormProps = {
   onClose?: () => void;
 };
 
+type Location = {
+  type: 'Point';
+  coordinates: [number, number];
+};
+
 export default function CreateListingForm({ user, onClose }: CreateListingFormProps) {
   const [form, setForm] = useState({
     title: '',
@@ -19,7 +24,8 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     type: 'Sell',
     price: 0,
     city: '',
-    radiusVisibility: 5,
+    state: '',
+    location: null as Location | null,
     imageUrls: [] as string[],
     publicIds: [] as string[],
     flaggedImages: [] as string[],
@@ -36,6 +42,25 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
   const [selectedDisc, setSelectedDisc] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [useGeoLocation, setUseGeoLocation] = useState<boolean | null>(null);
+
+  // Detect if geolocation is available
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setUseGeoLocation(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUseGeoLocation(true);
+        setForm((prev) => ({
+          ...prev,
+          location: { type: 'Point', coordinates: [pos.coords.longitude, pos.coords.latitude] },
+        }));
+      },
+      () => setUseGeoLocation(false)
+    );
+  }, []);
 
   // Fetch user's discs
   useEffect(() => {
@@ -82,16 +107,26 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     }
 
     setSubmitting(true);
-    const location = await getApproxLocation();
 
     try {
+      // Ensure location exists
+      if (!form.location) {
+        const location = await new Promise<Location | null>((resolve) => {
+          if (!navigator.geolocation) return resolve(null);
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ type: 'Point', coordinates: [pos.coords.longitude, pos.coords.latitude] }),
+            () => resolve(null)
+          );
+        });
+        setForm((prev) => ({ ...prev, location }));
+      }
+
       const res = await fetch('/api/listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
           userId: user.id,
-          location,
           pendingReview: form.pendingReview,
         }),
       });
@@ -101,6 +136,8 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         console.error('Listing creation failed:', errorBody);
         throw new Error('Failed to create listing');
       }
+
+      const data = await res.json();
 
       if (form.pendingReview) {
         alert(
@@ -120,23 +157,15 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     }
   }
 
-  // 🧠 UPDATED: Compress image before upload
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
 
     setUploading(true);
     try {
-      // 1️⃣ Compress client-side
-      const options = {
-        maxSizeMB: 0.6, // target ~600KB max
-        maxWidthOrHeight: 1280, // resize if too large
-        useWebWorker: true,
-        initialQuality: 0.8,
-      };
+      const options = { maxSizeMB: 0.6, maxWidthOrHeight: 1280, useWebWorker: true, initialQuality: 0.8 };
       const compressedFile = await imageCompression(file, options);
 
-      // 2️⃣ Upload to API
       const formData = new FormData();
       formData.append('file', compressedFile);
       formData.append('userId', user.id);
@@ -146,7 +175,6 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
 
       if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-      // 3️⃣ Handle NSFW / pending review / approved
       if (data.status === 'flagged') {
         setForm((prev) => ({
           ...prev,
@@ -182,15 +210,9 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
 
   function handleRemoveImage(urlOrName: string, flagged = false) {
     if (flagged) {
-      setForm((prev) => ({
-        ...prev,
-        flaggedImages: prev.flaggedImages.filter((f) => f !== urlOrName),
-      }));
+      setForm((prev) => ({ ...prev, flaggedImages: prev.flaggedImages.filter((f) => f !== urlOrName) }));
     } else {
-      setForm((prev) => ({
-        ...prev,
-        imageUrls: prev.imageUrls.filter((u) => u !== urlOrName),
-      }));
+      setForm((prev) => ({ ...prev, imageUrls: prev.imageUrls.filter((u) => u !== urlOrName) }));
     }
   }
 
@@ -204,7 +226,8 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       type: 'Sell',
       price: 0,
       city: '',
-      radiusVisibility: 5,
+      state: '',
+      location: null,
       imageUrls: [],
       publicIds: [],
       flaggedImages: [],
@@ -218,26 +241,15 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     <div className="space-y-4">
       {onClose && (
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              resetForm();
-              onClose();
-            }}
-            className="text-gray-600 hover:text-gray-800"
-          >
-            ✕ Close
-          </button>
+          <button type="button" onClick={() => { resetForm(); onClose(); }} className="text-gray-600 hover:text-gray-800">✕ Close</button>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Disc selector (optional) */}
+        {/* Disc selector */}
         {discs.length > 0 && (
           <div>
-            <label htmlFor="discSelect" className="block font-medium mb-1">
-              Select a disc from your bag (optional)
-            </label>
+            <label htmlFor="discSelect" className="block font-medium mb-1">Select a disc from your bag (optional)</label>
             <select
               id="discSelect"
               value={selectedDisc}
@@ -245,208 +257,102 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
               className="border px-3 py-2 rounded w-full"
             >
               <option value="">-- None --</option>
-              {discs.map((disc) => (
-                <option key={disc._id} value={disc._id}>
-                  {disc.name} {disc.brand ? `(${disc.brand})` : ''}
-                </option>
-              ))}
+              {discs.map((disc) => <option key={disc._id} value={disc._id}>{disc.name} {disc.brand ? `(${disc.brand})` : ''}</option>)}
             </select>
           </div>
         )}
 
-        {/* Title */}
+        {/* Title, Description, Brand, Plastic, Condition, Type, Price */}
         <div>
           <label htmlFor="title" className="block font-medium mb-1">Title</label>
-          <input
-            id="title"
-            type="text"
-            required
-            value={form.title}
-            onChange={(e) => handleFieldChange('title', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
-          />
+          <input id="title" type="text" required value={form.title} onChange={(e) => handleFieldChange('title', e.target.value)} className="border px-3 py-2 rounded w-full" />
         </div>
 
-        {/* Description */}
         <div>
           <label htmlFor="description" className="block font-medium mb-1">Description</label>
-          <textarea
-            id="description"
-            value={form.description}
-            onChange={(e) => handleFieldChange('description', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
-            rows={3}
-          />
+          <textarea id="description" value={form.description} onChange={(e) => handleFieldChange('description', e.target.value)} className="border px-3 py-2 rounded w-full" rows={3} />
         </div>
 
-        {/* Brand */}
         <div>
           <label htmlFor="brand" className="block font-medium mb-1">Brand</label>
-          <input
-            id="brand"
-            type="text"
-            value={form.brand}
-            onChange={(e) => handleFieldChange('brand', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
-          />
+          <input id="brand" type="text" value={form.brand} onChange={(e) => handleFieldChange('brand', e.target.value)} className="border px-3 py-2 rounded w-full" />
         </div>
 
-        {/* Plastic */}
         <div>
           <label htmlFor="plastic" className="block font-medium mb-1">Plastic</label>
-          <input
-            id="plastic"
-            type="text"
-            value={form.plastic}
-            onChange={(e) => handleFieldChange('plastic', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
-          />
+          <input id="plastic" type="text" value={form.plastic} onChange={(e) => handleFieldChange('plastic', e.target.value)} className="border px-3 py-2 rounded w-full" />
         </div>
 
-        {/* Condition */}
         <div>
           <label htmlFor="condition" className="block font-medium mb-1">Condition</label>
-          <select
-            id="condition"
-            value={form.condition}
-            onChange={(e) => handleFieldChange('condition', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
-          >
+          <select id="condition" value={form.condition} onChange={(e) => handleFieldChange('condition', e.target.value)} className="border px-3 py-2 rounded w-full">
             <option>New</option>
             <option>Used - Like New</option>
             <option>Used - Fair</option>
           </select>
         </div>
 
-        {/* Type */}
         <div>
           <label htmlFor="type" className="block font-medium mb-1">Listing Type</label>
-          <select
-            id="type"
-            value={form.type}
-            onChange={(e) => handleFieldChange('type', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
-          >
+          <select id="type" value={form.type} onChange={(e) => handleFieldChange('type', e.target.value)} className="border px-3 py-2 rounded w-full">
             <option>Sell</option>
             <option>Trade</option>
           </select>
         </div>
 
-        {/* Price (only if Sell) */}
         {form.type === 'Sell' && (
           <div>
             <label htmlFor="price" className="block font-medium mb-1">Price ($)</label>
-            <input
-              id="price"
-              type="number"
-              value={form.price}
-              onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
-              className="border px-3 py-2 rounded w-full"
-            />
+            <input id="price" type="number" value={form.price} onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))} className="border px-3 py-2 rounded w-full" />
           </div>
         )}
 
-        {/* City */}
-        <div>
-          <label htmlFor="city" className="block font-medium mb-1">City</label>
-          <input
-            id="city"
-            type="text"
-            value={form.city}
-            onChange={(e) => handleFieldChange('city', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
-          />
-        </div>
+        {/* Show city/state only if geolocation is not available */}
+        {useGeoLocation === false && (
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label htmlFor="city" className="block font-medium mb-1">City</label>
+              <input id="city" type="text" required value={form.city} onChange={(e) => handleFieldChange('city', e.target.value)} className="border px-3 py-2 rounded w-full" />
+            </div>
+            <div className="flex-1">
+              <label htmlFor="state" className="block font-medium mb-1">State</label>
+              <input id="state" type="text" required value={form.state} onChange={(e) => handleFieldChange('state', e.target.value)} className="border px-3 py-2 rounded w-full" />
+            </div>
+          </div>
+        )}
 
-        {/* Radius Visibility */}
-        <div>
-          <label htmlFor="radius" className="block font-medium mb-1">Visibility Radius (miles)</label>
-          <input
-            id="radius"
-            type="number"
-            min={1}
-            max={100}
-            value={form.radiusVisibility}
-            onChange={(e) => handleFieldChange('radiusVisibility', parseInt(e.target.value))}
-            className="border px-3 py-2 rounded w-full"
-          />
-        </div>
-
-        {/* Upload */}
+        {/* Image Upload */}
         <div>
           <label htmlFor="file" className="font-medium block mb-1">Upload Image</label>
-          <input
-            id="file"
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="border px-3 py-2 rounded w-full"
-            disabled={uploading}
-          />
+          <input id="file" type="file" accept="image/*" onChange={handleFileChange} className="border px-3 py-2 rounded w-full" disabled={uploading} />
         </div>
 
-        {/* Image gallery */}
+        {/* Image Gallery */}
         {(form.imageUrls.length > 0 || form.flaggedImages.length > 0) && (
           <div className="flex gap-2 mt-2 flex-wrap">
             {form.imageUrls.map((url, i) => (
               <div key={i} className="relative border-2 border-green-500 rounded">
                 <img src={url} className="w-24 h-24 object-cover rounded" />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(url)}
-                  className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded"
-                >
-                  ✕
-                </button>
+                <button type="button" onClick={() => handleRemoveImage(url)} className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded">✕</button>
               </div>
             ))}
             {form.flaggedImages.map((urlOrName, i) => (
-              <div
-                key={i}
-                className="relative border-2 border-red-500 rounded bg-red-100"
-              >
-                {urlOrName.startsWith('http') ? (
-                  <img src={urlOrName} className="w-24 h-24 object-cover rounded" />
-                ) : (
-                  <span className="px-2 py-1 text-red-800">{urlOrName}</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(urlOrName, true)}
-                  className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded"
-                >
-                  ✕
-                </button>
+              <div key={i} className="relative border-2 border-red-500 rounded bg-red-100">
+                {urlOrName.startsWith('http') ? <img src={urlOrName} className="w-24 h-24 object-cover rounded" /> : <span className="px-2 py-1 text-red-800">{urlOrName}</span>}
+                <button type="button" onClick={() => handleRemoveImage(urlOrName, true)} className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded">✕</button>
               </div>
             ))}
           </div>
         )}
         {form.flaggedImages.length > 0 && (
-          <p className="text-red-600 font-semibold">
-            ⚠️ You have {form.flaggedImages.length} flagged image(s). Remove them to submit.
-          </p>
+          <p className="text-red-600 font-semibold">⚠️ You have {form.flaggedImages.length} flagged image(s). Remove them to submit.</p>
         )}
 
-        <button
-          type="submit"
-          disabled={uploading || submitting || form.flaggedImages.length > 0}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
+        {/* Submit Button */}
+        <button type="submit" disabled={uploading || submitting || form.flaggedImages.length > 0} className="bg-green-600 text-white px-4 py-2 rounded">
           {submitting ? 'Posting...' : uploading ? 'Uploading...' : 'Post Listing'}
         </button>
       </form>
     </div>
   );
-}
-
-// Approx location helper
-async function getApproxLocation() {
-  return new Promise<{ type: string; coordinates: [number, number] }>((resolve) => {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      resolve({
-        type: 'Point',
-        coordinates: [pos.coords.longitude, pos.coords.latitude],
-      });
-    });
-  });
 }
