@@ -1,82 +1,120 @@
 'use client';
 
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
-import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Popup, Circle, useMap } from 'react-leaflet';
+import { useEffect, useState, useMemo } from 'react';
 import type { Listing } from '@/types/listing';
 import 'leaflet/dist/leaflet.css';
+
+// Helper to set map view safely
+function SetViewOnCenter({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center);
+  }, [center]); // ✅ only rerun when center actually changes
+  return null;
+}
 
 type MapProps = {
   listings?: Listing[];
   singleListing?: Listing;
   zoom?: number;
-  center?: { lat: number; lng: number };
 };
 
-// Move map center dynamically when user location changes
-function SetViewOnCenter({ center }: { center: { lat: number; lng: number } }) {
-  const map = useMap();
+export default function Map({ listings = [], singleListing, zoom = 13 }: MapProps) {
+  const [center, setCenter] = useState<[number, number] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Determine map center (user or single listing)
   useEffect(() => {
-    if (center) {
-      map.flyTo([center.lat, center.lng], map.getZoom(), { duration: 1 });
+    // Prevent infinite loops if we already have a center
+    if (center) return;
+
+    if (!singleListing && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            setCenter([pos.coords.latitude, pos.coords.longitude]);
+            setLoading(false);
+        },
+        () => {
+            console.warn('Geolocation blocked or failed, using fallback');
+            if (listings.length > 0 && listings[0].location?.coordinates) {
+            const [lng, lat] = listings[0].location.coordinates;
+            setCenter([lat, lng]);
+            } else {
+            setCenter([37.7749, -122.4194]); // fallback: SF
+            }
+            setLoading(false);
+        }
+        );
+    } else if (singleListing?.location?.coordinates) {
+        const [lng, lat] = singleListing.location.coordinates;
+        setCenter([lat, lng]);
+        setLoading(false);
     }
-  }, [center, map]);
-  return null;
-}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [singleListing?._id, listings.length]);
 
-export default function Map({ listings = [], singleListing, zoom = 13, center }: MapProps) {
-  const [isReady, setIsReady] = useState(false);
+  // ✅ Stable obfuscation: only computed once per listing
+  // ✅ Stable obfuscation: only computed once per listing
+    const obfuscatedMarkers = useMemo(() => {
+    const offset = 0.01;
+    return (singleListing ? [singleListing] : listings)
+        .map((listing, index) => {
+        if (!listing.location?.coordinates) return null;
+        const [lng, lat] = listing.location.coordinates;
 
-  useEffect(() => {
-    // Wait for DOM to be available (important for SSR + Leaflet)
-    setIsReady(typeof window !== 'undefined');
-  }, []);
+        // ✅ Use listing._id if available, else fallback to index
+        const idString = typeof listing._id === 'string' ? listing._id : String(index);
+        const randomSeed = idString
+            .split('')
+            .reduce((sum, c) => sum + c.charCodeAt(0), 0);
 
-  if (!isReady || !center) {
+        const latOffset = ((randomSeed % 100) / 100 - 0.5) * offset;
+        const lngOffset = (((randomSeed * 13) % 100) / 100 - 0.5) * offset;
+
+        return {
+            ...listing,
+            obLat: lat + latOffset,
+            obLng: lng + lngOffset,
+        };
+        })
+        .filter(Boolean) as (Listing & { obLat: number; obLng: number })[];
+    }, [listings, singleListing]);
+
+
+  if (loading || !center) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500 italic">
+      <div className="flex items-center justify-center w-full h-full rounded bg-gray-100 text-gray-600">
         Loading map...
       </div>
     );
   }
 
-  const markers = singleListing ? [singleListing] : listings;
-
-  // Add gentle randomization to mask exact positions
-  const obfuscate = (lat: number, lng: number) => {
-    const offset = 0.01; // ~1km radius
-    return [lat + (Math.random() - 0.5) * offset, lng + (Math.random() - 0.5) * offset] as [number, number];
-  };
-
   return (
-    <MapContainer
-      key={`${center.lat}-${center.lng}`} // reinit when center changes
-      center={[center.lat, center.lng]}
-      zoom={zoom}
-      style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}
-      className="z-0"
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <SetViewOnCenter center={center} />
+    <div className="w-full h-full rounded overflow-hidden">
+      <MapContainer
+        key={center.join(',')}
+        center={center}
+        zoom={zoom}
+        scrollWheelZoom
+        className="w-full h-full"
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <SetViewOnCenter center={center} />
 
-      {markers.map((listing) => {
-        if (!listing.location?.coordinates) return null;
-        const [lng, lat] = listing.location.coordinates;
-        if (lat === undefined || lng === undefined) return null;
-        const [obLat, obLng] = obfuscate(lat, lng);
-
-        return (
-          <CircleMarker
-            key={listing._id}
-            center={[obLat, obLng]}
-            radius={8}
+        {obfuscatedMarkers.map((listing, index) => (
+          <Circle
+            key={`${listing._id}-${index}`}
+            center={[listing.obLat, listing.obLng]}
+            radius={250} // smaller radius
             pathOptions={{
-              color: '#3b82f6',
-              fillColor: '#3b82f6',
-              fillOpacity: 0.35,
-              weight: 1,
+              color: 'rgba(30, 144, 255, 0.7)',
+              fillColor: 'rgba(30, 144, 255, 0.4)',
+              fillOpacity: 0.5,
             }}
           >
             <Popup>
@@ -86,9 +124,9 @@ export default function Map({ listings = [], singleListing, zoom = 13, center }:
               <br />
               Price: ${listing.price?.toFixed(2) || 'N/A'}
             </Popup>
-          </CircleMarker>
-        );
-      })}
-    </MapContainer>
+          </Circle>
+        ))}
+      </MapContainer>
+    </div>
   );
 }

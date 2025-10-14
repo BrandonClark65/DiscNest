@@ -267,7 +267,7 @@ export default function MarketplacePage() {
           {!userLocation ? (
             <p className="text-gray-500 italic">Loading map based on your location...</p>
           ) : (
-            <Map listings={marketListings} center={userLocation} />
+            <Map listings={marketListings}/>
           )}
         </div>
       )}
