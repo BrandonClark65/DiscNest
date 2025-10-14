@@ -6,55 +6,89 @@ import CreateListingForm from '@/components/CreateListingForm';
 import ListingCard from '@/components/ListingCard';
 import type { Listing } from '@/types/listing';
 import { useSession } from 'next-auth/react';
+import dynamic from 'next/dynamic';
+
+const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
 export default function MarketplacePage() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const [marketListings, setMarketListings] = useState<Listing[]>([]);
   const [myListings, setMyListings] = useState<Listing[]>([]);
-  const [radius, setRadius] = useState(25);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'market' | 'myListings'>('market');
   const [myListingsTab, setMyListingsTab] = useState<'active' | 'sold'>('active');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [brandFilter, setBrandFilter] = useState('');
+  const [conditionFilter, setConditionFilter] = useState('');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
   const router = useRouter();
 
+  // --- Fetch user location ---
   useEffect(() => {
     if (!userId) return;
 
-    setLoading(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => fetchListings(pos.coords.latitude, pos.coords.longitude),
+      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) => {
         console.error('Location error:', err);
-        fetchListings(0, 0);
+        setUserLocation(null);
       }
     );
-  }, [activeTab, radius, userId]);
+  }, [userId]);
 
-  async function fetchListings(lat: number, lng: number) {
-    try {
-      let url = `/api/listings?`;
+  // --- Fetch listings ---
+  useEffect(() => {
+    if (!userId) return;
 
-      if (activeTab === 'market') {
-        // Marketplace: exclude sold listings
-        url += `lat=${lat}&lng=${lng}&radius=${radius}&excludeUserId=${userId}`;
-      } else {
-        // My Listings: include sold listings
-        url += `userId=${userId}&includeSold=true`;
+    const fetchListings = async (pageToFetch = 1) => {
+      setLoading(true);
+      try {
+        let url = `/api/listings?`;
+        url += `excludeUserId=${userId}`;
+        url += `&page=${pageToFetch}&limit=20`; // pagination
+
+        if (userLocation) url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
+        if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+        if (brandFilter) url += `&brand=${encodeURIComponent(brandFilter)}`;
+        if (conditionFilter) url += `&condition=${encodeURIComponent(conditionFilter)}`;
+
+        const res = await fetch(url);
+        const data: Listing[] = await res.json();
+
+        if (data.length < 20) setHasMore(false); // no more pages
+        else setHasMore(true);
+
+        if (pageToFetch === 1) setMarketListings(data);
+        else setMarketListings((prev) => [...prev, ...data]);
+      } catch (err) {
+        console.error('Error fetching listings:', err);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const res = await fetch(url);
-      const data = await res.json();
+    if (activeTab === 'market') fetchListings(page);
+  }, [
+    activeTab,
+    userId,
+    userLocation,
+    searchQuery,
+    brandFilter,
+    conditionFilter,
+    page,
+  ]);
 
-      if (activeTab === 'market') setMarketListings(data);
-      else setMyListings(data);
-    } catch (err) {
-      console.error('Error fetching listings:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // --- Reset page when filters/search changes ---
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, brandFilter, conditionFilter]);
 
   // --- Delete a listing ---
   async function handleDelete(listingId: string) {
@@ -94,7 +128,8 @@ export default function MarketplacePage() {
     }
   }
 
-  function isOwner(listingUserId: string | { _id: string }, sessionUserId: string) {
+  function isOwner(listingUserId: string | { _id?: string } | undefined, sessionUserId: string) {
+    if (!listingUserId) return false;
     if (typeof listingUserId === 'string') return listingUserId === sessionUserId;
     return listingUserId._id === sessionUserId;
   }
@@ -102,12 +137,11 @@ export default function MarketplacePage() {
   // --- Determine listings to show ---
   let listingsToShow: Listing[] = [];
   if (activeTab === 'market') listingsToShow = marketListings;
-  else {
+  else
     listingsToShow =
       myListingsTab === 'active'
         ? myListings.filter((l) => !l.sold)
         : myListings.filter((l) => l.sold);
-  }
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -134,18 +168,19 @@ export default function MarketplacePage() {
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => setActiveTab('market')}
-          className={`px-3 py-1 rounded 
-            ${activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}
-            transition-colors duration-150`}
+          className={`px-3 py-1 rounded ${
+            activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
+          } transition-colors duration-150`}
         >
           Marketplace
         </button>
-
         <button
           onClick={() => setActiveTab('myListings')}
-          className={`px-3 py-1 rounded 
-            ${activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}
-            transition-colors duration-150`}
+          className={`px-3 py-1 rounded ${
+            activeTab === 'myListings'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 hover:bg-gray-300'
+          } transition-colors duration-150`}
         >
           My Listings
         </button>
@@ -177,19 +212,45 @@ export default function MarketplacePage() {
         </div>
       )}
 
-      {/* Radius Filter */}
+      {/* Filters */}
       {activeTab === 'market' && (
-        <div className="mb-4 flex items-center gap-2">
-          <label className="font-medium">Search radius:</label>
-          <input
-            type="range"
-            min="5"
-            max="100"
-            step="5"
-            value={radius}
-            onChange={(e) => setRadius(Number(e.target.value))}
-          />
-          <span>{radius} miles</span>
+        <div className="mb-4 flex flex-col md:flex-row gap-4 items-center">
+          <div className="flex items-center gap-2">
+            <label className="font-medium">Search:</label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input"
+              placeholder="Search discs, brand..."
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="font-medium">Brand:</label>
+            <input
+              type="text"
+              value={brandFilter}
+              onChange={(e) => setBrandFilter(e.target.value)}
+              className="input"
+              placeholder="Brand"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="font-medium">Condition:</label>
+            <select
+              value={conditionFilter}
+              onChange={(e) => setConditionFilter(e.target.value)}
+              className="input"
+            >
+              <option value="">Any</option>
+              <option value="New">New</option>
+              <option value="Like New">Like New</option>
+              <option value="Used">Used</option>
+              <option value="Worn">Worn</option>
+            </select>
+          </div>
         </div>
       )}
 
@@ -200,29 +261,55 @@ export default function MarketplacePage() {
         </div>
       )}
 
+      {/* Map */}
+      {activeTab === 'market' && (
+        <div className="mb-6 h-96 flex items-center justify-center">
+          {!userLocation ? (
+            <p className="text-gray-500 italic">Loading map based on your location...</p>
+          ) : (
+            <Map listings={marketListings} center={userLocation} />
+          )}
+        </div>
+      )}
+
+
       {/* Listings Grid */}
       {loading ? (
         <p>Loading listings...</p>
       ) : listingsToShow.length === 0 ? (
         <p className="text-gray-500 italic">
           {activeTab === 'market'
-            ? 'No listings found in this area.'
+            ? 'No listings found.'
             : myListingsTab === 'sold'
             ? 'No sold listings yet.'
             : 'No active listings yet.'}
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {listingsToShow.map((listing) => (
-            <ListingCard
-              key={listing._id}
-              listing={listing}
-              isOwner={isOwner(listing.userId, userId!)}
-              onDelete={() => handleDelete(listing._id)}
-              onMarkSold={() => handleMarkSold(listing._id)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {listingsToShow.map((listing, index) => (
+              <ListingCard
+                key={`${listing._id}-${index}`}
+                listing={listing}
+                isOwner={isOwner(listing.userId, userId!)}
+                onDelete={() => handleDelete(listing._id)}
+                onMarkSold={() => handleMarkSold(listing._id)}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {hasMore && (
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setPage((prev) => prev + 1)}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Load More
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

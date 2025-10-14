@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import MessageSellerButton from '@/components/MessageSellerButton';
+import Map from '@/components/Map';
 import type { Listing } from '@/types/listing';
 
 export default function ListingPage() {
@@ -53,7 +54,10 @@ export default function ListingPage() {
       {listing.imageUrls.length > 0 && (
         <div className="flex overflow-x-auto gap-4 py-2">
           {listing.imageUrls.map((url, index) => (
-            <div key={index} className="flex-shrink-0 w-64 h-64 relative rounded overflow-hidden shadow-md">
+            <div
+              key={index}
+              className="flex-shrink-0 w-64 h-64 relative rounded overflow-hidden shadow-md"
+            >
               <Image
                 src={url}
                 alt={listing.title}
@@ -84,6 +88,13 @@ export default function ListingPage() {
         </p>
         <p><span className="font-semibold">City:</span> {listing.city || '-'}</p>
       </div>
+
+      {/* Map showing listing */}
+      {listing.location?.coordinates && (
+        <div className="h-96 rounded overflow-hidden">
+          <Map singleListing={listing} zoom={15} />
+        </div>
+      )}
 
       {/* Message Seller Button */}
       <MessageSellerButton sellerId={listing.userId} listingId={listing._id} />

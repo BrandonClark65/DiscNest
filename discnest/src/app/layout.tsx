@@ -1,6 +1,8 @@
 'use client';
 
 import './globals.css';
+import 'leaflet/dist/leaflet.css';
+
 import { SessionProvider } from 'next-auth/react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';

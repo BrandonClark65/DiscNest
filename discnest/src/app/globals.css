@@ -1,5 +1,7 @@
+/* Keep Tailwind as you had it */
 @import "tailwindcss";
 
+/* Custom root variables */
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -34,4 +36,3 @@ body {
   transform: translateY(0);
   transition: opacity 0.2s, transform 0.2s;
 }
-

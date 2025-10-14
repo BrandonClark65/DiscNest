@@ -11,6 +11,7 @@ export type Listing = {
   publicIds?: string[];
   location?: { coordinates: [number, number] };
   city?: string;
+  state?: string;
   radiusVisibility?: number;
   createdAt?: string;
   pendingReview?: boolean;

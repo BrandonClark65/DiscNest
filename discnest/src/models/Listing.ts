@@ -16,6 +16,7 @@ const ListingSchema = new Schema({
     coordinates: { type: [Number], required: true }, // [lng, lat]
   },
   city: String,
+  state: String,
   radiusVisibility: { type: Number, default: 5 }, // miles
   createdAt: { type: Date, default: Date.now },
   pendingReview: { type: Boolean, default: false },

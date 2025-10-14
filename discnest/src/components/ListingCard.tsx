@@ -1,3 +1,5 @@
+'use client';
+
 import type { Listing } from "@/types/listing";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,6 +12,11 @@ type ListingCardProps = {
 };
 
 function ListingCard({ listing, isOwner, onDelete, onMarkSold }: ListingCardProps) {
+  // Combine city and state if available
+  const cityState = listing.city && listing.state
+    ? `${listing.city}, ${listing.state}`
+    : listing.city || listing.state || null;
+
   return (
     <div className="border rounded-lg p-4 shadow hover:shadow-lg transition-shadow duration-200 flex flex-col">
       {listing.imageUrls && listing.imageUrls.length > 0 && (
@@ -33,16 +40,21 @@ function ListingCard({ listing, isOwner, onDelete, onMarkSold }: ListingCardProp
       <p className="text-sm text-gray-600 mb-2 truncate">
         {listing.brand} – {listing.condition}
       </p>
+
+      {cityState && (
+        <p className="text-sm text-gray-500 mb-2 truncate">{cityState}</p>
+      )}
+
       <p className="text-md font-semibold mb-4">
-        {listing.price ? `$${listing.price.toFixed(2)}` : 'Price not listed'}
+        {listing.price !== undefined ? `$${listing.price.toFixed(2)}` : 'Price not listed'}
       </p>
 
       <Link href={`/listing/${listing._id}`}>
         <button
           className="bg-blue-600 text-white py-2 px-4 rounded w-full mb-2
-                    hover:bg-blue-700 active:bg-blue-800
-                    hover:scale-105 active:scale-95
-                    transition duration-150 transform"
+                     hover:bg-blue-700 active:bg-blue-800
+                     hover:scale-105 active:scale-95
+                     transition duration-150 transform"
         >
           View Listing
         </button>
@@ -54,9 +66,9 @@ function ListingCard({ listing, isOwner, onDelete, onMarkSold }: ListingCardProp
           <button
             onClick={onMarkSold}
             className="bg-green-500 text-white px-2 py-1 rounded flex-1
-                      hover:bg-green-600 active:bg-green-700
-                      hover:scale-105 active:scale-95
-                      transition duration-150 transform"
+                       hover:bg-green-600 active:bg-green-700
+                       hover:scale-105 active:scale-95
+                       transition duration-150 transform"
           >
             Mark as Sold
           </button>
@@ -64,9 +76,9 @@ function ListingCard({ listing, isOwner, onDelete, onMarkSold }: ListingCardProp
           <button
             onClick={onDelete}
             className="bg-red-500 text-white px-2 py-1 rounded flex-1
-                      hover:bg-red-600 active:bg-red-700
-                      hover:scale-105 active:scale-95
-                      transition duration-150 transform"
+                       hover:bg-red-600 active:bg-red-700
+                       hover:scale-105 active:scale-95
+                       transition duration-150 transform"
           >
             Delete
           </button>
@@ -80,6 +92,5 @@ function ListingCard({ listing, isOwner, onDelete, onMarkSold }: ListingCardProp
     </div>
   );
 }
-
 
 export default ListingCard;
