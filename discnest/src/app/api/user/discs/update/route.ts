@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { discId, plastic, wearLevel, notes, color } = body;
+  const { discId, plastic, wearLevel, notes, color, weight } = body;
   if (!discId) {
     return NextResponse.json({ error: 'Missing disc ID' }, { status: 400 });
   }
@@ -35,6 +35,15 @@ export async function POST(req: NextRequest) {
   if (notes !== undefined) updateFields.notes = notes;
   if (color !== undefined) updateFields.color = color;
 
+  // ✅ NEW: support saving weight
+  if (weight !== undefined) {
+    const parsedWeight = Number(weight);
+    if (isNaN(parsedWeight) || parsedWeight < 100 || parsedWeight > 200) {
+      return NextResponse.json({ error: 'Weight must be a valid number between 100–200g' }, { status: 400 });
+    }
+    updateFields.weight = parsedWeight;
+  }
+
   try {
     const updatedDisc = await Disc.findByIdAndUpdate(discId, updateFields, { new: true });
 
@@ -48,5 +57,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to update disc' }, { status: 500 });
   }
 }
-
-

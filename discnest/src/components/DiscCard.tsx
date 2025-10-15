@@ -33,8 +33,6 @@ export default function DiscCard({
     `Glide: ${disc.flight?.glide ?? '-'}`,
     `Turn: ${disc.flight?.turn ?? '-'}`,
     `Fade: ${disc.flight?.fade ?? '-'}`,
-    disc.plastic ? `Plastic: ${disc.plastic}` : null,
-    disc.wearLevel !== undefined ? `Wear: ${disc.wearLevel}` : null,
     disc.notes ? `Notes: ${disc.notes}` : null,
   ]
     .filter(Boolean)
@@ -49,7 +47,8 @@ export default function DiscCard({
       className={`border p-4 rounded shadow flex flex-col justify-between transition ${className} ${
         isRecentlyAdded ? 'ring-2 ring-green-500' : 'hover:ring-2 hover:ring-green-500'
       }`}
-      style={{ backgroundColor: disc.color ?? '#ffffff', 
+      style={{
+        backgroundColor: disc.color ?? '#ffffff',
         color: textColor,
         filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.4))',
       }}
@@ -71,8 +70,18 @@ export default function DiscCard({
         <p style={{ color: textColor }}>
           {disc.brand} • {disc.type} • {disc.stability}
         </p>
-        {disc.plastic && <p className="italic" style={{ color: textColor }}>Plastic: {disc.plastic}</p>}
-        {disc.wearLevel !== undefined && <p className="italic" style={{ color: textColor }}>Wear: {disc.wearLevel}</p>}
+        {disc.plastic && (
+          <p className="italic" style={{ color: textColor }}>
+            Plastic: {disc.plastic}
+          </p>
+        )}
+        {(disc.wearLevel !== undefined || disc.weight) && (
+          <p className="italic" style={{ color: textColor }}>
+            {disc.wearLevel !== undefined && `Wear: ${disc.wearLevel}`}
+            {disc.wearLevel !== undefined && disc.weight ? ' • ' : ''}
+            {disc.weight && `Weight: ${disc.weight}g`}
+          </p>
+        )}
       </div>
 
       {/* Edit & Remove Buttons */}
@@ -113,4 +122,3 @@ export default function DiscCard({
     </div>
   );
 }
-

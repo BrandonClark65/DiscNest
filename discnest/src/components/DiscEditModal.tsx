@@ -14,6 +14,7 @@ export default function DiscEditModal({
 }) {
   const [plastic, setPlastic] = useState(disc.plastic ?? '');
   const [wearLevel, setWearLevel] = useState(disc.wearLevel ?? 0);
+  const [weight, setWeight] = useState<number | undefined>(disc.weight);
   const [notes, setNotes] = useState(disc.notes ?? '');
   const [color, setColor] = useState(disc.color ?? '#ffffff');
   const [visible, setVisible] = useState(false);
@@ -25,9 +26,10 @@ export default function DiscEditModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
-      discId: disc._id, // ✅ send discId instead of _id
+      discId: disc._id,
       plastic,
       wearLevel,
+      weight,
       notes,
       color,
     });
@@ -51,6 +53,7 @@ export default function DiscEditModal({
           </button>
         </div>
 
+        {/* Plastic */}
         <label className="block text-sm font-medium">Plastic</label>
         <input
           type="text"
@@ -59,6 +62,7 @@ export default function DiscEditModal({
           className="w-full border rounded px-2 py-1"
         />
 
+        {/* Wear Level */}
         <label className="block text-sm font-medium">Wear Level</label>
         <input
           type="number"
@@ -67,7 +71,7 @@ export default function DiscEditModal({
           value={wearLevel}
           onChange={e => {
             const val = Number(e.target.value);
-            if (isNaN(val)) return; // ignore invalid input
+            if (isNaN(val)) return;
             setWearLevel(val);
           }}
           className={`w-full border rounded px-2 py-1 ${
@@ -80,6 +84,30 @@ export default function DiscEditModal({
             Wear level must be between 0 and 100
           </p>
         )}
+
+        {/* Weight */}
+        <label className="block text-sm font-medium">Weight (grams)</label>
+        <input
+          type="number"
+          min={100}
+          max={200}
+          value={weight ?? ''}
+          onChange={e => {
+            const val = e.target.value;
+            setWeight(val === '' ? undefined : Number(val));
+          }}
+          className={`w-full border rounded px-2 py-1 ${
+            weight && (weight < 100 || weight > 200) ? 'border-yellow-500' : ''
+          }`}
+          placeholder="e.g. 175"
+        />
+        {weight && (weight < 100 || weight > 200) && (
+          <p className="text-yellow-600 text-sm mt-1">
+            Typical disc weights range between 150–180g
+          </p>
+        )}
+
+        {/* Notes */}
         <label className="block text-sm font-medium">Notes</label>
         <textarea
           value={notes}
@@ -87,6 +115,7 @@ export default function DiscEditModal({
           className="w-full border rounded px-2 py-1"
         />
 
+        {/* Color */}
         <label className="block text-sm font-medium">Color</label>
         <input
           type="color"
@@ -95,6 +124,7 @@ export default function DiscEditModal({
           className="w-12 h-8 p-0 border rounded"
         />
 
+        {/* Actions */}
         <div className="flex justify-end space-x-2 pt-4">
           <button
             type="button"

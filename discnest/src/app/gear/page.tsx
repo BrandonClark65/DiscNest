@@ -38,6 +38,7 @@ export default function GearPage() {
     if (res.ok) {
       const data = await res.json();
       const updatedDisc = data.disc;
+      console.log('✅ Disc updated:', updatedDisc);
 
       setShelf(prev => prev.map(d => (d._id === updatedDisc._id ? updatedDisc : d)));
       setBag(prev => prev.map(d => (d._id === updatedDisc._id ? updatedDisc : d)));

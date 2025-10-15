@@ -17,4 +17,5 @@ export type Disc = {
   plastic?: string;
   wearLevel?: number;
   color?: string; // hex code
+  weight?: number; // in grams
 };
