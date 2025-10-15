@@ -1,50 +1,82 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // adjust path to your NextAuth config
+import { authOptions } from "@/lib/auth";
 import MessageThread from "@/models/MessageThread";
 import { connectToDatabase } from "@/lib/mongodb";
+import type { Thread } from "@/types/thread";
+import type { Message } from "@/types/message";
+import { Types } from "mongoose";
 
 // GET all threads for current user
 export async function GET(req: Request) {
   await connectToDatabase();
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = session.user.id;
+
   const threads = await MessageThread.find({ participants: userId })
+    .populate("participants", "_id name")
     .populate("listingId", "title imageUrls")
-    .populate("participants", "name");
+    .populate("messages.sender", "_id name");
 
   return NextResponse.json(threads);
 }
 
-// POST new thread
+// POST create new thread
 export async function POST(req: Request) {
   await connectToDatabase();
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const senderId = session.user.id;
   const { recipientId, listingId, content } = await req.json();
 
-  if (!recipientId || !listingId) {
+  if (!recipientId || !listingId)
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-  }
 
-  const existing = await MessageThread.findOne({
+  // Check if thread already exists
+  let existing = await MessageThread.findOne({
     participants: { $all: [senderId, recipientId] },
     listingId,
   });
 
-  if (existing) return NextResponse.json(existing);
+  if (existing) {
+    // Populate and return existing thread
+    existing = await existing
+      .populate("participants", "_id name")
+      .populate("listingId", "title imageUrls")
+      .populate("messages.sender", "_id name") as unknown as Thread;
+    return NextResponse.json(existing);
+  }
 
-  const thread = await MessageThread.create({
-    participants: [senderId, recipientId],
-    listingId,
-    messages: content ? [{ sender: senderId, content }] : [],
+  // Initialize messages array as ObjectIds
+  const messages: Message[] = content
+    ? [
+        {
+          sender: new Types.ObjectId(senderId), // ObjectId
+          content,
+          readBy: [new Types.ObjectId(senderId)], // ObjectId array
+          timestamp: new Date(),
+        },
+      ]
+    : [];
+
+  // Create new thread
+  let thread = await MessageThread.create({
+    participants: [new Types.ObjectId(senderId), new Types.ObjectId(recipientId)],
+    listingId: new Types.ObjectId(listingId),
+    messages,
+    updatedAt: new Date(),
   });
+
+  // Populate thread before returning
+  thread = await MessageThread.findById(thread._id)
+    .populate("participants", "_id name")
+    .populate("listingId", "_id title imageUrls")
+    .populate("messages.sender", "_id name") as unknown as Thread;
 
   return NextResponse.json(thread);
 }
-
-

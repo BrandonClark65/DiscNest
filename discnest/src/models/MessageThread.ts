@@ -10,6 +10,7 @@ const MessageThreadSchema = new Schema({
       sender: { type: Schema.Types.ObjectId, ref: "User", required: true },
       content: { type: String, required: true },
       timestamp: { type: Date, default: Date.now },
+      readBy: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }], // NEW
     },
   ],
   updatedAt: { type: Date, default: Date.now },
