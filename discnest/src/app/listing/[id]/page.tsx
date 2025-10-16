@@ -80,6 +80,7 @@ export default function ListingPage() {
         <p><span className="font-semibold">Description:</span> {listing.description || '-'}</p>
         <p><span className="font-semibold">Brand:</span> {listing.brand || '-'}</p>
         <p><span className="font-semibold">Plastic:</span> {listing.plastic || '-'}</p>
+        <p><span className="font-semibold">Weight:</span> {listing.weight ? `${listing.weight}g` : '-'}</p>
         <p><span className="font-semibold">Condition:</span> {listing.condition}</p>
         <p><span className="font-semibold">Listing Type:</span> {listing.type}</p>
         <p>

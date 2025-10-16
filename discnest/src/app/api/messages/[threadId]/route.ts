@@ -47,6 +47,7 @@ export async function POST(
   const { content } = await req.json();
   if (!content) return NextResponse.json({ error: "Missing message content" }, { status: 400 });
 
+
   const thread = await MessageThread.findById(threadId);
   if (!thread) return NextResponse.json({ error: "Thread not found" }, { status: 404 });
 

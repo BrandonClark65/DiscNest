@@ -20,6 +20,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     description: '',
     brand: '',
     plastic: '',
+    weight: '', // always controlled as string
     condition: 'Used - Like New',
     type: 'Sell',
     price: 0,
@@ -36,6 +37,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     title: false,
     brand: false,
     plastic: false,
+    weight: false,
   });
 
   const [discs, setDiscs] = useState<Disc[]>([]);
@@ -88,12 +90,17 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       title: touchedFields.title ? prev.title : disc.name || '',
       brand: touchedFields.brand ? prev.brand : disc.brand || '',
       plastic: touchedFields.plastic ? prev.plastic : disc.plastic || '',
+      weight: touchedFields.weight
+        ? prev.weight
+        : disc.weight !== undefined
+        ? String(disc.weight)
+        : '',
     }));
   }, [selectedDisc, discs, touchedFields]);
 
   function handleFieldChange<K extends keyof typeof form>(field: K, value: any) {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (['title', 'brand', 'plastic'].includes(field)) {
+    if (['title', 'brand', 'plastic', 'weight'].includes(field)) {
       setTouchedFields((prev) => ({ ...prev, [field]: true }));
     }
   }
@@ -114,7 +121,8 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         const location = await new Promise<Location | null>((resolve) => {
           if (!navigator.geolocation) return resolve(null);
           navigator.geolocation.getCurrentPosition(
-            (pos) => resolve({ type: 'Point', coordinates: [pos.coords.longitude, pos.coords.latitude] }),
+            (pos) =>
+              resolve({ type: 'Point', coordinates: [pos.coords.longitude, pos.coords.latitude] }),
             () => resolve(null)
           );
         });
@@ -126,6 +134,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          weight: form.weight ? Number(form.weight) : null, // convert to number
           userId: user.id,
           pendingReview: form.pendingReview,
         }),
@@ -222,6 +231,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       description: '',
       brand: '',
       plastic: '',
+      weight: '', // reset to empty string
       condition: 'Used - Like New',
       type: 'Sell',
       price: 0,
@@ -233,7 +243,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       flaggedImages: [],
       pendingReview: false,
     });
-    setTouchedFields({ title: false, brand: false, plastic: false });
+    setTouchedFields({ title: false, brand: false, plastic: false, weight: false });
     setSelectedDisc('');
   }
 
@@ -241,7 +251,16 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     <div className="space-y-4">
       {onClose && (
         <div className="flex justify-end">
-          <button type="button" onClick={() => { resetForm(); onClose(); }} className="text-gray-600 hover:text-gray-800">✕ Close</button>
+          <button
+            type="button"
+            onClick={() => {
+              resetForm();
+              onClose();
+            }}
+            className="text-gray-600 hover:text-gray-800"
+          >
+            ✕ Close
+          </button>
         </div>
       )}
 
@@ -249,7 +268,9 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         {/* Disc selector */}
         {discs.length > 0 && (
           <div>
-            <label htmlFor="discSelect" className="block font-medium mb-1">Select a disc from your bag (optional)</label>
+            <label htmlFor="discSelect" className="block font-medium mb-1">
+              Select a disc from your bag or shelf(optional)
+            </label>
             <select
               id="discSelect"
               value={selectedDisc}
@@ -257,35 +278,93 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
               className="border px-3 py-2 rounded w-full"
             >
               <option value="">-- None --</option>
-              {discs.map((disc) => <option key={disc._id} value={disc._id}>{disc.name} {disc.brand ? `(${disc.brand})` : ''}</option>)}
+              {discs.map((disc) => (
+                <option key={disc._id} value={disc._id}>
+                  {disc.name} {disc.brand ? `(${disc.brand})` : ''}
+                </option>
+              ))}
             </select>
           </div>
         )}
 
-        {/* Title, Description, Brand, Plastic, Condition, Type, Price */}
+        {/* Title, Description, Brand, Plastic, Weight, Condition, Type, Price */}
         <div>
-          <label htmlFor="title" className="block font-medium mb-1">Title</label>
-          <input id="title" type="text" required value={form.title} onChange={(e) => handleFieldChange('title', e.target.value)} className="border px-3 py-2 rounded w-full" />
+          <label htmlFor="title" className="block font-medium mb-1">
+            Title
+          </label>
+          <input
+            id="title"
+            type="text"
+            required
+            value={form.title}
+            onChange={(e) => handleFieldChange('title', e.target.value)}
+            className="border px-3 py-2 rounded w-full"
+          />
         </div>
 
         <div>
-          <label htmlFor="description" className="block font-medium mb-1">Description</label>
-          <textarea id="description" value={form.description} onChange={(e) => handleFieldChange('description', e.target.value)} className="border px-3 py-2 rounded w-full" rows={3} />
+          <label htmlFor="description" className="block font-medium mb-1">
+            Description
+          </label>
+          <textarea
+            id="description"
+            value={form.description}
+            onChange={(e) => handleFieldChange('description', e.target.value)}
+            className="border px-3 py-2 rounded w-full"
+            rows={3}
+          />
         </div>
 
         <div>
-          <label htmlFor="brand" className="block font-medium mb-1">Brand</label>
-          <input id="brand" type="text" value={form.brand} onChange={(e) => handleFieldChange('brand', e.target.value)} className="border px-3 py-2 rounded w-full" />
+          <label htmlFor="brand" className="block font-medium mb-1">
+            Brand
+          </label>
+          <input
+            id="brand"
+            type="text"
+            value={form.brand}
+            onChange={(e) => handleFieldChange('brand', e.target.value)}
+            className="border px-3 py-2 rounded w-full"
+          />
         </div>
 
         <div>
-          <label htmlFor="plastic" className="block font-medium mb-1">Plastic</label>
-          <input id="plastic" type="text" value={form.plastic} onChange={(e) => handleFieldChange('plastic', e.target.value)} className="border px-3 py-2 rounded w-full" />
+          <label htmlFor="plastic" className="block font-medium mb-1">
+            Plastic
+          </label>
+          <input
+            id="plastic"
+            type="text"
+            value={form.plastic}
+            onChange={(e) => handleFieldChange('plastic', e.target.value)}
+            className="border px-3 py-2 rounded w-full"
+          />
         </div>
 
         <div>
-          <label htmlFor="condition" className="block font-medium mb-1">Condition</label>
-          <select id="condition" value={form.condition} onChange={(e) => handleFieldChange('condition', e.target.value)} className="border px-3 py-2 rounded w-full">
+          <label htmlFor="weight" className="block font-medium mb-1">
+            Weight (g)
+          </label>
+          <input
+            id="weight"
+            type="number"
+            value={form.weight}
+            onChange={(e) => handleFieldChange('weight', e.target.value)}
+            className="border px-3 py-2 rounded w-full"
+            placeholder="e.g. 175"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="condition" className="block font-medium mb-1">
+            Condition
+          </label>
+          <select
+            id="condition"
+            value={form.condition}
+            onChange={(e) => handleFieldChange('condition', e.target.value)}
+            className="border px-3 py-2 rounded w-full"
+          >
             <option>New</option>
             <option>Used - Like New</option>
             <option>Used - Fair</option>
@@ -293,8 +372,15 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         </div>
 
         <div>
-          <label htmlFor="type" className="block font-medium mb-1">Listing Type</label>
-          <select id="type" value={form.type} onChange={(e) => handleFieldChange('type', e.target.value)} className="border px-3 py-2 rounded w-full">
+          <label htmlFor="type" className="block font-medium mb-1">
+            Listing Type
+          </label>
+          <select
+            id="type"
+            value={form.type}
+            onChange={(e) => handleFieldChange('type', e.target.value)}
+            className="border px-3 py-2 rounded w-full"
+          >
             <option>Sell</option>
             <option>Trade</option>
           </select>
@@ -302,54 +388,108 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
 
         {form.type === 'Sell' && (
           <div>
-            <label htmlFor="price" className="block font-medium mb-1">Price ($)</label>
-            <input id="price" type="number" value={form.price} onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))} className="border px-3 py-2 rounded w-full" />
+            <label htmlFor="price" className="block font-medium mb-1">
+              Price ($)
+            </label>
+            <input
+              id="price"
+              type="number"
+              value={form.price}
+              onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
+              className="border px-3 py-2 rounded w-full"
+            />
           </div>
         )}
 
-        {/* Show city/state only if geolocation is not available */}
         {useGeoLocation === false && (
           <div className="flex gap-2">
             <div className="flex-1">
-              <label htmlFor="city" className="block font-medium mb-1">City</label>
-              <input id="city" type="text" required value={form.city} onChange={(e) => handleFieldChange('city', e.target.value)} className="border px-3 py-2 rounded w-full" />
+              <label htmlFor="city" className="block font-medium mb-1">
+                City
+              </label>
+              <input
+                id="city"
+                type="text"
+                required
+                value={form.city}
+                onChange={(e) => handleFieldChange('city', e.target.value)}
+                className="border px-3 py-2 rounded w-full"
+              />
             </div>
             <div className="flex-1">
-              <label htmlFor="state" className="block font-medium mb-1">State</label>
-              <input id="state" type="text" required value={form.state} onChange={(e) => handleFieldChange('state', e.target.value)} className="border px-3 py-2 rounded w-full" />
+              <label htmlFor="state" className="block font-medium mb-1">
+                State
+              </label>
+              <input
+                id="state"
+                type="text"
+                required
+                value={form.state}
+                onChange={(e) => handleFieldChange('state', e.target.value)}
+                className="border px-3 py-2 rounded w-full"
+              />
             </div>
           </div>
         )}
 
-        {/* Image Upload */}
+        {/* Image Upload & Gallery */}
         <div>
-          <label htmlFor="file" className="font-medium block mb-1">Upload Image</label>
-          <input id="file" type="file" accept="image/*" onChange={handleFileChange} className="border px-3 py-2 rounded w-full" disabled={uploading} />
+          <label htmlFor="file" className="font-medium block mb-1">
+            Upload Image
+          </label>
+          <input
+            id="file"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="border px-3 py-2 rounded w-full"
+            disabled={uploading}
+          />
         </div>
 
-        {/* Image Gallery */}
         {(form.imageUrls.length > 0 || form.flaggedImages.length > 0) && (
           <div className="flex gap-2 mt-2 flex-wrap">
             {form.imageUrls.map((url, i) => (
               <div key={i} className="relative border-2 border-green-500 rounded">
                 <img src={url} className="w-24 h-24 object-cover rounded" />
-                <button type="button" onClick={() => handleRemoveImage(url)} className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded">✕</button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(url)}
+                  className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded"
+                >
+                  ✕
+                </button>
               </div>
             ))}
             {form.flaggedImages.map((urlOrName, i) => (
               <div key={i} className="relative border-2 border-red-500 rounded bg-red-100">
-                {urlOrName.startsWith('http') ? <img src={urlOrName} className="w-24 h-24 object-cover rounded" /> : <span className="px-2 py-1 text-red-800">{urlOrName}</span>}
-                <button type="button" onClick={() => handleRemoveImage(urlOrName, true)} className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded">✕</button>
+                {urlOrName.startsWith('http') ? (
+                  <img src={urlOrName} className="w-24 h-24 object-cover rounded" />
+                ) : (
+                  <span className="px-2 py-1 text-red-800">{urlOrName}</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(urlOrName, true)}
+                  className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
         )}
         {form.flaggedImages.length > 0 && (
-          <p className="text-red-600 font-semibold">⚠️ You have {form.flaggedImages.length} flagged image(s). Remove them to submit.</p>
+          <p className="text-red-600 font-semibold">
+            ⚠️ You have {form.flaggedImages.length} flagged image(s). Remove them to submit.
+          </p>
         )}
 
-        {/* Submit Button */}
-        <button type="submit" disabled={uploading || submitting || form.flaggedImages.length > 0} className="bg-green-600 text-white px-4 py-2 rounded">
+        <button
+          type="submit"
+          disabled={uploading || submitting || form.flaggedImages.length > 0}
+          className="bg-green-600 text-white px-4 py-2 rounded"
+        >
           {submitting ? 'Posting...' : uploading ? 'Uploading...' : 'Post Listing'}
         </button>
       </form>

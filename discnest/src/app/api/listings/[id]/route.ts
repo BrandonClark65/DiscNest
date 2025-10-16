@@ -15,12 +15,12 @@ cloudinary.config({
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   await connectToDatabase();
 
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const listingDoc = await Listing.findById(id).lean();
     if (!listingDoc) return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
 
@@ -91,7 +91,7 @@ export async function PATCH(
 // DELETE: remove listing + image from Cloudinary
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   await connectToDatabase();
 
@@ -100,7 +100,7 @@ export async function DELETE(
     if (!session?.user?.id)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { id } = await params;
+    const { id } = await context.params;
     const listing = await Listing.findById(id);
     if (!listing)
       return NextResponse.json({ error: "Listing not found" }, { status: 404 });

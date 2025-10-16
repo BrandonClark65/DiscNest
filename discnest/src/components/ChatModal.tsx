@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef } from "react";
-import type { Thread } from "@/types/thread";
 import { useSession } from "next-auth/react";
-
+import type { ThreadUI} from "@/types/thread"; 
+import type { MessageUI } from "@/types/message";
 
 type ChatModalProps = {
   threadId: string;
@@ -11,16 +11,16 @@ type ChatModalProps = {
 };
 
 export default function ChatModal({ threadId, onClose }: ChatModalProps) {
-  const [thread, setThread] = useState<Thread | null>(null);
+  const [thread, setThread] = useState<ThreadUI | null>(null);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const { data: session, status } = useSession();
+  
+
+  if (status !== "authenticated" || !session?.user?.id) return null;
   const currentUserId = session?.user?.id;
-
-  if (status !== "authenticated" || !currentUserId) return;
-
 
   useEffect(() => {
     fetchThread();
@@ -34,7 +34,26 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
     try {
       const res = await fetch(`/api/messages/${threadId}`);
       const data = await res.json();
-      setThread(data);
+
+      // Map backend messages to UI-friendly messages
+      const mappedThread: ThreadUI = {
+        _id: data._id,
+        participants: data.participants.map((p: any) => ({ _id: p._id, name: p.name })),
+        listingId: {
+          _id: data.listingId._id,
+          title: data.listingId.title,
+          imageUrls: data.listingId.imageUrls || [],
+        },
+        messages: data.messages.map((msg: any) => ({
+          sender: { _id: msg.sender._id, name: msg.sender.name },
+          content: msg.content,
+          timestamp: new Date(msg.timestamp).toISOString(),
+          readBy: msg.readBy.map((id: any) => id.toString()),
+        })),
+        updatedAt: new Date(data.updatedAt).toISOString(),
+      };
+
+      setThread(mappedThread);
     } catch (error) {
       console.error("Failed to fetch thread:", error);
     } finally {
@@ -45,11 +64,11 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
   async function sendMessage() {
     if (!newMessage.trim() || !thread) return;
 
-    if (!currentUserId) return;
-    const tempMsg = {
+    const tempMsg: MessageUI = {
       sender: { _id: currentUserId, name: "You" },
       content: newMessage,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
+      readBy: [],
     };
 
     // Optimistic UI
@@ -62,7 +81,7 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newMessage }),
       });
-      fetchThread();
+      fetchThread(); // refresh from backend
     } catch (error) {
       console.error("Failed to send message:", error);
     }
@@ -71,14 +90,12 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
   if (loading || !thread) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center" style={{ zIndex: 9999 }}>
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md flex flex-col h-[80vh]">
         {/* Header */}
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="text-lg font-semibold">{thread.listingId?.title ?? "No Title"}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-black">
-            ✕
-          </button>
+          <button onClick={onClose} className="text-gray-500 hover:text-black">✕</button>
         </div>
 
         {/* Messages */}
@@ -127,5 +144,3 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
     </div>
   );
 }
-
-

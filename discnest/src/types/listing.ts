@@ -17,6 +17,7 @@ export type Listing = {
   pendingReview?: boolean;
   plastic?: string;
   sold?: boolean;
+  weight?: number; // in grams
 };
 
 export type ListingAdmin = Listing & {

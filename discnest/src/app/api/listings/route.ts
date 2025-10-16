@@ -4,6 +4,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { Resend } from "resend";
 import mongoose from "mongoose";
+import { create } from "domain";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -138,9 +139,11 @@ export async function POST(req: Request) {
 
     const listing = await Listing.create({
       ...body,
+      weight: body.weight !== undefined && body.weight !== null ? Number(body.weight) : null,
       city,
       state,
       pendingReview,
+      createdAt: new Date(),
     });
 
     // (Optional) email admin if pending review

@@ -13,7 +13,7 @@ const ListingSchema = new Schema({
   publicIds: [String],
   location: {
     type: { type: String, enum: ["Point"], default: "Point" },
-    coordinates: { type: [Number], required: true }, // [lng, lat]
+    coordinates: { type: [Number], required: false }, // [lng, lat]
   },
   city: String,
   state: String,
@@ -22,6 +22,7 @@ const ListingSchema = new Schema({
   pendingReview: { type: Boolean, default: false },
   plastic: { type: String, default: '' },
   sold: { type: Boolean, default: false },
+  weight: { type: Number, default: null }, // in grams
 });
 
 ListingSchema.index({ location: "2dsphere" }); // enable geo queries
