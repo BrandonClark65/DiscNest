@@ -74,7 +74,7 @@ disc-nest/
 ## 🧠 Environment Variables
 
 All secrets are managed locally in `.env.local` and **should not be committed**.  
-- **Listings** —
+
 - **MONGODB_URI** = <your_mongodb_connection_string>
 - **NEXTAUTH_SECRET** = <your_nextauth_secret>
 - **NEXTAUTH_URL**= http://localhost:3000
