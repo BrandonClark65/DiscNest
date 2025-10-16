@@ -394,6 +394,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             <input
               id="price"
               type="number"
+              required={form.type === 'Sell'}
               value={form.price}
               onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
               className="border px-3 py-2 rounded w-full"
