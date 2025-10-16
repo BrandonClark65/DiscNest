@@ -22,7 +22,7 @@ DiscNest consists of several core modules:
 ---
 
 ## 🧩 Project Structure
-
+```
 disc-nest/
 ├── src/
 │ ├── app/
@@ -53,6 +53,7 @@ disc-nest/
 ├── package.json
 ├── tsconfig.json
 └── README.md
+```
 
 ---
 
@@ -73,18 +74,18 @@ disc-nest/
 ## 🧠 Environment Variables
 
 All secrets are managed locally in `.env.local` and **should not be committed**.  
-
-MONGODB_URI=<your_mongodb_connection_string>
-NEXTAUTH_SECRET=<your_nextauth_secret>
-NEXTAUTH_URL=http://localhost:3000
-CLOUDINARY_CLOUD_NAME=<your_cloudinary_cloud_Name>
-CLOUDINARY_API_KEY=<your_cloudinary_api_key>
-CLOUDINARY_API_SECRET=<your-cloudinary_api_secret>
-ADMIN_ALERT_EMAIL=<your_email_for_moderation_and_contact>
-GOOGLE_CLIENT_ID=<optional>
-GOOGLE_CLIENT_SECRET=<optional>
-RESEND_API_KEY=<resend_api_key>
-OPENCAGE_API_KEY=<for_reverse_geocoding>
+- **Listings** —
+- **MONGODB_URI** = <your_mongodb_connection_string>
+- **NEXTAUTH_SECRET** = <your_nextauth_secret>
+- **NEXTAUTH_URL**= http://localhost:3000
+- **CLOUDINARY_CLOUD_NAME** = <your_cloudinary_cloud_Name>
+- **CLOUDINARY_API_KEY** = <your_cloudinary_api_key>
+- **CLOUDINARY_API_SECRET** = <your-cloudinary_api_secret>
+- **ADMIN_ALERT_EMAIL** = <your_email_for_moderation_and_contact>
+- **GOOGLE_CLIENT_ID** = <optional>
+- **GOOGLE_CLIENT_SECRET** = <optional>
+- **RESEND_API_KEY** = <resend_api_key>
+- **OPENCAGE_API_KEY** = <for_reverse_geocoding>
 
 ---
 
@@ -94,9 +95,11 @@ OPENCAGE_API_KEY=<for_reverse_geocoding>
 ```bash
 git clone https://github.com/<your-org>/disc-nest.git
 cd disc-nest
-
+```
 ### 2. Install dependencies
+```bash
 npm install
+```
 
 ### 3. Add .env.local
 Create a .env.local file in the root directory and fill in the required keys above.
@@ -106,7 +109,9 @@ If using MongoDB Atlas, make sure your connection string is valid.
 For local development, ensure mongod is running.
 
 ### 5. Start the development server
+```bash
 npm run dev
+```
 
 Once running, open:
 👉 http://localhost:3000
