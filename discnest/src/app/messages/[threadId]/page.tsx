@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation"; // <-- added useRouter
 import type { ThreadDB, ThreadUI } from "@/types/thread";
 import type { MessageDB, MessageUI } from "@/types/message";
 
@@ -10,17 +10,22 @@ export default function ChatPage() {
   const { data: session } = useSession();
   const currentUserId = session?.user?.id;
   const { threadId } = useParams();
+  const router = useRouter(); // <-- added router
   const [thread, setThread] = useState<ThreadUI | null>(null);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Back button handler
+  const goBack = () => {
+    router.push("/messages"); // Adjust to your messages page route
+  };
 
   // Convert DB message → UI message
   function mapMessageDBtoUI(msg: MessageDB): MessageUI {
     let senderId: string;
     let senderName: string;
 
-    // Handle sender being ObjectId, string, or populated user object
     if (typeof msg.sender === "string") {
       senderId = msg.sender;
       senderName = "Unknown";
@@ -32,7 +37,6 @@ export default function ChatPage() {
       senderId = (msg.sender._id as any).toString();
       senderName = (msg.sender as any).name || "Unknown";
     } else {
-      // fallback in case sender is an ObjectId
       senderId = (msg.sender as any)?.toString?.() || "unknown";
       senderName = "Unknown";
     }
@@ -144,8 +148,22 @@ export default function ChatPage() {
   if (!thread) return <p>Thread not found.</p>;
 
   return (
-    <div className="max-w-3xl mx-auto p-4 flex flex-col h-[80vh]">
+    <div className="relative max-w-3xl mx-auto p-4 flex flex-col h-[80vh]">
+      {/* Back Button above the chat */}
+      <div className="mb-2">
+        <button
+          onClick={goBack}
+          className="
+            px-4 py-2 bg-blue-500 text-white rounded-full
+            shadow hover:bg-blue-600 transition-colors
+          "
+        >
+          ← Back
+        </button>
+      </div>
+
       <h1 className="text-2xl font-bold mb-2">{thread.listingId.title}</h1>
+
       <div className="flex-1 overflow-y-auto border rounded p-4 mb-4 flex flex-col gap-3 bg-gray-50">
         {thread.messages.map((msg, i) => {
           const isOwn = msg.sender._id === currentUserId;
@@ -163,6 +181,7 @@ export default function ChatPage() {
         })}
         <div ref={messagesEndRef} />
       </div>
+
       <div className="flex gap-2">
         <input
           type="text"
