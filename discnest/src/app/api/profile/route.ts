@@ -1,56 +1,87 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { connectToDatabase } from '@/lib/mongodb';
-import User from '@/models/User';
-import { NextResponse } from 'next/server';
-import { DiscNestUser } from '@/types/user';
-
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  await connectToDatabase();
-  const user = await User.findOne({ email: session.user.email }).lean<DiscNestUser>();
-
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-  // ✅ Patch missing fields with defaults
-  const patchedUser: DiscNestUser = {
-    _id: user._id, // ✅ required
-    name: user.name,
-    email: user.email,
-    image: user.image,
-    role: user.role,
-    hasOnboarded: user.hasOnboarded,
-    favoriteBrands: user.favoriteBrands ?? [],
-    preferredTypes: user.preferredTypes ?? [],
-    stability: user.stability ?? '',
-    throwingStyle: user.throwingStyle ?? '',
-    maxDistance: user.maxDistance ?? 0,
-    favoriteCourse: user.favoriteCourse ?? '',
-    discCount: user.discCount ?? 0,
-    lastLogin: user.lastLogin ?? null,
-    };
-
-  console.log('📦 Patched profile data:', patchedUser);
-  return NextResponse.json({ user: patchedUser });
-}
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { connectToDatabase } from "@/lib/mongodb";
+import User from "@/models/User";
+import { NextResponse } from "next/server";
+import { userSchema } from "@/lib/validation/userSchema";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = await req.json();
 
-  // ✅ Strip out lastLogin if it was accidentally sent
-  const { lastLogin, ...safeBody } = body;
+  // Validate incoming data with Zod
+  const parseResult = userSchema.safeParse(body);
+  if (!parseResult.success) {
+    return NextResponse.json(
+      { error: "Invalid data", details: parseResult.error.flatten() },
+      { status: 400 }
+    );
+  }
+
+  // Extract only allowed fields for update
+  const {
+    name,
+    username,
+    avatarUrl,
+    bio,
+    password,
+    location,
+    pdgaNumber,
+    homeCourse,
+    favoriteCourses,
+    maxDistanceFt,
+    goals,
+    dominantHand,
+    throwStyle,
+    favoriteBrands,
+    preferredDiscTypes,
+    stabilityPreference,
+    armSpeed,
+    skillLevel,
+    playFrequency,
+    preferredPlastics,
+    discShelf,
+    bag,
+    discCount,
+  } = parseResult.data;
+
+  const safeBody = {
+    name,
+    username,
+    avatarUrl,
+    bio,
+    password,
+    location,
+    pdgaNumber,
+    homeCourse,
+    favoriteCourses,
+    maxDistanceFt,
+    goals,
+    dominantHand,
+    throwStyle,
+    favoriteBrands,
+    preferredDiscTypes,
+    stabilityPreference,
+    armSpeed,
+    skillLevel,
+    playFrequency,
+    preferredPlastics,
+    discShelf,
+    bag,
+    discCount,
+  };
 
   await connectToDatabase();
-  const updated = await User.findOneAndUpdate(
+
+  const updatedUser = await User.findOneAndUpdate(
     { email: session.user.email },
     { $set: safeBody },
     { new: true }
-  ).lean<DiscNestUser>();
+  ).lean();
 
-  return NextResponse.json({ user: updated });
+  return NextResponse.json({ user: updatedUser });
 }

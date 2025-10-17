@@ -1,27 +1,85 @@
-// models/User.ts
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+import { DiscBrands, DiscPlastics } from "@/app/constants/discData";
 
-const UserSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, unique: true },
-  image: String,
-  password: String,
-  createdAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date, default: null },
-  discShelf: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Disc' }],
-  bag: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Disc' }],
-  discCount: { type: Number, default: 0 },
-  hasOnboarded: { type: Boolean, default: false },
-  role: { type: String, default: 'user' },
-  favoriteBrands: [String],
-  preferredTypes: [String],
-  stability: String,
-  throwingStyle: String,
-  maxDistance: Number,
-  favoriteCourse: String,
-  moderationFlags: { type: Number, default: 0 },
-  lastFlaggedAt: { type: Date },
+const UserSchema = new mongoose.Schema(
+  {
+    name: String,
+    username: { type: String, unique: true },
+    email: { type: String, unique: true },
+    avatarUrl: String,
+    bio: String,
+    password: String,
 
-}, { timestamps: true });
+    location: {
+      type: { type: String, enum: ["Point"], default: "Point" },
+      coordinates: [Number],
+    },
 
-export default mongoose.models.User || mongoose.model('User', UserSchema);
+    // Disc Golf Info
+    pdgaNumber: Number,
+    homeCourse: String,
+    favoriteCourses: [String],
+    maxDistanceFt: Number,
+    goals: String,
+
+    // ---- Play Style ----
+    dominantHand: {
+      type: String,
+      enum: ["Left", "Right", "Both"],
+    },
+    throwStyle: {
+      type: String,
+      enum: ["Backhand", "Forehand", "Both"],
+    },
+    favoriteBrands: [
+      {
+        type: String,
+        enum: DiscBrands as unknown as string[],
+      },
+    ],
+    preferredDiscTypes: [
+      {
+        type: String,
+        enum: ["Putter", "Midrange", "Fairway Driver", "Distance Driver"],
+      },
+    ],
+    stabilityPreference: {
+      type: String,
+      enum: ["Straight", "Overstable", "Understable"],
+    },
+    armSpeed: {
+      type: String,
+      enum: ["Slow", "Medium", "Fast"],
+    },
+    skillLevel: {
+      type: String,
+      enum: ["Beginner", "Intermediate", "Advanced", "Pro"],
+    },
+    playFrequency: {
+      type: String,
+      enum: ["<1 per week", "1-2 times per week", "Every day"],
+    },
+    preferredPlastics: [
+      {
+        type: String,
+        enum: DiscPlastics as unknown as string[],
+      },
+    ],
+
+    // ---- Meta / Activity ----
+    createdAt: { type: Date, default: Date.now },
+    lastLogin: { type: Date, default: null },
+    hasOnboarded: { type: Boolean, default: false },
+    role: { type: String, default: "user" },
+    moderationFlags: { type: Number, default: 0 },
+    lastFlaggedAt: { type: Date },
+
+    // ---- Disc Collections ----
+    discShelf: [{ type: mongoose.Schema.Types.ObjectId, ref: "Disc" }],
+    bag: [{ type: mongoose.Schema.Types.ObjectId, ref: "Disc" }],
+    discCount: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.models.User || mongoose.model("User", UserSchema);

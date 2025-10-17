@@ -2,167 +2,265 @@
 
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import { DiscNestUser } from '@/types/user';
+import { DiscBrands, DiscPlastics } from '@/app/constants/discData';
+import clsx from 'clsx';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<DiscNestUser | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'basic' | 'disc' | 'play'>('basic');
 
   useEffect(() => {
     if (status === 'authenticated') {
       fetch('/api/profile')
         .then(res => res.json())
-        .then(data => {
-          console.log('📥 Loaded profile:', data.user);
-          setProfile(data.user);
-        });
+        .then(data => setProfile(data.user));
     }
   }, [status]);
 
+  if (status === 'loading' || !profile) return <p>Loading...</p>;
+  if (!session?.user) return <p>Please log in to view your profile.</p>;
 
   const handleSave = async () => {
     setLoading(true);
     await fetch('/api/profile', {
       method: 'POST',
-      body: JSON.stringify(profile),
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile),
     });
     setLoading(false);
   };
 
-  if (status === 'loading' || !profile) return <p>Loading...</p>;
-  if (!session?.user) return <p>Please log in to view your profile.</p>;
+  // Calculate profile completion
+  const profileFields: (keyof DiscNestUser)[] = [
+    'name', 'username', 'bio',
+    'pdgaNumber', 'homeCourse', 'goals',
+    'dominantHand', 'throwStyle', 'favoriteBrands', 'preferredDiscTypes',
+    'stabilityPreference', 'armSpeed', 'skillLevel', 'playFrequency', 'preferredPlastics'
+  ];
 
-  const profileCompleted = [
-    profile.favoriteBrands?.length,
-    profile.preferredTypes?.length,
-    profile.stability,
-    profile.throwingStyle,
-    profile.maxDistance,
-    profile.favoriteCourse,
-  ].every(Boolean);
+  const filledFields = profileFields.filter(f => {
+    const value = profile[f];
+    if (Array.isArray(value)) return value.length > 0;
+    return Boolean(value);
+  }).length;
+
+  const completionPercent = Math.round((filledFields / profileFields.length) * 100);
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Welcome, {profile.name}</h1>
+      <h1 className="text-2xl font-bold">Welcome, {profile.name || profile.username}</h1>
 
-      {/* <div className="flex items-center gap-4">
-        {profile.image && (
-          <img src={profile.image} alt="Profile" className="w-20 h-20 rounded-full border" />
-        )}
-        <input
-          type="text"
-          value={profile.image || ''}
-          onChange={e => setProfile({ ...profile, image: e.target.value })}
-          placeholder="Profile Image URL"
-          className="border px-3 py-2 rounded w-full"
-        />
-      </div> */}
-
-      <div className="bg-white p-4 rounded shadow-sm border space-y-2">
-        <h2 className="text-lg font-semibold">Disc Preferences</h2>
-        <input
-          type="text"
-          value={profile.favoriteBrands?.join(', ') || ''}
-          onChange={e => setProfile({ ...profile, favoriteBrands: e.target.value.split(',').map(b => b.trim()) })}
-          placeholder="Owned Brands (comma-separated)"
-          className="border px-3 py-2 rounded w-full"
-        />
-        <input
-          type="text"
-          value={profile.preferredTypes?.join(', ') || ''}
-          onChange={e => setProfile({ ...profile, preferredTypes: e.target.value.split(',').map(t => t.trim()) })}
-          placeholder="Preferred Types (comma-separated)"
-          className="border px-3 py-2 rounded w-full"
-        />
-        <input
-          type="text"
-          value={profile.stability || ''}
-          onChange={e => setProfile({ ...profile, stability: e.target.value })}
-          placeholder="Stability Preference"
-          className="border px-3 py-2 rounded w-full"
+      {/* Progress Bar */}
+      <div className="w-full bg-gray-200 rounded-full h-3">
+        <div
+          className="bg-green-500 h-3 rounded-full transition-all"
+          style={{ width: `${completionPercent}%` }}
         />
       </div>
+      <p className="text-sm text-gray-600 mt-1">Profile Completion: {completionPercent}%</p>
 
-      <div className="bg-white p-4 rounded shadow-sm border space-y-2">
-        <h2 className="text-lg font-semibold">Play Style</h2>
-        <input
-          type="text"
-          value={profile.throwingStyle || ''}
-          onChange={e => setProfile({ ...profile, throwingStyle: e.target.value })}
-          placeholder="Throwing Style"
-          className="border px-3 py-2 rounded w-full"
-        />
-        <input
-          type="number"
-          value={profile.maxDistance || ''}
-          onChange={e => setProfile({ ...profile, maxDistance: Number(e.target.value) })}
-          placeholder="Max Distance (ft)"
-          className="border px-3 py-2 rounded w-full"
-        />
-        <input
-          type="text"
-          value={profile.favoriteCourse || ''}
-          onChange={e => setProfile({ ...profile, favoriteCourse: e.target.value })}
-          placeholder="Favorite Course"
-          className="border px-3 py-2 rounded w-full"
-        />
+      {/* Tabs */}
+      <div className="flex gap-4 mt-4">
+        {['basic', 'disc', 'play'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
+            className={clsx(
+              'px-4 py-2 rounded-t-lg font-medium',
+              activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+            )}
+          >
+            {tab === 'basic' ? 'Basic Info' : tab === 'disc' ? 'Disc Golf Info' : 'Play Style'}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Panels */}
+      <div className="bg-white p-4 rounded-b-lg shadow-sm border space-y-4">
+        {activeTab === 'basic' && (
+          <>
+            <label className="block font-medium">Name</label>
+            <input
+              type="text"
+              value={profile.name || ''}
+              onChange={e => setProfile({ ...profile, name: e.target.value })}
+              className="border px-3 py-2 rounded w-full"
+            />
+            <label className="block font-medium">Username</label>
+            <input
+              type="text"
+              value={profile.username || ''}
+              onChange={e => setProfile({ ...profile, username: e.target.value })}
+              className="border px-3 py-2 rounded w-full"
+            />
+            <label className="block font-medium">Bio</label>
+            <textarea
+              value={profile.bio || ''}
+              onChange={e => setProfile({ ...profile, bio: e.target.value })}
+              className="border px-3 py-2 rounded w-full"
+            />
+          </>
+        )}
+
+        {activeTab === 'disc' && (
+          <>
+            <label className="block font-medium">PDGA Number</label>
+            <input
+              type="number"
+              value={profile.pdgaNumber || ''}
+              onChange={e => setProfile({ ...profile, pdgaNumber: Number(e.target.value) })}
+              className="border px-3 py-2 rounded w-full"
+            />
+            <label className="block font-medium">Home Course</label>
+            <input
+              type="text"
+              value={profile.homeCourse || ''}
+              onChange={e => setProfile({ ...profile, homeCourse: e.target.value })}
+              className="border px-3 py-2 rounded w-full"
+            />
+            <label className="block font-medium">Goals</label>
+            <input
+              type="text"
+              value={profile.goals || ''}
+              onChange={e => setProfile({ ...profile, goals: e.target.value })}
+              className="border px-3 py-2 rounded w-full"
+            />
+          </>
+        )}
+
+        {activeTab === 'play' && (
+          <>
+            <label className="block font-medium">Dominant Hand</label>
+            <select
+              value={profile.dominantHand || 'Right'}
+              onChange={e => setProfile({ ...profile, dominantHand: e.target.value as DiscNestUser['dominantHand'] })}
+              className="border px-3 py-2 rounded w-full"
+            >
+              <option>Left</option>
+              <option>Right</option>
+              <option>Both</option>
+            </select>
+
+            <label className="block font-medium">Throw Style</label>
+            <select
+              value={profile.throwStyle || 'Backhand'}
+              onChange={e => setProfile({ ...profile, throwStyle: e.target.value as DiscNestUser['throwStyle'] })}
+              className="border px-3 py-2 rounded w-full"
+            >
+              <option>Backhand</option>
+              <option>Forehand</option>
+              <option>Both</option>
+            </select>
+
+            <label className="block font-medium">Favorite Brands</label>
+            <select
+              multiple
+              value={profile.favoriteBrands || []}
+              onChange={e => {
+                const selected = Array.from(e.target.selectedOptions).map(
+                  o => o.value as typeof DiscBrands[number]
+                );
+                setProfile({ ...profile, favoriteBrands: selected });
+              }}
+              className="border px-3 py-2 rounded w-full"
+            >
+              {DiscBrands.map(b => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+
+            <label className="block font-medium">Preferred Disc Types</label>
+            <select
+              multiple
+              value={profile.preferredDiscTypes || []}
+              onChange={e => {
+                const selected = Array.from(e.target.selectedOptions).map(
+                  o => o.value as 'Putter' | 'Midrange' | 'Fairway Driver' | 'Distance Driver'
+                );
+                setProfile({ ...profile, preferredDiscTypes: selected });
+              }}
+              className="border px-3 py-2 rounded w-full"
+            >
+              {['Putter', 'Midrange', 'Fairway Driver', 'Distance Driver'].map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+
+            <label className="block font-medium">Stability Preference</label>
+            <select
+              value={profile.stabilityPreference || 'Straight'}
+              onChange={e => setProfile({ ...profile, stabilityPreference: e.target.value as DiscNestUser['stabilityPreference'] })}
+              className="border px-3 py-2 rounded w-full"
+            >
+              <option>Straight</option>
+              <option>Overstable</option>
+              <option>Understable</option>
+            </select>
+
+            <label className="block font-medium">Arm Speed</label>
+            <select
+              value={profile.armSpeed || 'Medium'}
+              onChange={e => setProfile({ ...profile, armSpeed: e.target.value as DiscNestUser['armSpeed'] })}
+              className="border px-3 py-2 rounded w-full"
+            >
+              <option>Slow</option>
+              <option>Medium</option>
+              <option>Fast</option>
+            </select>
+
+            <label className="block font-medium">Skill Level</label>
+            <select
+              value={profile.skillLevel || 'Intermediate'}
+              onChange={e => setProfile({ ...profile, skillLevel: e.target.value as DiscNestUser['skillLevel'] })}
+              className="border px-3 py-2 rounded w-full"
+            >
+              <option>Beginner</option>
+              <option>Intermediate</option>
+              <option>Advanced</option>
+              <option>Pro</option>
+            </select>
+
+            <label className="block font-medium">Play Frequency</label>
+            <select
+              value={profile.playFrequency || '1-2 times per week'}
+              onChange={e => setProfile({ ...profile, playFrequency: e.target.value as DiscNestUser['playFrequency'] })}
+              className="border px-3 py-2 rounded w-full"
+            >
+              <option>&lt;1 per week</option>
+              <option>1-2 times per week</option>
+              <option>Every day</option>
+            </select>
+
+            <label className="block font-medium">Preferred Plastics</label>
+            <select
+              multiple
+              value={profile.preferredPlastics || []}
+              onChange={e => {
+                const selected = Array.from(e.target.selectedOptions).map(
+                  o => o.value as typeof DiscPlastics[number]
+                );
+                setProfile({ ...profile, preferredPlastics: selected });
+              }}
+              className="border px-3 py-2 rounded w-full"
+            >
+              {DiscPlastics.map(p => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </>
+        )}
       </div>
 
       <button
         onClick={handleSave}
         disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded"
+        className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
       >
         {loading ? 'Saving...' : 'Save Profile'}
       </button>
-
-      <div className="mt-6 space-y-4">
-        <h3 className="text-lg font-semibold">Milestones</h3>
-
-        <div className="flex flex-wrap gap-4">
-          {profile.discCount >= 1 && <Badge label="🎯 First Disc Added" />}
-          {profile.discCount >= 100 && <Badge label="💯 100+ Discs" />}
-          {profileCompleted && <Badge label="🧠 Profile Completed" />}
-          {profile.maxDistance >= 400 && <Badge label="🚀 Big Arm" />}
-          {profile.favoriteBrands?.length >= 5 && <Badge label="🧢 Brand Collector" />}
-        </div>
-
-        <div className="space-y-2 mt-4">
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Discs Added: {profile.discCount} / 100</p>
-            <ProgressBar value={profile.discCount} max={100} />
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Owned Brands: {profile.favoriteBrands?.length || 0} / 5</p>
-            <ProgressBar value={profile.favoriteBrands?.length || 0} max={5} />
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Max Distance: {profile.maxDistance} ft / 400 ft</p>
-            <ProgressBar value={profile.maxDistance} max={400} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Badge({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 bg-green-100 text-green-800 px-3 py-2 rounded-lg text-sm font-medium shadow-sm">
-      <span className="text-lg">{label}</span>
-    </div>
-  );
-}
-
-function ProgressBar({ value, max }: { value: number; max: number }) {
-  const percent = Math.min((value / max) * 100, 100);
-  return (
-    <div className="w-full bg-gray-200 rounded-full h-3">
-      <div
-        className="bg-green-500 h-3 rounded-full"
-        style={{ width: `${percent}%` }}
-      />
     </div>
   );
 }
