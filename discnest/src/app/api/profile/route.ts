@@ -3,15 +3,16 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import User from '@/models/User';
-import { userSchema } from '@/lib/validation/userSchema';
+import { editableProfileSchema  } from '@/lib/validation/userSchema';
 import { withUserAuth } from '@/lib/auth/withUserAuth';
 
 export const POST = withUserAuth(async (req, session) => {
   const body = await req.json();
 
   // Validate incoming data with Zod
-  const parseResult = userSchema.safeParse(body);
+  const parseResult = editableProfileSchema .safeParse(body);
   if (!parseResult.success) {
+    console.error("Zod validation error:", parseResult.error.flatten());
     return NextResponse.json(
       { error: 'Invalid data', details: parseResult.error.flatten() },
       { status: 400 }
@@ -24,7 +25,6 @@ export const POST = withUserAuth(async (req, session) => {
     username,
     avatarUrl,
     bio,
-    password,
     location,
     pdgaNumber,
     homeCourse,
@@ -40,9 +40,6 @@ export const POST = withUserAuth(async (req, session) => {
     skillLevel,
     playFrequency,
     preferredPlastics,
-    discShelf,
-    bag,
-    discCount,
   } = parseResult.data;
 
   const safeBody = {
@@ -50,7 +47,6 @@ export const POST = withUserAuth(async (req, session) => {
     username,
     avatarUrl,
     bio,
-    password,
     location,
     pdgaNumber,
     homeCourse,
@@ -66,9 +62,6 @@ export const POST = withUserAuth(async (req, session) => {
     skillLevel,
     playFrequency,
     preferredPlastics,
-    discShelf,
-    bag,
-    discCount,
   };
 
   await connectToDatabase();
@@ -80,4 +73,15 @@ export const POST = withUserAuth(async (req, session) => {
   ).lean();
 
   return NextResponse.json({ user: updatedUser });
+});
+
+export const GET = withUserAuth(async (req, session) => {
+  await connectToDatabase();
+  const user = await User.findOne({ email: session.user.email }).lean();
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ user });
 });
