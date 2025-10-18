@@ -4,7 +4,8 @@ import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { Resend } from "resend";
 import mongoose from "mongoose";
-import { create } from "domain";
+import { withUserAuth } from "@/lib/auth/withUserAuth";
+import { requireUser } from "@/lib/auth/requireUser";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -21,36 +22,50 @@ async function reverseGeocode(lat: number, lng: number) {
   };
 }
 
-// GET listings (marketplace or user-specific)
+// ✅ GET listings (marketplace or "myListings")
 export async function GET(req: Request) {
   await connectToDatabase();
   const { searchParams } = new URL(req.url);
 
+  const mode = searchParams.get("mode"); // 'marketplace' | 'myListings'
   const brand = searchParams.get("brand");
   const condition = searchParams.get("condition");
   const search = searchParams.get("search");
   const lat = parseFloat(searchParams.get("lat") || "0");
   const lng = parseFloat(searchParams.get("lng") || "0");
-  const currentUserId = searchParams.get("excludeUserId"); // current user ID
-  const mode = searchParams.get("mode"); // 'marketplace' | 'myListings'
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "20", 10);
   const skip = (page - 1) * limit;
 
-  const query: any = { pendingReview: { $ne: true } };
+  let sessionUserId: string | null = null;
 
-  if (mode === "marketplace" && currentUserId) {
-    query.userId = { $ne: new mongoose.Types.ObjectId(currentUserId) };
-    query.sold = { $ne: true };
+  // Only require login for "myListings"
+  if (mode === "myListings") {
+    try {
+      const session = await requireUser();
+      sessionUserId = session.user.id;
+    } catch (err) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
-  if (mode === "myListings" && currentUserId) {
-    query.userId = new mongoose.Types.ObjectId(currentUserId);
+  const query: any = { pendingReview: { $ne: true } };
+
+  if (mode === "marketplace") {
+    // Exclude current user's listings if logged in
+    if (sessionUserId) {
+      query.userId = { $ne: new mongoose.Types.ObjectId(sessionUserId) };
+    }
+    query.sold = { $ne: true };
+  } else if (mode === "myListings") {
+    // Show only this user's listings
+    if (sessionUserId) {
+      query.userId = new mongoose.Types.ObjectId(sessionUserId);
+    }
   }
 
   if (brand) query.brand = brand;
   if (condition) query.condition = condition;
-
   if (search) {
     query.$or = [
       { title: { $regex: search, $options: "i" } },
@@ -94,7 +109,6 @@ export async function GET(req: Request) {
   const users = await User.find({ _id: { $in: userIds } }, { _id: 1, name: 1 });
   const userMap = Object.fromEntries(users.map((u) => [u._id.toString(), u.name]));
 
-  // Randomize coordinates slightly for map obfuscation
   listings = listings.map((l) => ({
     ...l,
     userId: { _id: l.userId, name: userMap[l.userId?.toString()] || "Unknown" },
@@ -116,58 +130,57 @@ export async function GET(req: Request) {
 
 
 
-// POST new listing
-export async function POST(req: Request) {
-  try {
-    await connectToDatabase();
-    const body = await req.json();
-    const pendingReview = body.pendingReview || false;
 
-    let city = body.city || "";
-    let state = body.state || "";
 
-    if ((!city || !state) && body.location?.coordinates?.length === 2) {
-      try {
-        const [lng, lat] = body.location.coordinates;
-        const result = await reverseGeocode(lat, lng);
-        city = city || result.city;
-        state = state || result.state;
-      } catch (err) {
-        console.warn("Reverse geocode failed:", err);
-      }
+// ✅ POST new listing (must be logged in)
+export const POST = withUserAuth(async (req, session) => {
+  await connectToDatabase();
+  const body = await req.json();
+  const pendingReview = body.pendingReview || false;
+
+  let city = body.city || "";
+  let state = body.state || "";
+
+  if ((!city || !state) && body.location?.coordinates?.length === 2) {
+    try {
+      const [lng, lat] = body.location.coordinates;
+      const result = await reverseGeocode(lat, lng);
+      city = city || result.city;
+      state = state || result.state;
+    } catch (err) {
+      console.warn("Reverse geocode failed:", err);
     }
-
-    const listing = await Listing.create({
-      ...body,
-      weight: body.weight !== undefined && body.weight !== null ? Number(body.weight) : null,
-      city,
-      state,
-      pendingReview,
-      createdAt: new Date(),
-    });
-
-    // (Optional) email admin if pending review
-    if (pendingReview) {
-      const user = await User.findById(body.userId);
-      await resend.emails.send({
-        from: "alerts@yourdomain.com",
-        to: process.env.ADMIN_ALERT_EMAIL!,
-        subject: `⚠️ Listing from ${user?.name || "Unknown"} requires review`,
-        html: `
-          <p><strong>User:</strong> ${user?.name} (${user?.email})</p>
-          <p><strong>Listing:</strong> ${listing.title}</p>
-          <p><strong>Images:</strong> ${body.imageUrls
-            .map((url: string) => `<a href="${url}">${url}</a>`)
-            .join("<br>")}</p>
-          <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
-        `,
-      });
-    }
-
-    return NextResponse.json(listing, { status: 201 });
-  } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
   }
-}
 
+  const listing = await Listing.create({
+    ...body,
+    userId: session.user.id,
+    weight:
+      body.weight !== undefined && body.weight !== null
+        ? Number(body.weight)
+        : null,
+    city,
+    state,
+    pendingReview,
+    createdAt: new Date(),
+  });
+
+  if (pendingReview) {
+    const user = await User.findById(session.user.id);
+    await resend.emails.send({
+      from: "alerts@yourdomain.com",
+      to: process.env.ADMIN_ALERT_EMAIL!,
+      subject: `⚠️ Listing from ${user?.name || "Unknown"} requires review`,
+      html: `
+        <p><strong>User:</strong> ${user?.name} (${user?.email})</p>
+        <p><strong>Listing:</strong> ${listing.title}</p>
+        <p><strong>Images:</strong> ${body.imageUrls
+          .map((url: string) => `<a href="${url}">${url}</a>`)
+          .join("<br>")}</p>
+        <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+      `,
+    });
+  }
+
+  return NextResponse.json(listing, { status: 201 });
+});

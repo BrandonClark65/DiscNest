@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth'; // your NextAuth options
 import { connectToDatabase } from '@/lib/mongodb';
 import Listing from '@/models/Listing';
 import type { Listing as ListingType } from '@/types/listing';
 import { v2 as cloudinary } from 'cloudinary';
+import { withUserAuth } from '@/lib/auth/withUserAuth';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -35,117 +34,90 @@ export async function GET(
 }
 
 // PATCH: mark as sold
-export async function PATCH(
-  req: Request,
-  context: { params: Promise<{ id: string }> } // 👈 must use Promise type
-) {
-  const { action } = await req.json();
-
-  if (action === "markSold") {
+export const PATCH = withUserAuth<{ params: Promise<{ id: string }> }>(
+  async (req, session, context) => {
     await connectToDatabase();
 
     try {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id)
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      if (!context?.params) {
+        return NextResponse.json({ error: "Missing params" }, { status: 400 });
+      }
 
-      // ✅ Await params before accessing id
       const { id } = await context.params;
+      if (!id) return NextResponse.json({ error: "Missing listing ID" }, { status: 400 });
+
+      const { action } = await req.json();
+      if (action !== "markSold") return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
       const listing = await Listing.findById(id);
-      if (!listing)
-        return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+      if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 });
 
-      // Check ownership
-      const listingUserId =
-        typeof listing.userId === "string"
-          ? listing.userId
-          : listing.userId._id.toString();
+      // Ownership check
+      const listingUserId = typeof listing.userId === "string"
+        ? listing.userId
+        : listing.userId._id.toString();
 
       if (listingUserId !== session.user.id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-    listing.sold = true;
-    listing.markModified("sold"); // ✅ force Mongoose to recognize the change
-    try {
-    await listing.save();
-    console.log("✅ Listing marked as sold:", listing._id);
-    } catch (err) {
-    console.error("❌ Error saving listing:", err);
-    }
-
-
+      listing.sold = true;
+      listing.markModified("sold");
+      await listing.save();
 
       return NextResponse.json({ listing });
     } catch (err) {
       console.error(err);
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
-  } else {
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
-}
+);
 
+export const DELETE = withUserAuth<{ params: Promise<{ id: string }> }>(
+  async (req, session, context) => {
+    await connectToDatabase();
 
-// DELETE: remove listing + image from Cloudinary
-export async function DELETE(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  await connectToDatabase();
+    try {
+      if (!context?.params) {
+        return NextResponse.json({ error: "Missing params" }, { status: 400 });
+      }
 
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const { id } = await context.params;
+      if (!id) return NextResponse.json({ error: "Missing listing ID" }, { status: 400 });
 
-    const { id } = await context.params;
-    const listing = await Listing.findById(id);
-    if (!listing)
-      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+      const listing = await Listing.findById(id);
+      if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 });
 
-    // Check ownership
-    const listingUserId =
-      typeof listing.userId === "string"
+      // Ownership check
+      const listingUserId = typeof listing.userId === "string"
         ? listing.userId
         : listing.userId._id.toString();
-    if (listingUserId !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
 
-    // Delete images from Cloudinary
-    // Prefer using stored publicIds if available
-    if (listing.publicIds && listing.publicIds.length > 0) {
-      for (const publicId of listing.publicIds) {
-        try {
-          await cloudinary.uploader.destroy(publicId);
-        } catch (err) {
-          console.warn(`⚠️ Failed to delete Cloudinary image ${publicId}:`, err);
-        }
+      if (listingUserId !== session.user.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
-    } 
-    // Fallback: attempt to derive publicId from URL if no publicIds stored
-    else if (listing.imageUrls && listing.imageUrls.length > 0) {
-      for (const url of listing.imageUrls) {
+
+      // Delete images from Cloudinary
+      const imagesToDelete = listing.publicIds?.length ? listing.publicIds : listing.imageUrls || [];
+      for (const item of imagesToDelete) {
         try {
-          const match = url.match(/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/);
-          const derivedPublicId = match ? match[1] : null;
-          if (derivedPublicId) {
-            await cloudinary.uploader.destroy(derivedPublicId);
+          let publicId = item;
+          if (!listing.publicIds && typeof item === "string") {
+            const match = item.match(/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/);
+            publicId = match ? match[1] : null;
           }
+          if (publicId) await cloudinary.uploader.destroy(publicId);
         } catch (err) {
-          console.warn(`⚠️ Failed to derive/delete image from URL ${url}:`, err);
+          console.warn(`⚠️ Failed to delete Cloudinary image:`, err);
         }
       }
+
+      await listing.deleteOne();
+      return NextResponse.json({ message: "Listing deleted successfully" });
+    } catch (err) {
+      console.error(err);
+      return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
-
-    // Finally delete the listing itself
-    await listing.deleteOne();
-
-    return NextResponse.json({ message: "Listing deleted successfully" });
-  } catch (err) {
-    console.error("❌ Error deleting listing:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
-}
+);
+

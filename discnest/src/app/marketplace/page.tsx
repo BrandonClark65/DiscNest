@@ -41,8 +41,6 @@ export default function MarketplacePage() {
 
   // --- Fetch user location ---
   useEffect(() => {
-    if (!userId) return;
-
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) => {
@@ -50,26 +48,26 @@ export default function MarketplacePage() {
         setUserLocation(null);
       }
     );
-  }, [userId]);
+  }, []);
 
   // --- Fetch listings ---
   const fetchListings = async (
     mode: 'marketplace' | 'myListings',
     pageToFetch = 1
   ): Promise<{ listings: Listing[]; totalPages: number }> => {
-    if (!userId) return { listings: [], totalPages: 1 };
     setLoading(true);
-
     try {
-      let url = `/api/listings?mode=${mode}&excludeUserId=${userId}&page=${pageToFetch}&limit=${
+      let url = `/api/listings?mode=${mode}&page=${pageToFetch}&limit=${
         mode === 'marketplace' ? 20 : 100
       }`;
-
       if (mode === 'marketplace') {
         if (userLocation) url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
         if (brandFilter) url += `&brand=${encodeURIComponent(brandFilter)}`;
         if (conditionFilter) url += `&condition=${encodeURIComponent(conditionFilter)}`;
+        if (userId) url += `&excludeUserId=${userId}`;
+      } else if (mode === 'myListings' && userId) {
+        url += `&excludeUserId=${userId}`;
       }
 
       const res = await fetch(url);
@@ -101,26 +99,23 @@ export default function MarketplacePage() {
   // --- Fetch marketplace listings ---
   useEffect(() => {
     if (activeTab !== 'market') return;
-
     const fetchMarket = async () => {
       const { listings, totalPages } = await fetchListings('marketplace', marketPage);
       setMarketListings(listings);
       setMarketTotalPages(totalPages);
     };
-
     fetchMarket();
-  }, [activeTab, userId, userLocation, searchQuery, brandFilter, conditionFilter, marketPage]);
+  }, [activeTab, userLocation, searchQuery, brandFilter, conditionFilter, marketPage]);
 
   // --- Fetch current user's listings ---
   useEffect(() => {
-    if (activeTab !== 'myListings') return;
+    if (activeTab !== 'myListings' || !userId) return;
 
     const fetchMine = async () => {
       const { listings, totalPages } = await fetchListings('myListings', myPage);
       setMyListings(listings);
       setMyTotalPages(totalPages);
     };
-
     fetchMine();
   }, [activeTab, userId, myListingsTab, myPage]);
 
@@ -129,16 +124,18 @@ export default function MarketplacePage() {
     setMarketPage(1);
   }, [searchQuery, brandFilter, conditionFilter]);
 
-  // --- Delete a listing ---
+  // --- Handlers for buttons when not logged in ---
+  const handleLoginRequired = (action: string) => {
+    alert(`Log in to ${action}`);
+  };
+
   const handleDelete = async (listingId: string) => {
+    if (!userId) return handleLoginRequired('delete listings');
     if (!confirm('Are you sure you want to delete this listing?')) return;
 
     try {
       const res = await fetch(`/api/listings/${listingId}`, { method: 'DELETE' });
-      if (res.status === 401) return alert('You must be logged in to delete this listing.');
-      if (res.status === 403) return alert('You are not allowed to delete this listing.');
       if (!res.ok) throw new Error('Failed to delete listing');
-
       setMyListings((prev) => prev.filter((l) => l._id !== listingId));
     } catch (err) {
       console.error(err);
@@ -146,16 +143,15 @@ export default function MarketplacePage() {
     }
   };
 
-  // --- Mark as sold ---
   const handleMarkSold = async (listingId: string) => {
+    if (!userId) return handleLoginRequired('mark listings as sold');
+
     try {
       const res = await fetch(`/api/listings/${listingId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'markSold' }),
       });
-      if (res.status === 401) return alert('You must be logged in to mark this listing as sold.');
-      if (res.status === 403) return alert('You are not allowed to mark this listing as sold.');
       if (!res.ok) throw new Error('Failed to mark as sold');
 
       setMyListings((prev) =>
@@ -167,21 +163,21 @@ export default function MarketplacePage() {
     }
   };
 
-  const isOwner = (listingUserId: string | { _id?: string } | undefined, sessionUserId: string) => {
-    if (!listingUserId) return false;
-    if (typeof listingUserId === 'string') return listingUserId === sessionUserId;
-    return listingUserId._id === sessionUserId;
+  const isOwner = (listingUserId: string | { _id?: string } | undefined) => {
+    if (!listingUserId || !userId) return false;
+    if (typeof listingUserId === 'string') return listingUserId === userId;
+    return listingUserId._id === userId;
   };
 
-  // --- Determine listings to show ---
   const listingsToShow =
     activeTab === 'market'
       ? marketListings
+      : !userId
+      ? []
       : myListingsTab === 'active'
       ? myListings.filter((l) => !l.sold)
       : myListings.filter((l) => l.sold);
 
-  // --- Pagination controls ---
   const currentPage = activeTab === 'market' ? marketPage : myPage;
   const currentTotalPages = activeTab === 'market' ? marketTotalPages : myTotalPages;
   const setCurrentPage = activeTab === 'market' ? setMarketPage : setMyPage;
@@ -193,13 +189,17 @@ export default function MarketplacePage() {
         <h1 className="text-2xl font-semibold">Disc Marketplace</h1>
         <div className="flex gap-2">
           <button
-            onClick={() => router.push('/messages')}
+            onClick={() =>
+              session?.user ? router.push('/messages') : handleLoginRequired('view messages')
+            }
             className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
           >
             Messages
           </button>
           <button
-            onClick={() => setIsCreating(true)}
+            onClick={() =>
+              session?.user ? setIsCreating(true) : handleLoginRequired('create a listing')
+            }
             className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
           >
             + Create Listing
@@ -228,7 +228,7 @@ export default function MarketplacePage() {
       </div>
 
       {/* Subtabs for My Listings */}
-      {activeTab === 'myListings' && (
+      {activeTab === 'myListings' && userId && (
         <div className="flex gap-2 mb-4 ml-2">
           <button
             onClick={() => setMyListingsTab('active')}
@@ -247,6 +247,11 @@ export default function MarketplacePage() {
             Sold
           </button>
         </div>
+      )}
+
+      {/* Message for not logged-in users in My Listings */}
+      {activeTab === 'myListings' && !userId && (
+        <p className="text-gray-500 italic mb-4">Log in to view your listings.</p>
       )}
 
       {/* Filters */}
@@ -316,55 +321,55 @@ export default function MarketplacePage() {
         <p className="text-gray-500 italic">
           {activeTab === 'market'
             ? 'No listings found.'
+            : !userId
+            ? ''
             : myListingsTab === 'sold'
             ? 'No sold listings yet.'
             : 'No active listings yet.'}
         </p>
       ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {listingsToShow.map((listing, index) => (
-              <ListingCard
-                key={`${listing._id}-${index}`}
-                listing={listing}
-                isOwner={isOwner(listing.userId, userId!)}
-                onDelete={() => handleDelete(listing._id)}
-                onMarkSold={() => handleMarkSold(listing._id)}
-              />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {listingsToShow.map((listing, index) => (
+            <ListingCard
+              key={`${listing._id}-${index}`}
+              listing={listing}
+              isOwner={isOwner(listing.userId)}
+              onDelete={() => handleDelete(listing._id)}
+              onMarkSold={() => handleMarkSold(listing._id)}
+            />
+          ))}
+        </div>
+      )}
 
-          {/* Pagination */}
-          {currentTotalPages > 1 && (
-            <div className="flex justify-center mt-6 gap-2 flex-wrap">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-              >
-                Prev
-              </button>
-              {Array.from({ length: currentTotalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setCurrentPage(p)}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === p ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(currentTotalPages, p + 1))}
-                disabled={currentPage === currentTotalPages}
-                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </>
+      {/* Pagination */}
+      {currentTotalPages > 1 && (
+        <div className="flex justify-center mt-6 gap-2 flex-wrap">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          {Array.from({ length: currentTotalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              onClick={() => setCurrentPage(p)}
+              className={`px-3 py-1 rounded ${
+                currentPage === p ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(currentTotalPages, p + 1))}
+            disabled={currentPage === currentTotalPages}
+            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       )}
     </div>
   );

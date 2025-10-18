@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import ChatModal from '@/components/ChatModal';
 
 type MessageSellerButtonProps = {
@@ -12,10 +13,16 @@ export default function MessageSellerButton({
   sellerId,
   listingId,
 }: MessageSellerButtonProps) {
+  const { data: session } = useSession();
   const [threadId, setThreadId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleClick() {
+    if (!session?.user?.id) {
+      alert('Log in to message seller'); // replace with toast if you have one
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Create or get existing thread
@@ -60,6 +67,3 @@ export default function MessageSellerButton({
     </>
   );
 }
-
-
-
