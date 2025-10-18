@@ -54,20 +54,30 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchThreads = async () => {
-      const res = await fetch("/api/messages");
-      const data: ThreadDB[] = await res.json();
-
-      const threadsUI = data.map(mapThreadDBtoUI);
-
-      const sorted = threadsUI.sort((a, b) => {
-        const aLast = a.messages?.[a.messages.length - 1]?.timestamp || a.updatedAt;
-        const bLast = b.messages?.[b.messages.length - 1]?.timestamp || b.updatedAt;
-        return new Date(bLast).getTime() - new Date(aLast).getTime();
-      });
-
-      setThreads(sorted);
+    if (!currentUserId) {
       setLoading(false);
+      return;
+    }
+
+    const fetchThreads = async () => {
+      try {
+        const res = await fetch("/api/messages");
+        const data: ThreadDB[] = await res.json();
+
+        const threadsUI = data.map(mapThreadDBtoUI);
+
+        const sorted = threadsUI.sort((a, b) => {
+          const aLast = a.messages?.[a.messages.length - 1]?.timestamp || a.updatedAt;
+          const bLast = b.messages?.[b.messages.length - 1]?.timestamp || b.updatedAt;
+          return new Date(bLast).getTime() - new Date(aLast).getTime();
+        });
+
+        setThreads(sorted);
+      } catch (err) {
+        console.error("❌ Error fetching threads:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchThreads();
@@ -75,8 +85,9 @@ export default function MessagesPage() {
     const handleFocus = () => fetchThreads();
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, []);
+  }, [currentUserId]);
 
+  if (!currentUserId) return <p className="p-4 text-center text-gray-500">Log in to view messages</p>;
   if (loading) return <p className="p-4">Loading threads...</p>;
   if (!threads.length) return <p className="p-4">No messages yet.</p>;
 
