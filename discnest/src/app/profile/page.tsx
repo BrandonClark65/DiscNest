@@ -20,8 +20,12 @@ export default function ProfilePage() {
     }
   }, [status]);
 
-  if (status === 'loading' || !profile) return <p>Loading...</p>;
-  if (!session?.user) return <p>Please log in to view your profile.</p>;
+  if (status === 'loading') return <p className="p-4">Loading...</p>;
+
+  // User not logged in
+  if (!session?.user) return <p className="p-4 text-center text-gray-600">Log in to view profile</p>;
+
+  if (!profile) return <p className="p-4">Loading profile...</p>;
 
   const handleSave = async () => {
     setLoading(true);

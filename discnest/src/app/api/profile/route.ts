@@ -1,23 +1,19 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { connectToDatabase } from "@/lib/mongodb";
-import User from "@/models/User";
-import { NextResponse } from "next/server";
-import { userSchema } from "@/lib/validation/userSchema";
+'use server';
 
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/mongodb';
+import User from '@/models/User';
+import { userSchema } from '@/lib/validation/userSchema';
+import { withUserAuth } from '@/lib/auth/withUserAuth';
 
+export const POST = withUserAuth(async (req, session) => {
   const body = await req.json();
 
   // Validate incoming data with Zod
   const parseResult = userSchema.safeParse(body);
   if (!parseResult.success) {
     return NextResponse.json(
-      { error: "Invalid data", details: parseResult.error.flatten() },
+      { error: 'Invalid data', details: parseResult.error.flatten() },
       { status: 400 }
     );
   }
@@ -84,4 +80,4 @@ export async function POST(req: Request) {
   ).lean();
 
   return NextResponse.json({ user: updatedUser });
-}
+});
