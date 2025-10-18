@@ -1,17 +1,24 @@
 import { NextResponse } from 'next/server';
 import User from '@/models/User';
 import { connectToDatabase } from '@/lib/mongodb';
+import { withUserAuth } from '@/lib/auth/withUserAuth';
 
-export async function POST(req: Request) {
-  const { email, discId, from, to } = await req.json();
+export const POST = withUserAuth(async (req, session) => {
+  const { discId, from, to } = await req.json();
 
-  if (!email || !discId || !from || !to || !['discShelf', 'bag'].includes(from) || !['discShelf', 'bag'].includes(to)) {
+  if (
+    !discId ||
+    !from ||
+    !to ||
+    !['discShelf', 'bag'].includes(from) ||
+    !['discShelf', 'bag'].includes(to)
+  ) {
     return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 });
   }
 
   await connectToDatabase();
 
-  const user = await User.findOne({ email });
+  const user = await User.findById(session.user.id);
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
   // Check if disc exists in source array
@@ -22,7 +29,7 @@ export async function POST(req: Request) {
 
   // Move disc: remove from source, add to target
   await User.updateOne(
-    { email },
+    { _id: user._id },
     {
       $pull: { [from]: discId },
       $push: { [to]: discId },
@@ -30,4 +37,4 @@ export async function POST(req: Request) {
   );
 
   return NextResponse.json({ success: true });
-}
+});

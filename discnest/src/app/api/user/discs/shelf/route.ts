@@ -1,20 +1,13 @@
 import { NextResponse } from 'next/server';
-import { User, Disc } from '@/models';  // ✅ safe import
+import { User } from '@/models';
 import { connectToDatabase } from '@/lib/mongodb';
+import { withUserAuth } from '@/lib/auth/withUserAuth';
 
-
-export async function GET(req: Request) {
+export const GET = withUserAuth(async (_req, session) => {
   try {
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get('email');
-
-    if (!email) {
-      return NextResponse.json({ error: 'Missing email' }, { status: 400 });
-    }
-
     await connectToDatabase();
 
-    const user = await User.findOne({ email }).populate('discShelf');
+    const user = await User.findById(session.user.id).populate('discShelf');
 
     if (!user) {
       return NextResponse.json({ shelf: [] }, { status: 200 }); // ✅ return empty array instead of error
@@ -25,4 +18,4 @@ export async function GET(req: Request) {
     console.error('❌ Error in shelf route:', err);
     return NextResponse.json({ shelf: [] }, { status: 500 }); // ✅ always return JSON
   }
-}
+});

@@ -1,17 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Disc } from '@/models';
 import type { Disc as DiscType } from '@/types/disc';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { withUserAuth } from '@/lib/auth/withUserAuth';
 
-export async function POST(req: NextRequest) {
+export const POST = withUserAuth(async (req, session) => {
   const body = await req.json();
-  const session = await getServerSession(authOptions);
-
-  if (!session || session.user.email !== body.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
   const { discId, plastic, wearLevel, notes, color, weight } = body;
   if (!discId) {
@@ -19,6 +13,12 @@ export async function POST(req: NextRequest) {
   }
 
   await connectToDatabase();
+
+  // Ensure the user owns this disc
+  const disc = await Disc.findById(discId);
+  if (!disc || disc.userId.toString() !== session.user.id) {
+    return NextResponse.json({ error: 'Unauthorized or disc not found' }, { status: 401 });
+  }
 
   const updateFields: Partial<DiscType> = {};
 
@@ -35,7 +35,6 @@ export async function POST(req: NextRequest) {
   if (notes !== undefined) updateFields.notes = notes;
   if (color !== undefined) updateFields.color = color;
 
-  // ✅ NEW: support saving weight
   if (weight !== undefined) {
     const parsedWeight = Number(weight);
     if (isNaN(parsedWeight) || parsedWeight < 100 || parsedWeight > 200) {
@@ -47,13 +46,9 @@ export async function POST(req: NextRequest) {
   try {
     const updatedDisc = await Disc.findByIdAndUpdate(discId, updateFields, { new: true });
 
-    if (!updatedDisc) {
-      return NextResponse.json({ error: 'Disc not found' }, { status: 404 });
-    }
-
     return NextResponse.json({ success: true, disc: updatedDisc }, { status: 200 });
   } catch (err) {
     console.error('❌ Error updating disc:', err);
     return NextResponse.json({ error: 'Failed to update disc' }, { status: 500 });
   }
-}
+});

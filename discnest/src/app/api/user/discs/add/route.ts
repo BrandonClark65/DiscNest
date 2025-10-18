@@ -1,39 +1,39 @@
 import { NextResponse } from 'next/server';
-import { User, Disc } from '@/models';  // ✅ safe import
+import { User, Disc } from '@/models';
 import { connectToDatabase } from '@/lib/mongodb';
+import { withUserAuth } from '@/lib/auth/withUserAuth';
 
-export async function POST(req: Request) {
-  const { email, discId, target } = await req.json();
-  if (!email || !discId || !target || !['shelf', 'bag'].includes(target)) {
+export const POST = withUserAuth(async (req, session) => {
+  const { discId, target } = await req.json();
+
+  if (!discId || !target || !['shelf', 'bag'].includes(target)) {
     return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 });
   }
 
   await connectToDatabase();
 
+  // Ensure the disc exists in catalog (without a user)
   const catalogDisc = await Disc.findOne({ _id: discId, userId: { $exists: false } });
   if (!catalogDisc) {
     return NextResponse.json({ error: 'Disc not found in catalog' }, { status: 404 });
   }
 
-  const user = await User.findOne({ email });
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-  // Clone the disc for the user
+  // Clone the disc for the logged-in user
   const userDisc = new Disc({
     ...catalogDisc.toObject(),
     _id: undefined, // Let MongoDB assign a new ID
-    userId: user._id,
+    userId: session.user.id,
     addedAt: new Date(),
   });
 
   await userDisc.save();
 
-  // Add to user's shelf or bag using $addToSet
+  // Add to user's shelf or bag
   const updateField = target === 'shelf' ? 'discShelf' : 'bag';
   await User.updateOne(
-    { email },
-    { $push: { [updateField]: userDisc._id } }
+    { _id: session.user.id },
+    { $addToSet: { [updateField]: userDisc._id } } // $addToSet avoids duplicates
   );
 
-  return NextResponse.json({ success: true });
-}
+  return NextResponse.json({ success: true, discId: userDisc._id });
+});

@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Disc from '@/models/Disc';
-import { requireAdmin } from '@/lib/auth/requireAdmin';
+import { withAdminAuth } from '@/lib/auth/withAdminAuth';
 import { UnauthorizedError } from '@/lib/errors/UnauthorizedError';
 
-export async function GET() {
+export const GET = withAdminAuth(async () => {
   try {
-    const session = await requireAdmin();
     await connectToDatabase();
 
     const stats = await Disc.aggregate([
@@ -36,4 +35,4 @@ export async function GET() {
     console.error('❌ Unexpected error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-}
+});

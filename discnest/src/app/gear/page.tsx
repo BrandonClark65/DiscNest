@@ -20,25 +20,23 @@ export default function GearPage() {
   const [bag, setBag] = useState<Disc[]>([]);
   const [editingDisc, setEditingDisc] = useState<Disc | null>(null);
 
-  const email = session?.user?.email;
+  const isLoggedIn = !!session?.user;
+
   const fieldMap = { shelf: 'discShelf', bag: 'bag' };
 
   const handleEdit = (disc: Disc) => setEditingDisc(disc);
   const closeModal = () => setEditingDisc(null);
 
   const saveDiscDetails = async (updated: Partial<Disc> & { discId: string }) => {
-    if (!email) return;
-
     const res = await fetch('/api/user/discs/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, ...updated }),
+      body: JSON.stringify(updated),
     });
 
     if (res.ok) {
       const data = await res.json();
       const updatedDisc = data.disc;
-      console.log('✅ Disc updated:', updatedDisc);
 
       setShelf(prev => prev.map(d => (d._id === updatedDisc._id ? updatedDisc : d)));
       setBag(prev => prev.map(d => (d._id === updatedDisc._id ? updatedDisc : d)));
@@ -52,13 +50,13 @@ export default function GearPage() {
   };
 
   useEffect(() => {
-    if (!email) return;
+    if (!isLoggedIn) return;
 
     const fetchDiscs = async () => {
       try {
         const [shelfRes, bagRes] = await Promise.all([
-          fetch(`/api/user/discs/shelf?email=${email}`),
-          fetch(`/api/user/discs/bag?email=${email}`),
+          fetch(`/api/user/discs/shelf`),
+          fetch(`/api/user/discs/bag`),
         ]);
 
         if (!shelfRes.ok || !bagRes.ok) {
@@ -77,12 +75,13 @@ export default function GearPage() {
     };
 
     fetchDiscs();
-  }, [email]);
+  }, [isLoggedIn]);
 
   const refreshDiscs = async () => {
+    if (!isLoggedIn) return;
     const [shelfRes, bagRes] = await Promise.all([
-      fetch(`/api/user/discs/shelf?email=${email}`),
-      fetch(`/api/user/discs/bag?email=${email}`),
+      fetch(`/api/user/discs/shelf`),
+      fetch(`/api/user/discs/bag`),
     ]);
     const shelfData = await shelfRes.json();
     const bagData = await bagRes.json();
@@ -91,15 +90,10 @@ export default function GearPage() {
   };
 
   const moveDisc = async (discId: string, from: 'shelf' | 'bag', to: 'shelf' | 'bag') => {
-    if (!email) return;
-
-    const disc = from === 'shelf' ? shelf.find(d => d._id === discId) : bag.find(d => d._id === discId);
-
     const res = await fetch('/api/user/discs/move', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email,
         discId,
         from: fieldMap[from],
         to: fieldMap[to],
@@ -107,7 +101,7 @@ export default function GearPage() {
     });
 
     if (res.ok) {
-      toast.success(`Moved ${disc?.name || 'disc'} to ${to === 'bag' ? 'Bag' : 'Shelf'}!`);
+      toast.success(`Moved disc to ${to === 'bag' ? 'Bag' : 'Shelf'}!`);
       refreshDiscs();
     } else {
       const error = await res.json();
@@ -116,13 +110,10 @@ export default function GearPage() {
   };
 
   const deleteDisc = async (discId: string, target: 'shelf' | 'bag') => {
-    if (!email) return;
-
     const res = await fetch('/api/user/discs/delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email,
         discId,
         target: fieldMap[target],
       }),
@@ -141,7 +132,7 @@ export default function GearPage() {
     const discId = event.active.id as string;
     const targetZone = event.over?.id;
 
-    if (!discId || !targetZone || !email) return;
+    if (!discId || !targetZone) return;
 
     const from = shelf.find(d => d._id === discId) ? 'shelf' : 'bag';
     const to = targetZone === 'shelf' ? 'shelf' : 'bag';
@@ -174,7 +165,8 @@ export default function GearPage() {
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <GearSection
             title="Disc Shelf"
-            discs={shelf}
+            discs={isLoggedIn ? shelf : []}
+            emptyMessage={isLoggedIn ? 'No discs here yet.' : 'Log in to fill your shelf'}
             zoneId="shelf"
             actionLabel="Move to Bag"
             onAction={(id) => moveDisc(id, 'shelf', 'bag')}
@@ -182,12 +174,12 @@ export default function GearPage() {
             onEdit={handleEdit}
           />
 
-          {/* New layout: Bag grid and visual next to each other */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <div>
               <GearSection
                 title="Disc Bag"
-                discs={bag}
+                discs={isLoggedIn ? bag : []}
+                emptyMessage={isLoggedIn ? 'No discs here yet.' : 'Log in to fill your bag'}
                 zoneId="bag"
                 actionLabel="Move to Shelf"
                 onAction={(id) => moveDisc(id, 'bag', 'shelf')}
@@ -196,12 +188,9 @@ export default function GearPage() {
               />
             </div>
 
-            {/* Visual bag display */}
             <div className="flex-1 flex justify-center items-center">
-              {bag.length > 0 ? (
-                <DiscBagDisplay bag={bag} /> 
-              ) : (
-                <p className="text-gray-500 italic">No discs in your bag yet.</p>
+              {isLoggedIn && (
+                <DiscBagDisplay bag={bag} />
               )}
             </div>
           </div>
@@ -219,6 +208,7 @@ function GearSection({
   onAction,
   onDelete,
   onEdit,
+  emptyMessage,
 }: {
   title: string;
   discs: Disc[];
@@ -227,6 +217,7 @@ function GearSection({
   onAction: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (disc: Disc) => void;
+  emptyMessage: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: zoneId });
 
@@ -235,12 +226,10 @@ function GearSection({
       <h2 className="text-xl font-semibold mb-3">{title}</h2>
       <div
         ref={setNodeRef}
-        className={`transition p-2 rounded ${
-          isOver ? 'bg-green-50 ring-2 ring-green-400' : ''
-        }`}
+        className={`transition p-2 rounded ${isOver ? 'bg-green-50 ring-2 ring-green-400' : ''}`}
       >
         {discs.length === 0 ? (
-          <p className="text-gray-500 italic">No discs here yet.</p>
+          <p className="text-gray-500 italic">{emptyMessage}</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-fr">
             {discs.map((disc) => (
