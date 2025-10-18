@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import MessageSellerButton from '@/components/MessageSellerButton';
-import Map from '@/components/Map';
+import dynamic from 'next/dynamic';
+
+const Map = dynamic(() => import('@/components/Map'), { ssr: false });
+
 import type { Listing } from '@/types/listing';
 
 export default function ListingPage() {
