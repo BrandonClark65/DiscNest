@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-
 export default function OnboardingPage() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -12,34 +11,27 @@ export default function OnboardingPage() {
     if (!session?.user?.email) return;
 
     await fetch('/api/user/onboarded', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: session.user.email }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: session.user.email }),
     });
 
-    router.push('/profile'); // or wherever you want to land after onboarding
-    };
-
+    router.push('/gear');
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-8">
       <h1 className="text-3xl font-bold text-center text-green-700">Welcome to DiscNest 🥏</h1>
       <p className="text-center text-gray-600">
-        You’re officially in. Let’s get your gear organized and your profile ready to roll.
+        Let’s get you set up so you can manage your discs, explore the marketplace, and complete your profile.
       </p>
 
       <div className="grid gap-4">
         <button
-          onClick={() => router.push('/shelf')}
+          onClick={() => router.push('/catalog')}
           className="w-full bg-green-600 text-white py-3 rounded hover:bg-green-700"
         >
-          Set Up Your Disc Shelf
-        </button>
-        <button
-          onClick={() => router.push('/bag')}
-          className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"
-        >
-          Build Your Bag
+          Build Your Bag / Shelf
         </button>
         <button
           onClick={() => router.push('/marketplace')}
@@ -48,10 +40,17 @@ export default function OnboardingPage() {
           Browse Marketplace
         </button>
         <button
-            onClick={handleFinishSetup}
-            className="w-full bg-gray-800 text-white py-3 rounded hover:bg-gray-900 mt-6"
-            >
-            Finish Setup
+          onClick={() => router.push('/profile')}
+          className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"
+        >
+          Set Up Profile
+        </button>
+
+        <button
+          onClick={handleFinishSetup}
+          className="w-full bg-gray-800 text-white py-3 rounded hover:bg-gray-900 mt-6"
+        >
+          Finish Setup
         </button>
       </div>
 
