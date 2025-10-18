@@ -5,6 +5,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { getNSFWModel, tf } from '@/lib/nsfwModel';
 import { fileTypeFromBuffer } from 'file-type';
 import { createCanvas, loadImage } from 'canvas';
+import { withUserAuth } from '@/lib/auth/withUserAuth';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -12,7 +13,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-export async function POST(req: Request) {
+export const POST = withUserAuth(async (req, session) => {
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File;
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
       return tf.slice(tensor4, [0, 0, 0], [-1, -1, 3]);
     });
 
-    // 🔍 NSFW check (singleton model)
+    // 🔍 NSFW check
     const model = await getNSFWModel();
     const predictions = await model.classify(imageTensor);
     imageTensor.dispose();
@@ -55,9 +56,7 @@ export async function POST(req: Request) {
     ];
 
     const flagged = predictions.some(
-      (p) =>
-        flaggedClasses.includes(p.className) &&
-        p.probability > 0.6
+      (p) => flaggedClasses.includes(p.className) && p.probability > 0.6
     );
 
     // ☁️ Upload to Cloudinary
@@ -79,4 +78,4 @@ export async function POST(req: Request) {
     console.error('Upload error:', err);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }
-}
+});
