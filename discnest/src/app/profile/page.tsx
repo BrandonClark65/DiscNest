@@ -190,141 +190,160 @@ export default function ProfilePage() {
         )}
 
         {activeTab === 'play' && (
-          <>
-            <label className="block font-medium">Dominant Hand</label>
-            <select
-              value={profile.dominantHand ?? 'Right'}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  dominantHand: e.target.value as EditableUserFields['dominantHand'],
-                })
-              }
-              className="border px-3 py-2 rounded w-full"
-            >
-              <option>Left</option>
-              <option>Right</option>
-              <option>Both</option>
-            </select>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label className="block font-medium">Dominant Hand</label>
+      <select
+        value={profile.dominantHand ?? 'Right'}
+        onChange={(e) =>
+          setProfile({
+            ...profile,
+            dominantHand: e.target.value as EditableUserFields['dominantHand'],
+          })
+        }
+        className="border px-3 py-2 rounded w-full"
+      >
+        <option>Left</option>
+        <option>Right</option>
+        <option>Both</option>
+      </select>
+    </div>
 
-            <label className="block font-medium">Throw Style</label>
-            <select
-              value={profile.throwStyle ?? 'Backhand'}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  throwStyle: e.target.value as EditableUserFields['throwStyle'],
-                })
-              }
-              className="border px-3 py-2 rounded w-full"
-            >
-              <option>Backhand</option>
-              <option>Forehand</option>
-              <option>Both</option>
-            </select>
+    <div>
+      <label className="block font-medium">Throw Style</label>
+      <select
+        value={profile.throwStyle ?? 'Backhand'}
+        onChange={(e) =>
+          setProfile({
+            ...profile,
+            throwStyle: e.target.value as EditableUserFields['throwStyle'],
+          })
+        }
+        className="border px-3 py-2 rounded w-full"
+      >
+        <option>Backhand</option>
+        <option>Forehand</option>
+        <option>Both</option>
+      </select>
+    </div>
 
-            <MultiSelect
-              label="Favorite Brands"
-              options={[...DiscBrands]}
-              value={profile.favoriteBrands ?? []}
-              onChange={(val) =>
-                setProfile({
-                  ...profile,
-                  favoriteBrands: val as EditableUserFields['favoriteBrands'],
-                })
-              }
-            />
+    <div className="col-span-1 md:col-span-2">
+      <MultiSelect
+        label="Favorite Brands"
+        options={[...DiscBrands]}
+        value={profile.favoriteBrands ?? []}
+        onChange={(val) =>
+          setProfile({
+            ...profile,
+            favoriteBrands: val as EditableUserFields['favoriteBrands'],
+          })
+        }
+      />
+    </div>
 
-            <MultiSelect
-              label="Preferred Disc Types"
-              options={['Putter', 'Midrange', 'Fairway Driver', 'Distance Driver']}
-              value={profile.preferredDiscTypes ?? []}
-              onChange={(val) =>
-                setProfile({
-                  ...profile,
-                  preferredDiscTypes: val as EditableUserFields['preferredDiscTypes'],
-                })
-              }
-            />
+    <div className="col-span-1 md:col-span-2">
+      <MultiSelect
+        label="Preferred Disc Types"
+        options={['Putter', 'Midrange', 'Fairway Driver', 'Distance Driver']}
+        value={profile.preferredDiscTypes ?? []}
+        onChange={(val) =>
+          setProfile({
+            ...profile,
+            preferredDiscTypes: val as EditableUserFields['preferredDiscTypes'],
+          })
+        }
+      />
+    </div>
 
-            <label className="block font-medium">Stability Preference</label>
-            <select
-              value={profile.stabilityPreference ?? 'Straight'}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  stabilityPreference: e.target.value as EditableUserFields['stabilityPreference'],
-                })
-              }
-              className="border px-3 py-2 rounded w-full"
-            >
-              <option>Straight</option>
-              <option>Overstable</option>
-              <option>Understable</option>
-            </select>
+    <div>
+      <label className="block font-medium">Stability Preference</label>
+      <select
+        value={profile.stabilityPreference ?? 'Straight'}
+        onChange={(e) =>
+          setProfile({
+            ...profile,
+            stabilityPreference: e.target.value as EditableUserFields['stabilityPreference'],
+          })
+        }
+        className="border px-3 py-2 rounded w-full"
+      >
+        <option>Straight</option>
+        <option>Overstable</option>
+        <option>Understable</option>
+      </select>
+    </div>
 
-            <label className="block font-medium">Arm Speed</label>
-            <select
-              value={profile.armSpeed ?? 'Medium'}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  armSpeed: e.target.value as EditableUserFields['armSpeed'],
-                })
-              }
-              className="border px-3 py-2 rounded w-full"
-            >
-              <option>Slow</option>
-              <option>Medium</option>
-              <option>Fast</option>
-            </select>
+    <div>
+      <label className="block font-medium">Arm Speed</label>
+      <select
+        value={profile.armSpeed ?? 'Medium'}
+        onChange={(e) =>
+          setProfile({
+            ...profile,
+            armSpeed: e.target.value as EditableUserFields['armSpeed'],
+          })
+        }
+        className="border px-3 py-2 rounded w-full"
+      >
+        <option>Slow</option>
+        <option>Medium</option>
+        <option>Fast</option>
+      </select>
+    </div>
 
-            <label className="block font-medium">Skill Level</label>
-            <select
-              value={profile.skillLevel ?? 'Intermediate'}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  skillLevel: e.target.value as EditableUserFields['skillLevel'],
-                })
-              }
-              className="border px-3 py-2 rounded w-full"
-            >
-              <option>Beginner</option>
-              <option>Intermediate</option>
-              <option>Advanced</option>
-              <option>Pro</option>
-            </select>
+    <div>
+      <label className="block font-medium">Skill Level</label>
+      <select
+        value={profile.skillLevel ?? 'Intermediate'}
+        onChange={(e) =>
+          setProfile({
+            ...profile,
+            skillLevel: e.target.value as EditableUserFields['skillLevel'],
+          })
+        }
+        className="border px-3 py-2 rounded w-full"
+      >
+        <option>Beginner</option>
+        <option>Intermediate</option>
+        <option>Advanced</option>
+        <option>Pro</option>
+      </select>
+    </div>
 
-            <label className="block font-medium">Play Frequency</label>
-            <select
-              value={profile.playFrequency ?? '1-2 times per week'}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  playFrequency: e.target.value as EditableUserFields['playFrequency'],
-                })
-              }
-              className="border px-3 py-2 rounded w-full"
-            >
-              <option>&lt;1 per week</option>
-              <option>1-2 times per week</option>
-              <option>Every day</option>
-            </select>
+    <div>
+      <label className="block font-medium">Play Frequency</label>
+      <select
+        value={profile.playFrequency ?? '1-2 times per week'}
+        onChange={(e) =>
+          setProfile({
+            ...profile,
+            playFrequency: e.target.value as EditableUserFields['playFrequency'],
+          })
+        }
+        className="border px-3 py-2 rounded w-full"
+      >
+        <option>&lt;1 per week</option>
+        <option>1-2 times per week</option>
+        <option>Every day</option>
+      </select>
+    </div>
 
-            <MultiSelect
-              label="Preferred Plastics"
-              options={[...DiscPlastics]}
-              value={profile.preferredPlastics ?? []}
-              onChange={(val) =>
-                setProfile({
-                  ...profile,
-                  preferredPlastics: val as EditableUserFields['preferredPlastics'],
-                })
-              }
-            />
-          </>
-        )}
+    <div className="col-span-1 md:col-span-2">
+      <MultiSelect
+        label="Preferred Plastics"
+        options={[...DiscPlastics]}
+        value={profile.preferredPlastics ?? []}
+        onChange={(val) =>
+          setProfile({
+            ...profile,
+            preferredPlastics: val as EditableUserFields['preferredPlastics'],
+          })
+        }
+      />
+    </div>
+  </div>
+)}
+
       </div>
 
       <button
