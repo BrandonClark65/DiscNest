@@ -4,6 +4,8 @@ import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 import type { Disc } from '@/types/disc';
 import { getContrastColor } from '@/lib/colors';
+import toast from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
 
 type DiscCardProps = {
   disc: Disc;
@@ -26,6 +28,9 @@ export default function DiscCard({
   isRecentlyAdded = false,
   className = '',
 }: DiscCardProps) {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+
   const textColor = getContrastColor(disc.color ?? '#ffffff');
 
   const tooltipContent = [
@@ -37,6 +42,14 @@ export default function DiscCard({
   ]
     .filter(Boolean)
     .join('\n');
+
+  const handleActionClick = () => {
+    if (!isLoggedIn) {
+      toast('Log in to Add Discs to Shelf');
+      return;
+    }
+    onAction?.();
+  };
 
   return (
     <div
@@ -53,11 +66,14 @@ export default function DiscCard({
         filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.4))',
       }}
     >
-      {/* Disc Image */}
+      {/* Disc Image with fallback */}
       {disc.image && (
         <img
           src={disc.image}
           alt={disc.name}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/fallback.jpg';
+          }}
           className="w-20 h-20 mx-auto object-contain mb-2"
         />
       )}
@@ -109,9 +125,9 @@ export default function DiscCard({
       )}
 
       {/* Action Button */}
-      {actionLabel && onAction && (
+      {actionLabel && (
         <button
-          onClick={onAction}
+          onClick={handleActionClick}
           className="mt-auto bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700"
         >
           {actionLabel}
