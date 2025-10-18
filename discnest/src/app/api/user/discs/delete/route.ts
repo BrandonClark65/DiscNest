@@ -3,6 +3,7 @@ import User from '@/models/User';
 import Disc from '@/models/Disc';
 import { connectToDatabase } from '@/lib/mongodb';
 import { withUserAuth } from '@/lib/auth/withUserAuth';
+import { recalcDiscCount } from '@/lib/updateDiscCount';
 
 export const POST = withUserAuth(async (req, session) => {
   const { discId, target } = await req.json();
@@ -24,6 +25,9 @@ export const POST = withUserAuth(async (req, session) => {
 
   // Delete the disc document belonging to this user
   await Disc.deleteOne({ _id: discId, userId: user._id });
+
+  // ✅ Update discCount after modification
+  await recalcDiscCount(session.user.id);
 
   return NextResponse.json({ success: true });
 });

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import User from '@/models/User';
 import { connectToDatabase } from '@/lib/mongodb';
 import { withUserAuth } from '@/lib/auth/withUserAuth';
+import { recalcDiscCount } from '@/lib/updateDiscCount';
 
 export const POST = withUserAuth(async (req, session) => {
   const { discId, from, to } = await req.json();
@@ -35,6 +36,9 @@ export const POST = withUserAuth(async (req, session) => {
       $push: { [to]: discId },
     }
   );
+
+  // ✅ Update discCount after modification
+  await recalcDiscCount(session.user.id);
 
   return NextResponse.json({ success: true });
 });

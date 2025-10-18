@@ -8,7 +8,6 @@ import clsx from 'clsx';
 import MultiSelect from '@/components/ui/MultiSelect';
 import { z } from 'zod';
 
-// 💡 Define a safe subset of editable fields directly from Zod
 type EditableUserFields = z.infer<typeof editableProfileSchema>;
 
 export default function ProfilePage() {
@@ -16,26 +15,33 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Partial<EditableUserFields>>({});
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'disc' | 'play'>('basic');
+  const [discCount, setDiscCount] = useState<number>(0);
 
-  // 🧠 Fetch profile data
+  // 🧠 Fetch profile data including discCount
   useEffect(() => {
     if (status === 'authenticated') {
       fetch('/api/profile')
         .then((res) => res.json())
         .then((data) => {
-          const parsed = editableProfileSchema.parse(data.user ?? {}); // apply defaults
+          if (!data.user) return;
+
+          // Remove location because coordinates may be empty and cause Zod errors
+          const userData = { ...data.user };
+          delete userData.location;
+
+          // Parse remaining fields with Zod
+          const parsed = editableProfileSchema.parse(userData);
           setProfile(parsed);
+          setDiscCount(data.user.discCount || 0);
         })
         .catch((err) => console.error('Error loading profile:', err));
     }
   }, [status]);
 
-  if (status === 'loading') return <p className="p-4">Loading...</p>;
-  if (!session?.user)
-    return <p className="p-4 text-center text-gray-600">Log in to view profile</p>;
-  if (!profile) return <p className="p-4">Loading profile...</p>;
 
-  // 💾 Save
+  if (status === 'loading') return <p className="p-4">Loading...</p>;
+  if (!session?.user) return <p className="p-4 text-center text-gray-600">Log in to view profile</p>;
+
   const handleSave = async () => {
     setLoading(true);
     const res = await fetch('/api/profile', {
@@ -47,7 +53,7 @@ export default function ProfilePage() {
     if (!res.ok) console.error('Failed to save profile');
   };
 
-  // 🧮 Completion calculation with defaults
+  // 🧮 Profile completion calculation
   const defaults: Partial<Record<keyof EditableUserFields, any>> = {
     dominantHand: 'Right',
     throwStyle: 'Backhand',
@@ -76,21 +82,26 @@ export default function ProfilePage() {
 
   const filledFields = profileFields.filter((f) => {
     const value = profile[f] ?? defaults[f];
-
     if (Array.isArray(value)) return value.length > 0;
     if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'number') return value !== 0; // treat 0 as "empty"
+    if (typeof value === 'number') return value !== 0;
     return value !== null && value !== undefined;
   }).length;
 
   const completionPercent = Math.round((filledFields / profileFields.length) * 100);
 
-
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">
-        Welcome, {profile.name || profile.username || session.user.name}
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">
+          Welcome, {profile.name || profile.username || session.user.name}
+        </h1>
+
+        {/* Disc Count Badge */}
+        <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+          {discCount} Disc{discCount !== 1 ? 's' : ''}
+        </div>
+      </div>
 
       {/* Progress Bar */}
       <div className="w-full bg-gray-200 rounded-full h-3">
@@ -99,9 +110,7 @@ export default function ProfilePage() {
           style={{ width: `${completionPercent}%` }}
         />
       </div>
-      <p className="text-sm text-gray-600 mt-1">
-        Profile Completion: {completionPercent}%
-      </p>
+      <p className="text-sm text-gray-600 mt-1">Profile Completion: {completionPercent}%</p>
 
       {/* Tabs */}
       <div className="flex gap-4 mt-4">
@@ -116,11 +125,7 @@ export default function ProfilePage() {
                 : 'bg-gray-200 text-gray-700'
             )}
           >
-            {tab === 'basic'
-              ? 'Basic Info'
-              : tab === 'disc'
-              ? 'Disc Golf Info'
-              : 'Play Style'}
+            {tab === 'basic' ? 'Basic Info' : tab === 'disc' ? 'Disc Golf Info' : 'Play Style'}
           </button>
         ))}
       </div>
@@ -161,10 +166,7 @@ export default function ProfilePage() {
               type="number"
               value={profile.pdgaNumber ?? ''}
               onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  pdgaNumber: Number(e.target.value),
-                })
+                setProfile({ ...profile, pdgaNumber: Number(e.target.value) })
               }
               className="border px-3 py-2 rounded w-full"
             />
@@ -173,9 +175,7 @@ export default function ProfilePage() {
             <input
               type="text"
               value={profile.homeCourse ?? ''}
-              onChange={(e) =>
-                setProfile({ ...profile, homeCourse: e.target.value })
-              }
+              onChange={(e) => setProfile({ ...profile, homeCourse: e.target.value })}
               className="border px-3 py-2 rounded w-full"
             />
 
@@ -190,7 +190,7 @@ export default function ProfilePage() {
         )}
 
         {activeTab === 'play' && (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
       <label className="block font-medium">Dominant Hand</label>
       <select
@@ -341,9 +341,8 @@ export default function ProfilePage() {
         }
       />
     </div>
-  </div>
-)}
-
+          </div>
+        )}
       </div>
 
       <button
