@@ -1,12 +1,17 @@
 // models/Disc.ts
 import mongoose from 'mongoose';
+import { DiscPlastics } from '@/app/constants/discData';
 
 const DiscSchema = new mongoose.Schema({
   name: { type: String, required: true },
   brand: { type: String },
   type: { type: String, default: '' },
   stability: { type: String, default: '' },
-  plastic: { type: String, default: '' },
+  plastic: { 
+    type: String, 
+    enum: DiscPlastics, 
+    default: '' 
+  },
   wearLevel: { type: Number, min: 0, max: 100, default: 0 }, // changed to number 0-100
   weight: { type: Number, default: null }, // in grams
   notes: { type: String, default: '' },

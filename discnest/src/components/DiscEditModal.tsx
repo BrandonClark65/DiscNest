@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import type { Disc } from '@/types/disc';
+import { DiscPlastics } from '@/app/constants/discData'; // import the constants
+import type { DiscPlastic } from '@/app/constants/discData';
 
 export default function DiscEditModal({
   disc,
@@ -12,7 +14,7 @@ export default function DiscEditModal({
   onClose: () => void;
   onSave: (updated: Partial<Disc> & { discId: string }) => void;
 }) {
-  const [plastic, setPlastic] = useState(disc.plastic ?? '');
+  const [plastic, setPlastic] = useState<DiscPlastic | ''>(disc.plastic ?? '');
   const [wearLevel, setWearLevel] = useState(disc.wearLevel ?? 0);
   const [weight, setWeight] = useState<number | undefined>(disc.weight);
   const [notes, setNotes] = useState(disc.notes ?? '');
@@ -27,7 +29,7 @@ export default function DiscEditModal({
     e.preventDefault();
     onSave({
       discId: disc._id,
-      plastic,
+      plastic: plastic === '' ? undefined : plastic,
       wearLevel,
       weight,
       notes,
@@ -55,13 +57,18 @@ export default function DiscEditModal({
 
         {/* Plastic */}
         <label className="block text-sm font-medium">Plastic</label>
-        <input
-          type="text"
+        <select
           value={plastic}
-          onChange={e => setPlastic(e.target.value)}
+          onChange={e => setPlastic(e.target.value as DiscPlastic)}
           className="w-full border rounded px-2 py-1"
-        />
-
+        >
+          <option value="">Select Plastic</option>
+          {DiscPlastics.map(p => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
         {/* Wear Level */}
         <label className="block text-sm font-medium">Wear Level</label>
         <input

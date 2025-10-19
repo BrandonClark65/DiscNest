@@ -1,3 +1,5 @@
+import type { DiscPlastic } from '@/app/constants/discData';
+
 export type Disc = {
   _id: string;
   name: string;
@@ -14,7 +16,7 @@ export type Disc = {
   };
   userId?: string;
   addedAt?: string;
-  plastic?: string;
+  plastic?: DiscPlastic;
   wearLevel?: number;
   color?: string; // hex code
   weight?: number; // in grams

@@ -7,6 +7,7 @@ import type { Disc } from '@/types/disc';
 import DiscCard from '@/components/DiscCard';
 import DiscEditModal from '@/components/DiscEditModal';
 import DiscBagDisplay from '@/components/DiscbagDisplay';
+import BagStats from '@/components/BagStats';
 import {
   DndContext,
   closestCenter,
@@ -176,8 +177,14 @@ export default function GearPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  Disc Bag
+                </h2>
+                {isLoggedIn && <BagStats bag={bag} />}
+              </div>
               <GearSection
-                title="Disc Bag"
+                title=""
                 discs={isLoggedIn ? bag : []}
                 emptyMessage={isLoggedIn ? 'No discs here yet.' : 'Log in to fill your bag'}
                 zoneId="bag"
@@ -189,9 +196,7 @@ export default function GearPage() {
             </div>
 
             <div className="flex-1 flex justify-center items-center">
-              {isLoggedIn && (
-                <DiscBagDisplay bag={bag} />
-              )}
+              {isLoggedIn && <DiscBagDisplay bag={bag} />}
             </div>
           </div>
         </DndContext>
