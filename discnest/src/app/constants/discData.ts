@@ -91,6 +91,15 @@ export const DiscPlastics = [
   "BT Soft",
   "Moonshine",
 
+  // Kastaplast
+  "K1 Soft",
+  "K1 Glow-Line",
+  "K1 Grind",
+  "K3 Hard",
+  "K3 Glow-Line",
+  "K1 Handler",
+  "K4",
+
   // Others / general blends
   "Glow",
   "Regrind",
