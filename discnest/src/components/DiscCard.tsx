@@ -6,6 +6,7 @@ import type { Disc } from '@/types/disc';
 import { getContrastColor } from '@/lib/colors';
 import toast from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 
 type DiscCardProps = {
   disc: Disc;
@@ -30,6 +31,14 @@ export default function DiscCard({
 }: DiscCardProps) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const textColor = getContrastColor(disc.color ?? '#ffffff');
 
@@ -51,13 +60,27 @@ export default function DiscCard({
     onAction?.();
   };
 
+  // Handle both hover (desktop) and tap (mobile)
+  const handleHoverStart = () => {
+    if (!isMobile) onHover?.(disc);
+  };
+
+  const handleHoverEnd = () => {
+    if (!isMobile) onHover?.(null);
+  };
+
+  const handleClick = () => {
+    if (isMobile) onHover?.(disc);
+  };
+
   return (
     <div
-      onMouseEnter={() => onHover?.(disc)}
-      onMouseLeave={() => onHover?.(null)}
+      onMouseEnter={handleHoverStart}
+      onMouseLeave={handleHoverEnd}
+      onClick={handleClick}
       data-tooltip-id={`disc-${disc._id}`}
       data-tooltip-content={tooltipContent}
-      className={`border p-4 rounded shadow flex flex-col justify-between transition ${className} ${
+      className={`border p-4 rounded shadow flex flex-col justify-between transition cursor-pointer ${className} ${
         isRecentlyAdded ? 'ring-2 ring-green-500' : 'hover:ring-2 hover:ring-green-500'
       }`}
       style={{
@@ -66,7 +89,7 @@ export default function DiscCard({
         filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.4))',
       }}
     >
-      {/* Disc Image with fallback */}
+      {/* Disc Image */}
       {disc.image && (
         <img
           src={disc.image}
@@ -78,7 +101,7 @@ export default function DiscCard({
         />
       )}
 
-      {/* Disc Info */}
+      {/* Info */}
       <div className="mb-2 text-center">
         <h3 className="font-bold" style={{ color: textColor }}>
           {disc.name}
@@ -100,7 +123,7 @@ export default function DiscCard({
         )}
       </div>
 
-      {/* Edit & Remove Buttons */}
+      {/* Edit / Delete */}
       {(onEdit || onDelete) && (
         <div className="flex justify-center gap-2 mb-2">
           {onEdit && (
@@ -124,7 +147,7 @@ export default function DiscCard({
         </div>
       )}
 
-      {/* Action Button */}
+      {/* Add to Shelf Button */}
       {actionLabel && (
         <button
           onClick={handleActionClick}
