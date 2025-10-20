@@ -10,7 +10,7 @@ const DiscSchema = new mongoose.Schema({
   plastic: { 
     type: String, 
     enum: DiscPlastics, 
-    default: '' 
+    required: false, 
   },
   wearLevel: { type: Number, min: 0, max: 100, default: 0 }, // changed to number 0-100
   weight: { type: Number, default: null }, // in grams

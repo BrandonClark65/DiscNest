@@ -20,8 +20,15 @@ export const POST = withUserAuth(async (req, session) => {
   }
 
   // Clone the disc for the logged-in user
+  const discData = catalogDisc.toObject();
+
+  // 🩹 Ensure plastic is valid
+  if (!discData.plastic || discData.plastic.trim() === '') {
+    discData.plastic = 'Unknown';
+  }
+
   const userDisc = new Disc({
-    ...catalogDisc.toObject(),
+    ...discData,
     _id: undefined, // Let MongoDB assign a new ID
     userId: session.user.id,
     addedAt: new Date(),
@@ -33,7 +40,7 @@ export const POST = withUserAuth(async (req, session) => {
   const updateField = target === 'shelf' ? 'discShelf' : 'bag';
   await User.updateOne(
     { _id: session.user.id },
-    { $addToSet: { [updateField]: userDisc._id } } // $addToSet avoids duplicates
+    { $addToSet: { [updateField]: userDisc._id } }
   );
 
   // ✅ Update discCount after modification

@@ -90,6 +90,7 @@ export const DiscPlastics = [
   "Z",
   "Z FLX",
   "Zero",
+  "Unknown",
 ] as const;
 
 
