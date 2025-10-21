@@ -9,11 +9,14 @@ import toast from 'react-hot-toast';
 export default function CatalogPage() {
   const [discs, setDiscs] = useState<Disc[]>([]);
   const [hoveredDisc, setHoveredDisc] = useState<Disc | null>(null);
-  const [selectedDisc, setSelectedDisc] = useState<Disc | null>(null);
   const [addedDiscId, setAddedDiscId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const { data: session } = useSession();
   const email = session?.user?.email;
+
+  const discsPerPage = 24;
 
   // Detect screen size
   useEffect(() => {
@@ -37,6 +40,7 @@ export default function CatalogPage() {
       });
   }, []);
 
+  // Add disc handler
   const handleAdd = async (discId: string, target: 'shelf' | 'bag') => {
     if (!email) return;
     const disc = discs.find(d => d._id === discId);
@@ -109,9 +113,6 @@ export default function CatalogPage() {
   });
 
   // --- Pagination ---
-  const [currentPage, setCurrentPage] = useState(1);
-  const discsPerPage = 24; // adjust as needed
-
   const totalPages = Math.ceil(filtered.length / discsPerPage);
   const startIndex = (currentPage - 1) * discsPerPage;
   const endIndex = startIndex + discsPerPage;
@@ -136,7 +137,7 @@ export default function CatalogPage() {
         [key]: list.includes(value) ? list.filter(v => v !== value) : [...list, value],
       };
     });
-    setCurrentPage(1); // reset to first page after filter change
+    setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
@@ -241,7 +242,7 @@ export default function CatalogPage() {
               disc={disc}
               actionLabel="Add to Shelf"
               onAction={() => handleAdd(disc._id, 'shelf')}
-              onHover={isMobile ? undefined : setHoveredDisc}
+              onHover={setHoveredDisc} // hover for desktop, tap for mobile
               isRecentlyAdded={addedDiscId === disc._id}
             />
           ))}
@@ -251,7 +252,7 @@ export default function CatalogPage() {
           <p className="text-center text-gray-500 mt-8">No discs match your filters.</p>
         )}
 
-        {/* Pagination Controls (Compact) */}
+        {/* Pagination Controls */}
         {filtered.length > discsPerPage && (
           <div className="flex justify-center items-center gap-1 mt-8 flex-wrap">
             <button
@@ -263,28 +264,15 @@ export default function CatalogPage() {
             </button>
 
             {(() => {
-              const windowSize = 2; // how many pages around current
+              const windowSize = 2;
               const pages: (number | string)[] = [];
 
-              // Always include first page
               pages.push(1);
-
-              // Show ellipsis if gap before window
               if (currentPage - windowSize > 2) pages.push('...');
-
-              // Middle window
-              for (
-                let i = Math.max(2, currentPage - windowSize);
-                i <= Math.min(totalPages - 1, currentPage + windowSize);
-                i++
-              ) {
+              for (let i = Math.max(2, currentPage - windowSize); i <= Math.min(totalPages - 1, currentPage + windowSize); i++) {
                 pages.push(i);
               }
-
-              // Ellipsis after window
               if (currentPage + windowSize < totalPages - 1) pages.push('...');
-
-              // Always include last page (if more than one)
               if (totalPages > 1) pages.push(totalPages);
 
               return pages.map((page, idx) =>
@@ -299,9 +287,7 @@ export default function CatalogPage() {
                     {page}
                   </button>
                 ) : (
-                  <span key={idx} className="px-2 text-gray-500">
-                    {page}
-                  </span>
+                  <span key={idx} className="px-2 text-gray-500">{page}</span>
                 )
               );
             })()}
@@ -314,6 +300,21 @@ export default function CatalogPage() {
               Next
             </button>
           </div>
+        )}
+      </div>
+
+      {/* Hover Preview Sidebar (Desktop) */}
+      <div
+        className={`hidden md:block fixed top-20 right-8 w-96 bg-white border rounded-xl shadow-xl p-6 z-50 transition-opacity duration-300 ${
+          hoveredDisc ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {hoveredDisc?.image && (
+          <>
+            <img src={hoveredDisc.image} alt={hoveredDisc.name} className="w-full h-64 object-contain mb-4" />
+            <h3 className="text-xl font-bold text-center text-green-700">{hoveredDisc.name}</h3>
+            <p className="text-sm text-gray-600 text-center">{hoveredDisc.brand}</p>
+          </>
         )}
       </div>
     </div>
