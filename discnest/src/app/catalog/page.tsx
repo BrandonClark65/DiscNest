@@ -12,18 +12,18 @@ export default function CatalogPage() {
   const [addedDiscId, setAddedDiscId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const { data: session } = useSession();
   const email = session?.user?.email;
 
   const discsPerPage = 24;
 
-  // Detect screen size
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Fetch & sort discs
@@ -40,7 +40,6 @@ export default function CatalogPage() {
       });
   }, []);
 
-  // Add disc handler
   const handleAdd = async (discId: string, target: 'shelf' | 'bag') => {
     if (!email) return;
     const disc = discs.find(d => d._id === discId);
@@ -98,7 +97,6 @@ export default function CatalogPage() {
     .sort((a, b) => a - b)
     .map(String);
 
-  // --- Filter Logic ---
   const filtered = discs.filter(disc => {
     const matchesSearch =
       (disc.name?.toLowerCase() || '').includes(filter.search.toLowerCase()) ||
@@ -112,7 +110,6 @@ export default function CatalogPage() {
     return matchesSearch && matchesBrand && matchesType && matchesStability && matchesSpeed;
   });
 
-  // --- Pagination ---
   const totalPages = Math.ceil(filtered.length / discsPerPage);
   const startIndex = (currentPage - 1) * discsPerPage;
   const endIndex = startIndex + discsPerPage;
@@ -145,94 +142,124 @@ export default function CatalogPage() {
     setCurrentPage(1);
   };
 
-  // --- UI ---
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6 relative">
-      {/* Sidebar Filters */}
-      <aside className="md:col-span-1 space-y-4 pt-2 md:pt-8">
-        <button onClick={handleClearFilters} className="text-sm text-gray-600 underline hover:text-green-700">
-          Clear Filters
-        </button>
 
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search by name or brand"
-          value={filter.search}
-          onChange={e => setFilter(prev => ({ ...prev, search: e.target.value }))}
-          className="w-full border px-3 py-2 rounded"
-        />
+      {/* Mobile Filter Overlay */}
+      {isMobile && filtersOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setFiltersOpen(false)} />
+          <aside className="fixed inset-y-0 left-0 w-11/12 max-w-xs bg-white z-50 p-4 overflow-y-auto shadow-lg">
+            <button onClick={() => setFiltersOpen(false)} className="mb-4 text-sm underline">Close Filters</button>
+            <button onClick={handleClearFilters} className="mb-4 text-sm text-gray-600 underline hover:text-green-700">Clear Filters</button>
+            {(['brand','type','stability','speed'] as const).map(section => (
+              <div key={section} className="border rounded-md mb-2">
+                <button
+                  onClick={() => toggleAccordion(section)}
+                  className="w-full text-left font-medium px-3 py-2 flex justify-between"
+                >
+                  <span>{section.charAt(0).toUpperCase() + section.slice(1)}</span>
+                  <span>{openSections[section] ? '−' : '+'}</span>
+                </button>
+                {openSections[section] && (
+                  <div className="p-3 space-y-1 max-h-48 overflow-y-auto">
+                    {section === 'brand' && uniqueBrands.map(value => (
+                      <label key={value} className="block text-sm">
+                        <input type="checkbox" checked={filter.brands.includes(value)} onChange={() => handleCheckboxChange('brands', value)} className="mr-2"/>
+                        {value}
+                      </label>
+                    ))}
+                    {section === 'type' && uniqueTypes.map(value => (
+                      <label key={value} className="block text-sm">
+                        <input type="checkbox" checked={filter.types.includes(value!)} onChange={() => handleCheckboxChange('types', value!)} className="mr-2"/>
+                        {value}
+                      </label>
+                    ))}
+                    {section === 'stability' && uniqueStabilities.map(value => (
+                      <label key={value} className="block text-sm">
+                        <input type="checkbox" checked={filter.stabilities.includes(value)} onChange={() => handleCheckboxChange('stabilities', value)} className="mr-2"/>
+                        {value}
+                      </label>
+                    ))}
+                    {section === 'speed' && uniqueSpeeds.map(value => (
+                      <label key={value} className="block text-sm">
+                        <input type="checkbox" checked={filter.speeds.includes(value)} onChange={() => handleCheckboxChange('speeds', value)} className="mr-2"/>
+                        {value}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </aside>
+        </>
+      )}
 
-        {/* Accordion Filter Groups */}
-        <div className="border rounded-md">
-          {(['brand', 'type', 'stability', 'speed'] as const).map(section => (
-            <div key={section}>
-              <button
-                onClick={() => toggleAccordion(section)}
-                className="w-full text-left font-medium px-3 py-2 border-b flex justify-between"
-              >
-                <span>{section.charAt(0).toUpperCase() + section.slice(1)}</span>
-                <span>{openSections[section] ? '−' : '+'}</span>
-              </button>
-              {openSections[section] && (
-                <div className="p-3 space-y-1 max-h-48 overflow-y-auto">
-                  {section === 'brand' &&
-                    uniqueBrands.map(value => (
+      {/* Sidebar Filters (Desktop) */}
+      {!isMobile && (
+        <aside className="md:col-span-1 space-y-4 pt-2 md:pt-8">
+          <button onClick={handleClearFilters} className="text-sm text-gray-600 underline hover:text-green-700">
+            Clear Filters
+          </button>
+          <input
+            type="text"
+            placeholder="Search by name or brand"
+            value={filter.search}
+            onChange={e => setFilter(prev => ({ ...prev, search: e.target.value }))}
+            className="w-full border px-3 py-2 rounded"
+          />
+          <div className="border rounded-md">
+            {(['brand','type','stability','speed'] as const).map(section => (
+              <div key={section}>
+                <button
+                  onClick={() => toggleAccordion(section)}
+                  className="w-full text-left font-medium px-3 py-2 border-b flex justify-between"
+                >
+                  <span>{section.charAt(0).toUpperCase() + section.slice(1)}</span>
+                  <span>{openSections[section] ? '−' : '+'}</span>
+                </button>
+                {openSections[section] && (
+                  <div className="p-3 space-y-1 max-h-48 overflow-y-auto">
+                    {section === 'brand' && uniqueBrands.map(value => (
                       <label key={value} className="block text-sm">
-                        <input
-                          type="checkbox"
-                          checked={filter.brands.includes(value)}
-                          onChange={() => handleCheckboxChange('brands', value)}
-                          className="mr-2"
-                        />
+                        <input type="checkbox" checked={filter.brands.includes(value)} onChange={() => handleCheckboxChange('brands', value)} className="mr-2"/>
                         {value}
                       </label>
                     ))}
-                  {section === 'type' &&
-                    uniqueTypes.map(value => (
+                    {section === 'type' && uniqueTypes.map(value => (
                       <label key={value} className="block text-sm">
-                        <input
-                          type="checkbox"
-                          checked={filter.types.includes(value!)}
-                          onChange={() => handleCheckboxChange('types', value!)}
-                          className="mr-2"
-                        />
+                        <input type="checkbox" checked={filter.types.includes(value!)} onChange={() => handleCheckboxChange('types', value!)} className="mr-2"/>
                         {value}
                       </label>
                     ))}
-                  {section === 'stability' &&
-                    uniqueStabilities.map(value => (
+                    {section === 'stability' && uniqueStabilities.map(value => (
                       <label key={value} className="block text-sm">
-                        <input
-                          type="checkbox"
-                          checked={filter.stabilities.includes(value)}
-                          onChange={() => handleCheckboxChange('stabilities', value)}
-                          className="mr-2"
-                        />
+                        <input type="checkbox" checked={filter.stabilities.includes(value)} onChange={() => handleCheckboxChange('stabilities', value)} className="mr-2"/>
                         {value}
                       </label>
                     ))}
-                  {section === 'speed' &&
-                    uniqueSpeeds.map(value => (
+                    {section === 'speed' && uniqueSpeeds.map(value => (
                       <label key={value} className="block text-sm">
-                        <input
-                          type="checkbox"
-                          checked={filter.speeds.includes(value)}
-                          onChange={() => handleCheckboxChange('speeds', value)}
-                          className="mr-2"
-                        />
+                        <input type="checkbox" checked={filter.speeds.includes(value)} onChange={() => handleCheckboxChange('speeds', value)} className="mr-2"/>
                         {value}
                       </label>
                     ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </aside>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </aside>
+      )}
 
       {/* Main Catalog */}
       <div className="md:col-span-3 space-y-4">
+        {isMobile && (
+          <button onClick={() => setFiltersOpen(true)} className="mb-4 bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700">
+            Filters
+          </button>
+        )}
+
         <h1 className="text-2xl font-bold text-center text-green-700">Disc Catalog</h1>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -242,7 +269,7 @@ export default function CatalogPage() {
               disc={disc}
               actionLabel="Add to Shelf"
               onAction={() => handleAdd(disc._id, 'shelf')}
-              onHover={setHoveredDisc} // hover for desktop, tap for mobile
+              onHover={setHoveredDisc}
               isRecentlyAdded={addedDiscId === disc._id}
             />
           ))}
@@ -255,13 +282,7 @@ export default function CatalogPage() {
         {/* Pagination Controls */}
         {filtered.length > discsPerPage && (
           <div className="flex justify-center items-center gap-1 mt-8 flex-wrap">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Prev
-            </button>
+            <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
 
             {(() => {
               const windowSize = 2;
@@ -280,9 +301,7 @@ export default function CatalogPage() {
                   <button
                     key={idx}
                     onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 border rounded ${
-                      page === currentPage ? 'bg-green-700 text-white' : 'hover:bg-gray-100'
-                    }`}
+                    className={`px-3 py-1 border rounded ${page === currentPage ? 'bg-green-700 text-white' : 'hover:bg-gray-100'}`}
                   >
                     {page}
                   </button>
@@ -292,31 +311,42 @@ export default function CatalogPage() {
               );
             })()}
 
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Next
-            </button>
+            <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50">Next</button>
           </div>
         )}
       </div>
 
-      {/* Hover Preview Sidebar (Desktop) */}
-      <div
-        className={`hidden md:block fixed top-20 right-8 w-96 bg-white border rounded-xl shadow-xl p-6 z-50 transition-opacity duration-300 ${
-          hoveredDisc ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-      >
-        {hoveredDisc?.image && (
-          <>
-            <img src={hoveredDisc.image} alt={hoveredDisc.name} className="w-full h-64 object-contain mb-4" />
-            <h3 className="text-xl font-bold text-center text-green-700">{hoveredDisc.name}</h3>
-            <p className="text-sm text-gray-600 text-center">{hoveredDisc.brand}</p>
-          </>
-        )}
-      </div>
+      {/* Hover Preview Modal (desktop + mobile tap) */}
+      {/* Hover Preview Modal (desktop + mobile tap) */}
+      {hoveredDisc && (
+        <div
+          className={`fixed z-50 bg-white border rounded-xl shadow-xl transition-all ${
+            isMobile
+              ? 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-11/12 max-h-[90vh] overflow-y-auto p-4'
+              : 'top-20 right-8 w-96 p-6'
+          }`}
+        >
+          {isMobile && (
+            <button
+              onClick={() => setHoveredDisc(null)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          )}
+          {hoveredDisc.image && (
+            <>
+              <img
+                src={hoveredDisc.image}
+                alt={hoveredDisc.name}
+                className="w-full h-64 object-contain mb-4"
+              />
+              <h3 className="text-xl font-bold text-center text-green-700">{hoveredDisc.name}</h3>
+              <p className="text-sm text-gray-600 text-center">{hoveredDisc.brand}</p>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

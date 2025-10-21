@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
-import { useEffect } from 'react'; // if not already imported
-
+import { useEffect } from 'react';
 
 export default function NavBar() {
   const { data: session, status } = useSession();
@@ -12,15 +11,14 @@ export default function NavBar() {
     console.log('Session:', session);
   }, [session]);
 
-
   return (
-    <nav className="bg-green-700 text-white px-6 py-3 flex justify-between items-center">
+    <nav className="bg-green-700 text-white w-full max-w-screen box-border px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center">
       <Link href="/" className="text-xl font-bold hover:text-green-200">
         DiscNest
       </Link>
 
-      <div className="space-x-4 text-sm flex items-center">
-        <Link href='/marketplace' className="hover:text-green-200">Marketplace</Link>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm">
+        <Link href="/marketplace" className="hover:text-green-200">Marketplace</Link>
         <Link href="/gear" className="hover:text-green-200">Gear</Link>
         <Link href="/catalog" className="hover:text-green-200">Catalog</Link>
         <Link href="/profile" className="hover:text-green-200">Profile</Link>
@@ -29,7 +27,7 @@ export default function NavBar() {
           <>
             <span className="italic">Hi, {session.user?.name?.split(' ')[0]}</span>
             {status === 'authenticated' && session?.user?.role === 'admin' && (
-                <Link href="/admin" className="hover:text-green-200">Admin</Link>
+              <Link href="/admin" className="hover:text-green-200">Admin</Link>
             )}
             <button
               onClick={() => signOut()}

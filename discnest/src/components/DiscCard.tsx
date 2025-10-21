@@ -1,7 +1,5 @@
 'use client';
 
-import { Tooltip } from 'react-tooltip';
-import 'react-tooltip/dist/react-tooltip.css';
 import type { Disc } from '@/types/disc';
 import { getContrastColor } from '@/lib/colors';
 import toast from 'react-hot-toast';
@@ -13,8 +11,8 @@ type DiscCardProps = {
   actionLabel?: string;
   onAction?: () => void;
   onDelete?: () => void;
-  onHover?: (disc: Disc | null) => void;
   onEdit?: (disc: Disc) => void;
+  onHover?: (disc: Disc | null) => void; // re-added
   isRecentlyAdded?: boolean;
   className?: string;
 };
@@ -24,8 +22,8 @@ export default function DiscCard({
   actionLabel,
   onAction,
   onDelete,
-  onHover,
   onEdit,
+  onHover,
   isRecentlyAdded = false,
   className = '',
 }: DiscCardProps) {
@@ -42,16 +40,6 @@ export default function DiscCard({
 
   const textColor = getContrastColor(disc.color ?? '#ffffff');
 
-  const tooltipContent = [
-    `Speed: ${disc.flight?.speed ?? '-'}`,
-    `Glide: ${disc.flight?.glide ?? '-'}`,
-    `Turn: ${disc.flight?.turn ?? '-'}`,
-    `Fade: ${disc.flight?.fade ?? '-'}`,
-    disc.notes ? `Notes: ${disc.notes}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
-
   const handleActionClick = () => {
     if (!isLoggedIn) {
       toast('Log in to Add Discs to Shelf');
@@ -60,26 +48,11 @@ export default function DiscCard({
     onAction?.();
   };
 
-  // Handle both hover (desktop) and tap (mobile)
-  const handleHoverStart = () => {
-    if (!isMobile) onHover?.(disc);
-  };
-
-  const handleHoverEnd = () => {
-    if (!isMobile) onHover?.(null);
-  };
-
-  const handleClick = () => {
-    if (isMobile) onHover?.(disc);
-  };
-
   return (
     <div
-      onMouseEnter={handleHoverStart}
-      onMouseLeave={handleHoverEnd}
-      onClick={handleClick}
-      data-tooltip-id={`disc-${disc._id}`}
-      data-tooltip-content={tooltipContent}
+      onMouseEnter={() => !isMobile && onHover?.(disc)}
+      onMouseLeave={() => !isMobile && onHover?.(null)}
+      onClick={() => isMobile && onHover?.(disc)}
       className={`border p-4 rounded shadow flex flex-col justify-between transition cursor-pointer ${className} ${
         isRecentlyAdded ? 'ring-2 ring-green-500' : 'hover:ring-2 hover:ring-green-500'
       }`}
@@ -94,15 +67,13 @@ export default function DiscCard({
         <img
           src={disc.image}
           alt={disc.name}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/fallback.jpg';
-          }}
-          className="w-20 h-20 mx-auto object-contain mb-2"
+          onError={(e) => ((e.target as HTMLImageElement).src = '/fallback.jpg')}
+          className={isMobile ? 'w-32 h-32 mx-auto object-contain mb-4' : 'w-20 h-20 mx-auto object-contain mb-2'}
         />
       )}
 
       {/* Info */}
-      <div className="mb-2 text-center">
+      <div className={isMobile ? 'text-center mb-4 space-y-1' : 'mb-2 text-center'}>
         <h3 className="font-bold" style={{ color: textColor }}>
           {disc.name}
         </h3>
@@ -123,9 +94,9 @@ export default function DiscCard({
         )}
       </div>
 
-      {/* Edit / Delete */}
+      {/* Edit / Delete Buttons */}
       {(onEdit || onDelete) && (
-        <div className="flex justify-center gap-2 mb-2">
+        <div className="flex justify-center gap-2 mb-2 flex-wrap">
           {onEdit && (
             <button
               onClick={() => onEdit(disc)}
@@ -147,17 +118,15 @@ export default function DiscCard({
         </div>
       )}
 
-      {/* Add to Shelf Button */}
+      {/* Add Button */}
       {actionLabel && (
         <button
           onClick={handleActionClick}
-          className="mt-auto bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700"
+          className={isMobile ? 'mt-auto bg-green-600 text-white py-2 px-4 rounded text-lg' : 'mt-auto bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700'}
         >
           {actionLabel}
         </button>
       )}
-
-      <Tooltip id={`disc-${disc._id}`} place="top" />
     </div>
   );
 }
