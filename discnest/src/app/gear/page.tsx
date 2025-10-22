@@ -14,6 +14,8 @@ import {
   DragEndEvent,
   useDroppable,
 } from '@dnd-kit/core';
+import { motion } from 'framer-motion';
+import { Disc as DiscIcon, ShoppingBag, Package  } from 'lucide-react';
 
 export default function GearPage() {
   const { data: session } = useSession();
@@ -101,41 +103,67 @@ export default function GearPage() {
       )}
 
       <div
-        className={`max-w-6xl mx-auto p-6 space-y-10 transition-all duration-300 relative`}
+        className={`max-w-6xl mx-auto p-6 space-y-12 transition-all duration-300 relative`}
         style={{
           paddingRight: editingDisc ? '24rem' : undefined, // Reserve space instead of shifting layout
         }}
       >
-        {/* Header */}
-        <h1 className="text-3xl font-bold text-center text-green-700">Your Gear</h1>
+        {/* ===== HEADER ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center space-y-4"
+        >
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 drop-shadow-md tracking-tight">
+            Your Gear
+          </h1>
+          <div className="h-1 w-24 mx-auto bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"></div>
 
-        <div className="text-center">
           <a
             href="/catalog"
-            className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-full shadow-md hover:shadow-xl hover:scale-[1.05] active:scale-95 transition-all duration-300 font-semibold"
           >
-            ➕ Browse Disc Catalog
+            <DiscIcon className="w-5 h-5" />
+            Browse Disc Catalog
           </a>
-        </div>
+        </motion.div>
 
-        {/* Main content area */}
+        {/* ===== MAIN CONTENT ===== */}
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          {/* Disc Shelf */}
-          <GearSection
-            title="Disc Shelf"
-            discs={isLoggedIn ? shelf : []}
-            emptyMessage={isLoggedIn ? 'No discs here yet.' : 'Log in to fill your shelf'}
-            zoneId="shelf"
-            actionLabel="Move to Bag"
-            onAction={(id) => moveDisc(id, 'shelf', 'bag')}
-            onDelete={(id) => deleteDisc(id, 'shelf')}
-            onEdit={handleEdit}
-          />
+          {/* === DISC SHELF === */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            <GearSection
+              title="Disc Shelf"
+              icon={<Package className="w-5 h-5 text-green-600" />}
+              discs={isLoggedIn ? shelf : []}
+              emptyMessage={isLoggedIn ? 'No discs here yet.' : 'Log in to fill your shelf'}
+              zoneId="shelf"
+              actionLabel="Move to Bag"
+              onAction={(id) => moveDisc(id, 'shelf', 'bag')}
+              onDelete={(id) => deleteDisc(id, 'shelf')}
+              onEdit={handleEdit}
+            />
+          </motion.div>
 
-          {/* Disc Bag Section */}
-          <section className="space-y-6">
+          {/* === DISC BAG === */}
+          <motion.section
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={{ once: true }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="text-xl font-semibold flex items-center gap-2">Disc Bag</h2>
+              <h2 className="text-2xl font-bold flex items-center gap-2 text-green-700">
+                <ShoppingBag className="w-5 h-5 text-green-600" />
+                Disc Bag
+              </h2>
               {isLoggedIn && <BagStats bag={bag} />}
             </div>
 
@@ -150,13 +178,18 @@ export default function GearPage() {
               onEdit={handleEdit}
             />
 
-            {/* Bag visual below for all devices */}
+            {/* Bag visual */}
             {isLoggedIn && (
-              <div className="flex justify-center mt-10">
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 0.8 }}
+                className="flex justify-center mt-10"
+              >
                 <DiscBagDisplay bag={bag} />
-              </div>
+              </motion.div>
             )}
-          </section>
+          </motion.section>
         </DndContext>
       </div>
     </div>
@@ -165,6 +198,7 @@ export default function GearPage() {
 
 function GearSection({
   title,
+  icon,
   discs,
   zoneId,
   actionLabel,
@@ -174,6 +208,7 @@ function GearSection({
   emptyMessage,
 }: {
   title: string;
+  icon?: React.ReactNode;
   discs: Disc[];
   zoneId: string;
   actionLabel: string;
@@ -185,12 +220,18 @@ function GearSection({
   const { setNodeRef, isOver } = useDroppable({ id: zoneId });
 
   return (
-    <section className="w-full">
-      {title && <h2 className="text-xl font-semibold mb-3">{title}</h2>}
+    <section className="w-full mb-10">
+      {title && (
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-green-700">
+          <span className="inline-block w-2 h-6 bg-green-500 rounded"></span>
+          {icon}
+          {title}
+        </h2>
+      )}
       <div
         ref={setNodeRef}
-        className={`transition p-2 rounded ${
-          isOver ? 'bg-green-50 ring-2 ring-green-400' : ''
+        className={`transition p-2 rounded-lg ${
+          isOver ? 'bg-green-50 ring-2 ring-green-400' : 'bg-white/50'
         }`}
       >
         {discs.length === 0 ? (
