@@ -56,7 +56,9 @@ export default function DiscCard({
       onMouseLeave={() => !isMobile && onHover?.(null)}
       onClick={() => isMobile && onHover?.(disc)}
       className={`transition cursor-pointer ${className} ${
-        isRecentlyAdded ? 'ring-2 ring-green-500' : 'hover:ring-2 hover:ring-green-500'
+        isRecentlyAdded
+          ? 'ring-2 ring-green-500'
+          : 'hover:ring-2 hover:ring-green-500'
       } ${
         circleView
           ? 'relative rounded-full border shadow-md flex items-center justify-center overflow-hidden'
@@ -71,18 +73,21 @@ export default function DiscCard({
         margin: circleView ? '0 auto' : undefined,
       }}
     >
-      {/* ✅ Scaled Inner Wrapper */}
+      {/* Inner Wrapper */}
       <div
         className={`transition-transform duration-300 ease-in-out ${
-          circleView ? 'flex flex-col items-center justify-center scale-[0.9] md:scale-[0.95] lg:scale-[1]' : ''
+          circleView
+            ? 'flex flex-col items-center justify-center scale-[0.9] md:scale-[0.95] lg:scale-[1]'
+            : 'flex flex-col h-full'
         }`}
         style={{
           width: '90%',
-          height: '90%',
+          height: circleView ? 'auto' : '100%',
           transformOrigin: 'center center',
+          margin: '0 auto',
         }}
       >
-        {/* Disc Image */}
+        {/* Image */}
         {disc.image && (
           <img
             src={disc.image}
@@ -103,8 +108,8 @@ export default function DiscCard({
           className={`text-center ${
             circleView
               ? 'flex flex-col items-center justify-center text-[0.75rem] sm:text-[0.8rem] md:text-[0.85rem] leading-tight mt-1'
-              : ''
-          } ${isMobile ? 'mb-4 space-y-1' : 'mb-2'}`}
+              : 'flex flex-col items-center flex-grow space-y-1'
+          }`}
         >
           <h3 className="font-bold" style={{ color: textColor }}>
             {disc.name}
@@ -126,13 +131,13 @@ export default function DiscCard({
           )}
         </div>
 
-        {/* Edit / Delete Buttons */}
+        {/* Edit / Delete */}
         {(onEdit || onDelete) && (
-          <div className="flex justify-center gap-2 mb-1 flex-wrap mt-auto">
+          <div className="flex justify-center gap-2 flex-wrap mt-2">
             {onEdit && (
               <button
                 onClick={() => onEdit(disc)}
-                className="flex-1 text-xs hover:underline"
+                className="text-xs hover:underline"
                 style={{ color: textColor }}
               >
                 ✏️ Edit
@@ -141,7 +146,7 @@ export default function DiscCard({
             {onDelete && (
               <button
                 onClick={onDelete}
-                className="flex-1 text-xs hover:underline"
+                className="text-xs hover:underline"
                 style={{ color: textColor }}
               >
                 🗑️ Remove
@@ -150,20 +155,28 @@ export default function DiscCard({
           </div>
         )}
 
-        {/* Add Button */}
+        {/* ✅ Button (catalog pinned, gear unchanged) */}
         {actionLabel && (
-          <button
-            onClick={handleActionClick}
-            className={`mt-auto bg-green-600 text-white rounded ${
+          <div
+            className={`${
               circleView
-                ? 'py-1 px-3 text-xs hover:bg-green-700'
-                : isMobile
-                ? 'py-2 px-4 text-lg'
-                : 'py-1 px-3 hover:bg-green-700'
+                ? 'mt-auto' // ✅ Gear layout (unchanged)
+                : 'mt-auto pt-3 flex justify-center' // ✅ Catalog: pinned bottom
             }`}
           >
-            {actionLabel}
-          </button>
+            <button
+              onClick={handleActionClick}
+              className={`bg-green-600 text-white rounded transition-colors duration-200 ${
+                circleView
+                  ? 'py-1 px-3 text-xs hover:bg-green-700'
+                  : isMobile
+                  ? 'py-2 px-4 text-lg hover:bg-green-700'
+                  : 'py-1.5 px-3 hover:bg-green-700'
+              }`}
+            >
+              {actionLabel}
+            </button>
+          </div>
         )}
       </div>
     </div>
