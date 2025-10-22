@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import type { Disc } from '@/types/disc';
 import imageCompression from 'browser-image-compression';
+import { DiscBrands, DiscPlastics } from '@/app/constants/discData';
+
 
 type CreateListingFormProps = {
   user: { id: string; name?: string; email?: string };
@@ -21,7 +23,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     brand: '',
     plastic: '',
     weight: '', // always controlled as string
-    condition: 'Used - Like New',
+    condition: 'Like New',
     type: 'Sell',
     price: 0,
     city: '',
@@ -232,7 +234,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       brand: '',
       plastic: '',
       weight: '', // reset to empty string
-      condition: 'Used - Like New',
+      condition: 'Like New',
       type: 'Sell',
       price: 0,
       city: '',
@@ -315,32 +317,45 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           />
         </div>
 
+        {/* Brand Picklist */}
         <div>
           <label htmlFor="brand" className="block font-medium mb-1">
             Brand
           </label>
-          <input
+          <select
             id="brand"
-            type="text"
             value={form.brand}
             onChange={(e) => handleFieldChange('brand', e.target.value)}
             className="border px-3 py-2 rounded w-full"
-          />
+          >
+            <option value="">Select brand</option>
+            {DiscBrands.map((brand) => (
+              <option key={brand} value={brand}>
+                {brand}
+              </option>
+            ))}
+          </select>
         </div>
 
+        {/* Plastic Picklist */}
         <div>
           <label htmlFor="plastic" className="block font-medium mb-1">
             Plastic
           </label>
-          <input
+          <select
             id="plastic"
-            type="text"
             value={form.plastic}
             onChange={(e) => handleFieldChange('plastic', e.target.value)}
             className="border px-3 py-2 rounded w-full"
-          />
+          >
+            <option value="">Select plastic</option>
+            {DiscPlastics.map((plastic) => (
+              <option key={plastic} value={plastic}>
+                {plastic}
+              </option>
+            ))}
+          </select>
         </div>
-
         <div>
           <label htmlFor="weight" className="block font-medium mb-1">
             Weight (g)
@@ -366,8 +381,9 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             className="border px-3 py-2 rounded w-full"
           >
             <option>New</option>
-            <option>Used - Like New</option>
-            <option>Used - Fair</option>
+            <option>Like New</option>
+            <option>Used</option>
+            <option>Worn</option>
           </select>
         </div>
 
