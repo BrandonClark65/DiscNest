@@ -28,7 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SessionProvider>
           <Toaster position="bottom-center" />
           <NavBar />
-          <main className="flex-grow">{children}</main>
+          {/* 👇 Add top padding to clear fixed navbar */}
+          <main className="flex-grow pt-16 md:pt-20">{children}</main>
           <Footer />
         </SessionProvider>
       </body>
