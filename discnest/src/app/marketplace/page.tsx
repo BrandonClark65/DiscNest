@@ -7,6 +7,8 @@ import { useSession } from 'next-auth/react';
 import CreateListingForm from '@/components/CreateListingForm';
 import type { Listing } from '@/types/listing';
 import { DiscBrands } from '@/app/constants/discData';
+import GradientButton from '@/components/ui/GradientButton';
+import { MessageCircle, PlusCircle } from 'lucide-react';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 const ListingCard = dynamic(() => import('@/components/ListingCard'), { ssr: false });
@@ -221,22 +223,18 @@ export default function MarketplacePage() {
         <h1 className="text-3xl font-bold text-gray-800">Disc Marketplace</h1>
 
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-          <button
-            onClick={() =>
-              session?.user ? router.push('/messages') : handleLoginRequired('view messages')
-            }
-            className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm sm:text-base transition"
-          >
-            Messages
-          </button>
-          <button
-            onClick={() =>
-              session?.user ? setIsCreating(true) : handleLoginRequired('create a listing')
-            }
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm sm:text-base transition"
-          >
-            + Create Listing
-          </button>
+          <GradientButton
+            label="Messages"
+            href="/messages"
+            icon={<MessageCircle className="w-5 h-5" />}
+            variant="blue"
+          />
+          <GradientButton
+            label="Create Listing"
+            onClick={() => setIsCreating(true)}
+            icon={<PlusCircle className="w-5 h-5" />}
+            variant="green"
+          />
         </div>
       </header>
 

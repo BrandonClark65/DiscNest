@@ -15,7 +15,8 @@ import {
   useDroppable,
 } from '@dnd-kit/core';
 import { motion } from 'framer-motion';
-import { Disc as DiscIcon, ShoppingBag, Package  } from 'lucide-react';
+import { Disc as DiscIcon, ShoppingBag, Package } from 'lucide-react';
+import GradientButton from '@/components/ui/GradientButton'; // ✅ NEW
 
 export default function GearPage() {
   const { data: session } = useSession();
@@ -105,7 +106,7 @@ export default function GearPage() {
       <div
         className={`max-w-6xl mx-auto p-6 space-y-12 transition-all duration-300 relative`}
         style={{
-          paddingRight: editingDisc ? '24rem' : undefined, // Reserve space instead of shifting layout
+          paddingRight: editingDisc ? '24rem' : undefined, // Prevents layout shift
         }}
       >
         {/* ===== HEADER ===== */}
@@ -120,13 +121,13 @@ export default function GearPage() {
           </h1>
           <div className="h-1 w-24 mx-auto bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"></div>
 
-          <a
+          {/* ✅ Updated to use GradientButton */}
+          <GradientButton
+            label="Browse Disc Catalog"
             href="/catalog"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-full shadow-md hover:shadow-xl hover:scale-[1.05] active:scale-95 transition-all duration-300 font-semibold"
-          >
-            <DiscIcon className="w-5 h-5" />
-            Browse Disc Catalog
-          </a>
+            icon={<DiscIcon className="w-5 h-5" />}
+            variant="blue"
+          />
         </motion.div>
 
         {/* ===== MAIN CONTENT ===== */}
@@ -196,6 +197,7 @@ export default function GearPage() {
   );
 }
 
+/* ---------- Gear Section Component ---------- */
 function GearSection({
   title,
   icon,
