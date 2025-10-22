@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
 import CreateListingForm from '@/components/CreateListingForm';
 import type { Listing } from '@/types/listing';
+import { DiscBrands } from '@/app/constants/discData';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 const ListingCard = dynamic(() => import('@/components/ListingCard'), { ssr: false });
@@ -284,18 +285,24 @@ export default function MarketplacePage() {
         <div className="hidden md:flex gap-4 items-center mb-6">
           <input
             type="text"
-            placeholder="Search discs, brand..."
+            placeholder="Search discs..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 w-1/3"
           />
-          <input
-            type="text"
-            placeholder="Brand"
+          {/* ✅ Brand picklist */}
+          <select
             value={brandFilter}
             onChange={(e) => setBrandFilter(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 w-1/4"
-          />
+          >
+            <option value="">All Brands</option>
+            {DiscBrands.map((brand) => (
+              <option key={brand} value={brand}>
+                {brand}
+              </option>
+            ))}
+          </select>
           <select
             value={conditionFilter}
             onChange={(e) => setConditionFilter(e.target.value)}
