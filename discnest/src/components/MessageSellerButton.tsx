@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import ChatModal from '@/components/ChatModal';
+import GradientButton from './ui/GradientButton';
+import { MessageCircle } from 'lucide-react';
 
 type MessageSellerButtonProps = {
   sellerId: string;
@@ -53,14 +55,11 @@ export default function MessageSellerButton({
 
   return (
     <>
-      <button
-        onClick={handleClick}
-        disabled={isLoading}
-        className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700"
-      >
-        {isLoading ? 'Loading...' : 'Message Seller'}
-      </button>
-
+      <GradientButton label={isLoading ? 'Loading...' : 'Message Seller'} 
+        onClick={handleClick} 
+        variant="blue" 
+        icon={<MessageCircle className="w-5 h-5" />}
+      />
       {threadId && (
         <ChatModal threadId={threadId} onClose={() => setThreadId(null)} />
       )}

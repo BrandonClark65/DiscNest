@@ -6,6 +6,8 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import MessageSellerButton from '@/components/MessageSellerButton';
 import type { Listing } from '@/types/listing';
+import GradientButton from '@/components/ui/GradientButton';
+import { ArrowBigLeft } from 'lucide-react';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
@@ -49,12 +51,7 @@ export default function ListingPage() {
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
       {/* ---------- BACK BUTTON ---------- */}
-      <button
-        onClick={() => router.push('/marketplace')}
-        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-sm sm:text-base transition"
-      >
-        &larr; Back to Marketplace
-      </button>
+      <GradientButton label="Back to Marketplace" href={`/marketplace`} variant="gray" icon={<ArrowBigLeft  className="w-5 h-5" />} />
 
       {/* ---------- MAIN LAYOUT ---------- */}
       <div className="flex flex-col lg:flex-row gap-8">

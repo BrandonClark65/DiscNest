@@ -4,6 +4,7 @@ import type { Listing } from '@/types/listing';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import GradientButton from '@/components/ui/GradientButton';
 
 type ListingCardProps = {
   listing: Listing;
@@ -88,40 +89,16 @@ export default function ListingCard({
             : 'Price not listed'}
         </p>
 
-        <div className="mt-auto space-y-2">
-          <Link href={`/listing/${listing._id}`} className="block">
-            <button
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg
-                         hover:bg-blue-700 active:bg-blue-800
-                         hover:scale-[1.02] active:scale-[0.98]
-                         transition duration-150"
-            >
-              View Listing
-            </button>
-          </Link>
-
-          {/* ---------- Owner Actions ---------- */}
+        <div className="mt-auto space-y-2 flex flex-col items-center">
+          <GradientButton
+            label="View Listing"
+            href={`/listing/${listing._id}`}
+            variant="blue"
+          />
           {isOwner && !listing.sold && (
-            <div className="flex gap-2">
-              <button
-                onClick={onMarkSold}
-                className="flex-1 bg-green-500 text-white py-1 rounded-lg
-                           hover:bg-green-600 active:bg-green-700
-                           hover:scale-[1.02] active:scale-[0.98]
-                           transition duration-150"
-              >
-                Mark Sold
-              </button>
-
-              <button
-                onClick={onDelete}
-                className="flex-1 bg-red-500 text-white py-1 rounded-lg
-                           hover:bg-red-600 active:bg-red-700
-                           hover:scale-[1.02] active:scale-[0.98]
-                           transition duration-150"
-              >
-                Delete
-              </button>
+            <div className="flex gap-2 justify-center">
+              <GradientButton label="Sold" onClick={onMarkSold} variant="green" />
+              <GradientButton label="Delete" onClick={onDelete} variant="red" />
             </div>
           )}
         </div>

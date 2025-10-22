@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react';
 import type { Disc } from '@/types/disc';
 import DiscCard from '@/components/DiscCard';
 import toast from 'react-hot-toast';
+import GradientButton from '@/components/ui/GradientButton';
+import { Filter } from 'lucide-react';
 
 export default function CatalogPage() {
   const [discs, setDiscs] = useState<Disc[]>([]);
@@ -254,10 +256,14 @@ export default function CatalogPage() {
 
       {/* Main Catalog */}
       <div className="md:col-span-3 space-y-4">
-        {isMobile && (
-          <button onClick={() => setFiltersOpen(true)} className="mb-4 bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700">
-            Filters
-          </button>
+        {isMobile && (  
+          <GradientButton
+            label="Filters"
+            icon={<Filter size={18} />} // optional — remove if you don’t want the icon
+            onClick={() => setFiltersOpen(true)}
+            variant="green"
+            className="mb-4 px-4 py-2"
+          />
         )}
 
         <h1 className="text-2xl font-bold text-center text-green-700">Disc Catalog</h1>

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Package, BookOpen, User } from 'lucide-react';
 import DiscbagDisplay from '@/components/DiscbagDisplay';
+import GradientButton from '@/components/ui/GradientButton';
+import { DiscIcon } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -22,12 +24,12 @@ export default function HomePage() {
           Track your disc golf gear, build your bag, and explore new discs with ease.
         </p>
         <div className="mt-6">
-          <Link
+          <GradientButton
+            label="Browse Disc Catalog"
             href="/catalog"
-            className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-green-700 transition"
-          >
-            Browse Discs
-          </Link>
+            icon={<DiscIcon className="w-5 h-5" />}
+            variant="green"
+          />
         </div>
       </motion.div>
 
