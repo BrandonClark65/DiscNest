@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import CreateListingForm from '@/components/CreateListingForm';
-import ListingCard from '@/components/ListingCard';
-import type { Listing } from '@/types/listing';
-import { useSession } from 'next-auth/react';
 import dynamic from 'next/dynamic';
+import { useSession } from 'next-auth/react';
+import CreateListingForm from '@/components/CreateListingForm';
+import type { Listing } from '@/types/listing';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
+const ListingCard = dynamic(() => import('@/components/ListingCard'), { ssr: false });
 
 export default function MarketplacePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userId = session?.user?.id;
   const router = useRouter();
 
@@ -33,7 +33,7 @@ export default function MarketplacePage() {
   // Location
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Pagination state
+  // Pagination
   const [marketPage, setMarketPage] = useState(1);
   const [marketTotalPages, setMarketTotalPages] = useState(1);
   const [myPage, setMyPage] = useState(1);
@@ -60,14 +60,15 @@ export default function MarketplacePage() {
       let url = `/api/listings?mode=${mode}&page=${pageToFetch}&limit=${
         mode === 'marketplace' ? 20 : 100
       }`;
+
       if (mode === 'marketplace') {
         if (userLocation) url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
         if (brandFilter) url += `&brand=${encodeURIComponent(brandFilter)}`;
         if (conditionFilter) url += `&condition=${encodeURIComponent(conditionFilter)}`;
-        if (userId) url += `&excludeUserId=${userId}`;
+        if (userId) url += `&excludeUserId=${userId}`; // ✅ only here
       } else if (mode === 'myListings' && userId) {
-        url += `&excludeUserId=${userId}`;
+        url += `&userId=${userId}`; // ✅ correct param for owned listings
       }
 
       const res = await fetch(url);
@@ -99,15 +100,41 @@ export default function MarketplacePage() {
   // --- Fetch marketplace listings ---
   useEffect(() => {
     if (activeTab !== 'market') return;
+    if (status === 'loading') return;
+
     const fetchMarket = async () => {
       const { listings, totalPages } = await fetchListings('marketplace', marketPage);
-      setMarketListings(listings);
+
+      // ✅ Client-side safety filter: ensure we never show owned listings
+      const filtered = userId
+        ? listings.filter((l) => {
+            const ownerId =
+              typeof l.userId === 'string'
+                ? l.userId
+                : String((l.userId as any)?._id || '');
+            return ownerId !== userId;
+          })
+        : listings;
+
+
+
+      setMarketListings(filtered);
       setMarketTotalPages(totalPages);
     };
-    fetchMarket();
-  }, [activeTab, userLocation, searchQuery, brandFilter, conditionFilter, marketPage]);
 
-  // --- Fetch current user's listings ---
+    fetchMarket();
+  }, [
+    activeTab,
+    userLocation,
+    searchQuery,
+    brandFilter,
+    conditionFilter,
+    marketPage,
+    userId,
+    status,
+  ]);
+
+  // --- Fetch user's listings ---
   useEffect(() => {
     if (activeTab !== 'myListings' || !userId) return;
 
@@ -124,7 +151,11 @@ export default function MarketplacePage() {
     setMarketPage(1);
   }, [searchQuery, brandFilter, conditionFilter]);
 
-  // --- Handlers for buttons when not logged in ---
+  // --- Smooth scroll on pagination change ---
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [marketPage, myPage]);
+
   const handleLoginRequired = (action: string) => {
     alert(`Log in to ${action}`);
   };
@@ -183,16 +214,17 @@ export default function MarketplacePage() {
   const setCurrentPage = activeTab === 'market' ? setMarketPage : setMyPage;
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-semibold">Disc Marketplace</h1>
-        <div className="flex gap-2">
+    <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* ---------- HEADER ---------- */}
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Disc Marketplace</h1>
+
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={() =>
               session?.user ? router.push('/messages') : handleLoginRequired('view messages')
             }
-            className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+            className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm sm:text-base transition"
           >
             Messages
           </button>
@@ -200,125 +232,147 @@ export default function MarketplacePage() {
             onClick={() =>
               session?.user ? setIsCreating(true) : handleLoginRequired('create a listing')
             }
-            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm sm:text-base transition"
           >
             + Create Listing
           </button>
         </div>
+      </header>
+
+      {/* ---------- TABS ---------- */}
+      <div className="flex justify-center sm:justify-start border-b border-gray-200 mb-6">
+        {['market', 'myListings'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab as 'market' | 'myListings')}
+            className={`px-4 py-2 text-sm sm:text-base font-medium border-b-2 transition-colors duration-200 ${
+              activeTab === tab
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab === 'market' ? 'Marketplace' : 'My Listings'}
+          </button>
+        ))}
       </div>
 
-      {/* Tabs */}
-      <div className="mb-4 flex gap-2">
-        <button
-          onClick={() => setActiveTab('market')}
-          className={`px-3 py-1 rounded ${
-            activeTab === 'market' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
-          } transition-colors duration-150`}
-        >
-          Marketplace
-        </button>
-        <button
-          onClick={() => setActiveTab('myListings')}
-          className={`px-3 py-1 rounded ${
-            activeTab === 'myListings' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
-          } transition-colors duration-150`}
-        >
-          My Listings
-        </button>
-      </div>
-
-      {/* Subtabs for My Listings */}
+      {/* ---------- My Listings subtabs ---------- */}
       {activeTab === 'myListings' && userId && (
         <div className="flex gap-2 mb-4 ml-2">
-          <button
-            onClick={() => setMyListingsTab('active')}
-            className={`px-3 py-1 rounded text-sm ${
-              myListingsTab === 'active' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-            } transition-colors duration-150`}
-          >
-            Active
-          </button>
-          <button
-            onClick={() => setMyListingsTab('sold')}
-            className={`px-3 py-1 rounded text-sm ${
-              myListingsTab === 'sold' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-            } transition-colors duration-150`}
-          >
-            Sold
-          </button>
+          {['active', 'sold'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setMyListingsTab(tab as 'active' | 'sold')}
+              className={`px-3 py-1 rounded text-sm font-medium ${
+                myListingsTab === tab
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              } transition`}
+            >
+              {tab === 'active' ? 'Active' : 'Sold'}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Message for not logged-in users in My Listings */}
       {activeTab === 'myListings' && !userId && (
         <p className="text-gray-500 italic mb-4">Log in to view your listings.</p>
       )}
 
-      {/* Filters */}
+      {/* ---------- FILTERS (desktop) ---------- */}
       {activeTab === 'market' && (
-        <div className="mb-4 flex flex-col md:flex-row gap-4 items-center">
-          <div className="flex items-center gap-2">
-            <label className="font-medium">Search:</label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input"
-              placeholder="Search discs, brand..."
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label className="font-medium">Brand:</label>
-            <input
-              type="text"
-              value={brandFilter}
-              onChange={(e) => setBrandFilter(e.target.value)}
-              className="input"
-              placeholder="Brand"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label className="font-medium">Condition:</label>
-            <select
-              value={conditionFilter}
-              onChange={(e) => setConditionFilter(e.target.value)}
-              className="input"
-            >
-              <option value="">Any</option>
-              <option value="New">New</option>
-              <option value="Like New">Like New</option>
-              <option value="Used">Used</option>
-              <option value="Worn">Worn</option>
-            </select>
-          </div>
+        <div className="hidden md:flex gap-4 items-center mb-6">
+          <input
+            type="text"
+            placeholder="Search discs, brand..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 w-1/3"
+          />
+          <input
+            type="text"
+            placeholder="Brand"
+            value={brandFilter}
+            onChange={(e) => setBrandFilter(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 w-1/4"
+          />
+          <select
+            value={conditionFilter}
+            onChange={(e) => setConditionFilter(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 w-1/4"
+          >
+            <option value="">Condition</option>
+            <option>New</option>
+            <option>Like New</option>
+            <option>Used</option>
+            <option>Worn</option>
+          </select>
         </div>
       )}
 
-      {/* Create Listing Form */}
+      {/* ---------- FILTERS (mobile collapsible) ---------- */}
+      {activeTab === 'market' && (
+        <details className="md:hidden mb-6">
+          <summary className="cursor-pointer bg-gray-100 px-3 py-2 rounded-lg font-medium">
+            Filters
+          </summary>
+          <div className="flex flex-col gap-3 mt-3">
+            <input
+              type="text"
+              placeholder="Search discs, brand..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Brand"
+              value={brandFilter}
+              onChange={(e) => setBrandFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            />
+            <select
+              value={conditionFilter}
+              onChange={(e) => setConditionFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="">Condition</option>
+              <option>New</option>
+              <option>Like New</option>
+              <option>Used</option>
+              <option>Worn</option>
+            </select>
+          </div>
+        </details>
+      )}
+
+      {/* ---------- CREATE LISTING FORM ---------- */}
       {isCreating && session?.user && (
-        <div className="border rounded p-4 mb-6 bg-gray-50">
+        <div className="border rounded-lg p-4 mb-6 bg-gray-50 shadow-sm">
           <CreateListingForm user={session.user} onClose={() => setIsCreating(false)} />
         </div>
       )}
 
-      {/* Map */}
+      {/* ---------- MAP SECTION ---------- */}
       {activeTab === 'market' && (
-        <div className="mb-6 h-96 flex items-center justify-center">
-          {!userLocation ? (
-            <p className="text-gray-500 italic">Loading map based on your location...</p>
-          ) : (
-            <Map listings={marketListings} />
-          )}
+        <div className="mb-8">
+          <div className="h-64 sm:h-80 md:h-96 rounded-lg overflow-hidden shadow">
+            {!userLocation ? (
+              <p className="text-gray-500 italic flex items-center justify-center h-full">
+                Loading map based on your location...
+              </p>
+            ) : (
+              <Map listings={marketListings} />
+            )}
+          </div>
         </div>
       )}
 
-      {/* Listings Grid */}
+      {/* ---------- LISTINGS GRID ---------- */}
       {loading ? (
-        <p>Loading listings...</p>
+        <p className="text-gray-500 text-center italic py-10">Loading listings...</p>
       ) : listingsToShow.length === 0 ? (
-        <p className="text-gray-500 italic">
+        <p className="text-gray-500 italic text-center py-10">
           {activeTab === 'market'
             ? 'No listings found.'
             : !userId
@@ -328,7 +382,7 @@ export default function MarketplacePage() {
             : 'No active listings yet.'}
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
           {listingsToShow.map((listing, index) => (
             <ListingCard
               key={`${listing._id}-${index}`}
@@ -341,9 +395,9 @@ export default function MarketplacePage() {
         </div>
       )}
 
-      {/* Pagination */}
+      {/* ---------- PAGINATION ---------- */}
       {currentTotalPages > 1 && (
-        <div className="flex justify-center mt-6 gap-2 flex-wrap">
+        <div className="flex justify-center mt-8 gap-2 flex-wrap">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
@@ -370,6 +424,18 @@ export default function MarketplacePage() {
             Next
           </button>
         </div>
+      )}
+
+      {/* ---------- FLOATING CREATE BUTTON (mobile only) ---------- */}
+      {!isCreating && (
+        <button
+          onClick={() =>
+            session?.user ? setIsCreating(true) : handleLoginRequired('create a listing')
+          }
+          className="fixed bottom-20 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 sm:hidden z-50"
+        >
+          +
+        </button>
       )}
     </div>
   );
