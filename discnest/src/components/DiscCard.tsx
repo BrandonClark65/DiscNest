@@ -12,9 +12,10 @@ type DiscCardProps = {
   onAction?: () => void;
   onDelete?: () => void;
   onEdit?: (disc: Disc) => void;
-  onHover?: (disc: Disc | null) => void; // re-added
+  onHover?: (disc: Disc | null) => void;
   isRecentlyAdded?: boolean;
   className?: string;
+  circleView?: boolean;
 };
 
 export default function DiscCard({
@@ -26,6 +27,7 @@ export default function DiscCard({
   onHover,
   isRecentlyAdded = false,
   className = '',
+  circleView = false,
 }: DiscCardProps) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
@@ -53,80 +55,117 @@ export default function DiscCard({
       onMouseEnter={() => !isMobile && onHover?.(disc)}
       onMouseLeave={() => !isMobile && onHover?.(null)}
       onClick={() => isMobile && onHover?.(disc)}
-      className={`border p-4 rounded shadow flex flex-col justify-between transition cursor-pointer ${className} ${
+      className={`transition cursor-pointer ${className} ${
         isRecentlyAdded ? 'ring-2 ring-green-500' : 'hover:ring-2 hover:ring-green-500'
+      } ${
+        circleView
+          ? 'relative rounded-full border shadow-md flex items-center justify-center overflow-hidden'
+          : 'border p-4 rounded shadow flex flex-col justify-between'
       }`}
       style={{
         backgroundColor: disc.color ?? '#ffffff',
         color: textColor,
         filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.4))',
+        width: circleView ? 'clamp(260px, 28vw, 320px)' : undefined,
+        height: circleView ? 'clamp(260px, 28vw, 320px)' : undefined,
+        margin: circleView ? '0 auto' : undefined,
       }}
     >
-      {/* Disc Image */}
-      {disc.image && (
-        <img
-          src={disc.image}
-          alt={disc.name}
-          onError={(e) => ((e.target as HTMLImageElement).src = '/fallback.jpg')}
-          className={isMobile ? 'w-32 h-32 mx-auto object-contain mb-4' : 'w-20 h-20 mx-auto object-contain mb-2'}
-        />
-      )}
-
-      {/* Info */}
-      <div className={isMobile ? 'text-center mb-4 space-y-1' : 'mb-2 text-center'}>
-        <h3 className="font-bold" style={{ color: textColor }}>
-          {disc.name}
-        </h3>
-        <p style={{ color: textColor }}>
-          {disc.brand} • {disc.type} • {disc.stability}
-        </p>
-        {disc.plastic && (
-          <p className="italic" style={{ color: textColor }}>
-            Plastic: {disc.plastic}
-          </p>
+      {/* ✅ Scaled Inner Wrapper */}
+      <div
+        className={`transition-transform duration-300 ease-in-out ${
+          circleView ? 'flex flex-col items-center justify-center scale-[0.9] md:scale-[0.95] lg:scale-[1]' : ''
+        }`}
+        style={{
+          width: '90%',
+          height: '90%',
+          transformOrigin: 'center center',
+        }}
+      >
+        {/* Disc Image */}
+        {disc.image && (
+          <img
+            src={disc.image}
+            alt={disc.name}
+            onError={(e) => ((e.target as HTMLImageElement).src = '/fallback.jpg')}
+            className={`object-contain ${
+              circleView
+                ? 'w-28 h-28 md:w-36 md:h-36 rounded-full border border-white shadow-inner mb-2'
+                : isMobile
+                ? 'w-32 h-32 mx-auto object-contain mb-4'
+                : 'w-20 h-20 mx-auto object-contain mb-2'
+            }`}
+          />
         )}
-        {(disc.wearLevel !== undefined || disc.weight) && (
-          <p className="italic" style={{ color: textColor }}>
-            {disc.wearLevel !== undefined && `Wear: ${disc.wearLevel}`}
-            {disc.wearLevel !== undefined && disc.weight ? ' • ' : ''}
-            {disc.weight && `Weight: ${disc.weight}g`}
-          </p>
-        )}
-      </div>
 
-      {/* Edit / Delete Buttons */}
-      {(onEdit || onDelete) && (
-        <div className="flex justify-center gap-2 mb-2 flex-wrap">
-          {onEdit && (
-            <button
-              onClick={() => onEdit(disc)}
-              className="flex-1 text-sm hover:underline"
-              style={{ color: textColor }}
-            >
-              ✏️ Edit
-            </button>
+        {/* Info */}
+        <div
+          className={`text-center ${
+            circleView
+              ? 'flex flex-col items-center justify-center text-[0.75rem] sm:text-[0.8rem] md:text-[0.85rem] leading-tight mt-1'
+              : ''
+          } ${isMobile ? 'mb-4 space-y-1' : 'mb-2'}`}
+        >
+          <h3 className="font-bold" style={{ color: textColor }}>
+            {disc.name}
+          </h3>
+          <p style={{ color: textColor }}>
+            {disc.brand} • {disc.type} • {disc.stability}
+          </p>
+          {disc.plastic && (
+            <p className="italic" style={{ color: textColor }}>
+              Plastic: {disc.plastic}
+            </p>
           )}
-          {onDelete && (
-            <button
-              onClick={onDelete}
-              className="flex-1 text-sm hover:underline"
-              style={{ color: textColor }}
-            >
-              🗑️ Remove
-            </button>
+          {(disc.wearLevel !== undefined || disc.weight) && (
+            <p className="italic" style={{ color: textColor }}>
+              {disc.wearLevel !== undefined && `Wear: ${disc.wearLevel}`}
+              {disc.wearLevel !== undefined && disc.weight ? ' • ' : ''}
+              {disc.weight && `Weight: ${disc.weight}g`}
+            </p>
           )}
         </div>
-      )}
 
-      {/* Add Button */}
-      {actionLabel && (
-        <button
-          onClick={handleActionClick}
-          className={isMobile ? 'mt-auto bg-green-600 text-white py-2 px-4 rounded text-lg' : 'mt-auto bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700'}
-        >
-          {actionLabel}
-        </button>
-      )}
+        {/* Edit / Delete Buttons */}
+        {(onEdit || onDelete) && (
+          <div className="flex justify-center gap-2 mb-1 flex-wrap mt-auto">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(disc)}
+                className="flex-1 text-xs hover:underline"
+                style={{ color: textColor }}
+              >
+                ✏️ Edit
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                className="flex-1 text-xs hover:underline"
+                style={{ color: textColor }}
+              >
+                🗑️ Remove
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Add Button */}
+        {actionLabel && (
+          <button
+            onClick={handleActionClick}
+            className={`mt-auto bg-green-600 text-white rounded ${
+              circleView
+                ? 'py-1 px-3 text-xs hover:bg-green-700'
+                : isMobile
+                ? 'py-2 px-4 text-lg'
+                : 'py-1 px-3 hover:bg-green-700'
+            }`}
+          >
+            {actionLabel}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
