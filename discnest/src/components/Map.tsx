@@ -1,11 +1,11 @@
 'use client';
 
-import { MapContainer, TileLayer, Popup, Circle, useMap } from 'react-leaflet';
 import { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Popup, Circle, useMap } from 'react-leaflet';
 import type { Listing } from '@/types/listing';
 import 'leaflet/dist/leaflet.css';
 
-// Helper to safely recenter map
+// ---------- Helper ----------
 function SetViewOnCenter({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
@@ -23,10 +23,17 @@ type MapProps = {
 export default function Map({ listings = [], singleListing, zoom = 13 }: MapProps) {
   const [center, setCenter] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
-  // --- Determine initial center ---
+  // ✅ Always call this
   useEffect(() => {
-    if (center) return; // ✅ don’t re-run once set
+    if (typeof window === 'undefined') return;
+    setMounted(true);
+  }, []);
+
+  // ✅ Always call this second useEffect, but guard inside
+  useEffect(() => {
+    if (!mounted || center) return;
 
     if (singleListing?.location?.coordinates) {
       const [lng, lat] = singleListing.location.coordinates;
@@ -35,7 +42,6 @@ export default function Map({ listings = [], singleListing, zoom = 13 }: MapProp
       return;
     }
 
-    // Fallback to user location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -43,12 +49,11 @@ export default function Map({ listings = [], singleListing, zoom = 13 }: MapProp
           setLoading(false);
         },
         () => {
-          // fallback: first listing or default city
           if (listings[0]?.location?.coordinates) {
             const [lng, lat] = listings[0].location.coordinates;
             setCenter([lat, lng]);
           } else {
-            setCenter([37.7749, -122.4194]); // San Francisco
+            setCenter([37.7749, -122.4194]);
           }
           setLoading(false);
         }
@@ -57,7 +62,7 @@ export default function Map({ listings = [], singleListing, zoom = 13 }: MapProp
       setCenter([37.7749, -122.4194]);
       setLoading(false);
     }
-  }, [center, listings, singleListing]);
+  }, [mounted, center, listings, singleListing]);
 
   // --- Create stable obfuscated marker positions ---
   const obfuscatedMarkers = useMemo(() => {
@@ -80,8 +85,8 @@ export default function Map({ listings = [], singleListing, zoom = 13 }: MapProp
       .filter(Boolean) as (Listing & { obLat: number; obLng: number })[];
   }, [listings, singleListing]);
 
-  // --- Loading / no center guard ---
-  if (loading || !center) {
+  // --- Loading guard ---
+  if (loading || !mounted || !center) {
     return (
       <div className="flex items-center justify-center w-full h-full rounded bg-gray-100 text-gray-600">
         Loading map...
@@ -89,9 +94,8 @@ export default function Map({ listings = [], singleListing, zoom = 13 }: MapProp
     );
   }
 
-  // ✅ Remove dynamic key — prevents map remounts and appendChild errors
   return (
-    <div className="w-full h-full rounded overflow-hidden">
+    <div className="w-full h-full rounded overflow-hidden relative z-0">
       <MapContainer
         center={center}
         zoom={zoom}
@@ -109,7 +113,7 @@ export default function Map({ listings = [], singleListing, zoom = 13 }: MapProp
           <Circle
             key={`${listing._id}-${index}`}
             center={[listing.obLat, listing.obLng]}
-            radius={400} // smaller, nicer size
+            radius={400}
             pathOptions={{
               color: '#1d4ed8',
               fillColor: '#3b82f6',
