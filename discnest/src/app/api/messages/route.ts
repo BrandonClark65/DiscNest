@@ -44,13 +44,14 @@ export async function POST(req: Request) {
   });
 
   if (existing) {
-    // Populate and return existing thread
-    existing = await existing
+    const populatedExisting = await MessageThread.findById(existing._id)
       .populate("participants", "_id name")
       .populate("listingId", "title imageUrls")
       .populate("messages.sender", "_id name") as unknown as Thread;
-    return NextResponse.json(existing);
+
+    return NextResponse.json(populatedExisting);
   }
+
 
   // Initialize messages array as ObjectIds
   const messages: Message[] = content
