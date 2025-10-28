@@ -5,6 +5,7 @@ import { getContrastColor } from '@/lib/colors';
 import toast from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import { GripVertical } from 'lucide-react';
 
 type DiscCardProps = {
   disc: Disc;
@@ -16,6 +17,9 @@ type DiscCardProps = {
   isRecentlyAdded?: boolean;
   className?: string;
   circleView?: boolean;
+
+  // ✅ Optional drag handle props
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
 };
 
 export default function DiscCard({
@@ -28,6 +32,7 @@ export default function DiscCard({
   isRecentlyAdded = false,
   className = '',
   circleView = false,
+  dragHandleProps,
 }: DiscCardProps) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
@@ -55,13 +60,13 @@ export default function DiscCard({
       onMouseEnter={() => !isMobile && onHover?.(disc)}
       onMouseLeave={() => !isMobile && onHover?.(null)}
       onClick={() => isMobile && onHover?.(disc)}
-      className={`transition cursor-pointer ${className} ${
+      className={`transition cursor-pointer relative ${className} ${
         isRecentlyAdded
           ? 'ring-2 ring-green-500'
           : 'hover:ring-2 hover:ring-green-500'
       } ${
         circleView
-          ? 'relative rounded-full border shadow-md flex items-center justify-center overflow-hidden'
+          ? 'rounded-full border shadow-md flex items-center justify-center overflow-hidden'
           : 'border p-4 rounded shadow flex flex-col justify-between'
       }`}
       style={{
@@ -73,6 +78,19 @@ export default function DiscCard({
         margin: circleView ? '0 auto' : undefined,
       }}
     >
+      {/* ✅ Floating drag handle above the disc */}
+      {circleView && dragHandleProps && (
+        <div
+          {...dragHandleProps}
+          className="absolute -top-5 left-1/2 -translate-x-1/2 cursor-grab z-10"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-white/80 rounded-full shadow-sm p-0.5 hover:bg-white text-gray-700 hover:text-gray-900 transition">
+            <GripVertical className="w-5 h-5 opacity-80" />
+          </div>
+        </div>
+      )}
+
       {/* Inner Wrapper */}
       <div
         className={`transition-transform duration-300 ease-in-out ${
@@ -136,7 +154,10 @@ export default function DiscCard({
           <div className="flex justify-center gap-2 flex-wrap mt-2">
             {onEdit && (
               <button
-                onClick={() => onEdit(disc)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(disc);
+                }}
                 className="text-xs hover:underline"
                 style={{ color: textColor }}
               >
@@ -145,7 +166,10 @@ export default function DiscCard({
             )}
             {onDelete && (
               <button
-                onClick={onDelete}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
                 className="text-xs hover:underline"
                 style={{ color: textColor }}
               >
@@ -155,17 +179,20 @@ export default function DiscCard({
           </div>
         )}
 
-        {/* ✅ Button (catalog pinned, gear unchanged) */}
+        {/* Action Button */}
         {actionLabel && (
           <div
             className={`${
               circleView
-                ? 'mt-auto' // ✅ Gear layout (unchanged)
-                : 'mt-auto pt-3 flex justify-center' // ✅ Catalog: pinned bottom
+                ? 'mt-auto'
+                : 'mt-auto pt-3 flex justify-center'
             }`}
           >
             <button
-              onClick={handleActionClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleActionClick();
+              }}
               className={`bg-green-600 text-white rounded transition-colors duration-200 ${
                 circleView
                   ? 'py-1 px-3 text-xs hover:bg-green-700'

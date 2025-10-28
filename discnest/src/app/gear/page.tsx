@@ -14,10 +14,54 @@ import {
   DragEndEvent,
   useDroppable,
 } from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import { Disc as DiscIcon, ShoppingBag, Package } from 'lucide-react';
-import GradientButton from '@/components/ui/GradientButton'; // ✅ NEW
+import GradientButton from '@/components/ui/GradientButton';
 
+/* ---------- Sortable Card Wrapper ---------- */
+function SortableDiscCard({
+  disc,
+  onAction,
+  onDelete,
+  onEdit,
+  actionLabel,
+}: {
+  disc: Disc;
+  onAction: () => void;
+  onDelete: () => void;
+  onEdit: (disc: Disc) => void;
+  actionLabel: string;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: disc._id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <DiscCard
+        disc={disc}
+        actionLabel={actionLabel}
+        onAction={onAction}
+        onDelete={onDelete}
+        onEdit={() => onEdit(disc)}
+        circleView
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
+
+
+/* ---------- Main Page ---------- */
 export default function GearPage() {
   const { data: session } = useSession();
   const [shelf, setShelf] = useState<Disc[]>([]);
@@ -30,7 +74,6 @@ export default function GearPage() {
   const handleEdit = (disc: Disc) => setEditingDisc(disc);
   const closeModal = () => setEditingDisc(null);
 
-  // ✅ Unified fetch
   const fetchDiscs = async () => {
     if (!isLoggedIn) return;
     try {
@@ -42,8 +85,12 @@ export default function GearPage() {
 
       const shelfData = await shelfRes.json();
       const bagData = await bagRes.json();
-      setShelf(shelfData.shelf || []);
-      setBag(bagData.bag || []);
+
+      const sortedShelf = (shelfData.shelf || []).sort((a: Disc, b: Disc) => (a.order ?? 0) - (b.order ?? 0));
+      const sortedBag = (bagData.bag || []).sort((a: Disc, b: Disc) => (a.order ?? 0) - (b.order ?? 0));
+
+      setShelf(sortedShelf);
+      setBag(sortedBag);
     } catch (err) {
       console.error('❌ Error fetching discs:', err);
       toast.error('Failed to load discs. Please try again.');
@@ -86,17 +133,58 @@ export default function GearPage() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const discId = event.active.id as string;
-    const targetZone = event.over?.id;
-    if (!discId || !targetZone) return;
+  // ✅ Enhanced Drag Handler (Shelf + Bag)
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!active || !over) return;
+    if (active.id === over.id) return;
 
-    const from = shelf.find((d) => d._id === discId) ? 'shelf' : 'bag';
-    const to = targetZone === 'shelf' ? 'shelf' : 'bag';
-    if (from !== to) moveDisc(discId, from, to);
+    // --- Reordering inside Shelf ---
+    const oldShelfIndex = shelf.findIndex((d) => d._id === active.id);
+    const newShelfIndex = shelf.findIndex((d) => d._id === over.id);
+
+    if (oldShelfIndex !== -1 && newShelfIndex !== -1) {
+      const newShelf = arrayMove(shelf, oldShelfIndex, newShelfIndex);
+      setShelf(newShelf);
+      try {
+        await fetch('/api/user/discs/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderedIds: newShelf.map((d) => d._id), zone: 'shelf' }),
+        });
+      } catch (err) {
+        console.error('❌ Failed to save shelf reorder:', err);
+        toast.error('Could not save shelf order');
+      }
+      return;
+    }
+
+    // --- Reordering inside Bag ---
+    const oldBagIndex = bag.findIndex((d) => d._id === active.id);
+    const newBagIndex = bag.findIndex((d) => d._id === over.id);
+
+    if (oldBagIndex !== -1 && newBagIndex !== -1) {
+      const newBag = arrayMove(bag, oldBagIndex, newBagIndex);
+      setBag(newBag);
+      try {
+        await fetch('/api/user/discs/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderedIds: newBag.map((d) => d._id), zone: 'bag' }),
+        });
+      } catch (err) {
+        console.error('❌ Failed to save bag reorder:', err);
+        toast.error('Could not save bag order');
+      }
+      return;
+    }
+
+    // --- Moving between zones ---
+    const from = shelf.find((d) => d._id === active.id) ? 'shelf' : 'bag';
+    const to = over.id === 'shelf' ? 'shelf' : 'bag';
+    if (from !== to) moveDisc(active.id as string, from, to);
   };
 
-  // ✅ Responsive Layout
   return (
     <div className="relative">
       {editingDisc && (
@@ -106,7 +194,7 @@ export default function GearPage() {
       <div
         className={`max-w-6xl mx-auto p-6 space-y-12 transition-all duration-300 relative`}
         style={{
-          paddingRight: editingDisc ? '24rem' : undefined, // Prevents layout shift
+          paddingRight: editingDisc ? '24rem' : undefined,
         }}
       >
         {/* ===== HEADER ===== */}
@@ -121,7 +209,6 @@ export default function GearPage() {
           </h1>
           <div className="h-1 w-24 mx-auto bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"></div>
 
-          {/* ✅ Updated to use GradientButton */}
           <GradientButton
             label="Browse Disc Catalog"
             href="/catalog"
@@ -149,6 +236,7 @@ export default function GearPage() {
               onAction={(id) => moveDisc(id, 'shelf', 'bag')}
               onDelete={(id) => deleteDisc(id, 'shelf')}
               onEdit={handleEdit}
+              sortable
             />
           </motion.div>
 
@@ -177,9 +265,9 @@ export default function GearPage() {
               onAction={(id) => moveDisc(id, 'bag', 'shelf')}
               onDelete={(id) => deleteDisc(id, 'bag')}
               onEdit={handleEdit}
+              sortable
             />
 
-            {/* Bag visual */}
             {isLoggedIn && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -208,6 +296,7 @@ function GearSection({
   onDelete,
   onEdit,
   emptyMessage,
+  sortable = false,
 }: {
   title: string;
   icon?: React.ReactNode;
@@ -218,8 +307,66 @@ function GearSection({
   onDelete: (id: string) => void;
   onEdit: (disc: Disc) => void;
   emptyMessage: string;
+  sortable?: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: zoneId });
+
+  const content = discs.length === 0 ? (
+    <p className="text-gray-500 italic text-center py-8">{emptyMessage}</p>
+  ) : sortable ? (
+    <SortableContext items={discs.map((d) => d._id)} strategy={verticalListSortingStrategy}>
+      <div
+        className="
+          grid
+          gap-6
+          justify-center
+          grid-cols-2
+          sm:grid-cols-2
+          md:grid-cols-3
+          lg:grid-cols-4
+          xl:grid-cols-5
+        "
+        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
+      >
+        {discs.map((disc) => (
+          <SortableDiscCard
+            key={disc._id}
+            disc={disc}
+            actionLabel={actionLabel}
+            onAction={() => onAction(disc._id)}
+            onDelete={() => onDelete(disc._id)}
+            onEdit={onEdit}
+          />
+        ))}
+      </div>
+    </SortableContext>
+  ) : (
+    <div
+      className="
+        grid
+        gap-6
+        justify-center
+        grid-cols-2
+        sm:grid-cols-2
+        md:grid-cols-3
+        lg:grid-cols-4
+        xl:grid-cols-5
+      "
+      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
+    >
+      {discs.map((disc) => (
+        <DiscCard
+          key={disc._id}
+          disc={disc}
+          actionLabel={actionLabel}
+          onAction={() => onAction(disc._id)}
+          onDelete={() => onDelete(disc._id)}
+          onEdit={onEdit}
+          circleView
+        />
+      ))}
+    </div>
+  );
 
   return (
     <section className="w-full mb-10">
@@ -236,38 +383,7 @@ function GearSection({
           isOver ? 'bg-green-50 ring-2 ring-green-400' : 'bg-white/50'
         }`}
       >
-        {discs.length === 0 ? (
-          <p className="text-gray-500 italic text-center py-8">{emptyMessage}</p>
-        ) : (
-          <div
-            className="
-              grid
-              gap-6
-              justify-center
-              grid-cols-2
-              sm:grid-cols-2
-              md:grid-cols-3
-              lg:grid-cols-4
-              xl:grid-cols-5
-            "
-            style={{
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            }}
-          >
-            {discs.map((disc) => (
-              <DiscCard
-                key={disc._id}
-                disc={disc}
-                actionLabel={actionLabel}
-                onAction={() => onAction(disc._id)}
-                onDelete={() => onDelete(disc._id)}
-                onEdit={() => onEdit(disc)}
-                isRecentlyAdded={false}
-                circleView
-              />
-            ))}
-          </div>
-        )}
+        {content}
       </div>
     </section>
   );

@@ -26,6 +26,7 @@ const DiscSchema = new mongoose.Schema({
   storeLink: { type: String },
   addedAt: { type: Date, default: Date.now },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  order: { type: Number, default: 0 },
 });
 
 export default mongoose.models.Disc || mongoose.model('Disc', DiscSchema);

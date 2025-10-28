@@ -20,4 +20,5 @@ export type Disc = {
   wearLevel?: number;
   color?: string; // hex code
   weight?: number; // in grams
+  order?: number; // position in bag or shelf
 };
