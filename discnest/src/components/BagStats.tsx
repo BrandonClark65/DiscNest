@@ -1,16 +1,26 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3 } from 'lucide-react';
 import type { Disc } from '@/types/disc';
 
-type BagStatsPopoverProps = {
+type BagStatsProps = {
   bag: Disc[];
 };
 
-export default function BagStats({ bag }: BagStatsPopoverProps) {
+export default function BagStats({ bag }: BagStatsProps) {
   const [open, setOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Close when clicking outside
   useEffect(() => {
@@ -26,12 +36,6 @@ export default function BagStats({ bag }: BagStatsPopoverProps) {
   // --- BAG ANALYTICS ---
   const total = bag.length;
   const uniqueMolds = new Set(bag.map((d) => d.name)).size;
-
-  const byType = bag.reduce<Record<string, number>>((acc, d) => {
-    if (!d.type) return acc;
-    acc[d.type] = (acc[d.type] || 0) + 1;
-    return acc;
-  }, {});
 
   const byBrand = bag.reduce<Record<string, number>>((acc, d) => {
     if (!d.brand) return acc;
@@ -51,7 +55,6 @@ export default function BagStats({ bag }: BagStatsPopoverProps) {
     return acc;
   }, {});
 
-  // Average flight
   const averageFlight = bag.reduce(
     (acc, d) => {
       if (!d.flight) return acc;
@@ -76,7 +79,6 @@ export default function BagStats({ bag }: BagStatsPopoverProps) {
         }
       : null;
 
-  // Average wear
   const wearValues = bag
     .map((d) => d.wearLevel)
     .filter((w): w is number => typeof w === 'number');
@@ -95,7 +97,6 @@ export default function BagStats({ bag }: BagStatsPopoverProps) {
       ? 'Moderately seasoned'
       : 'Well seasoned';
 
-  // Weight stats
   const weights = bag.map((d) => d.weight).filter(Boolean) as number[];
   const avgWeight =
     weights.length > 0
@@ -104,131 +105,182 @@ export default function BagStats({ bag }: BagStatsPopoverProps) {
   const minWeight = weights.length > 0 ? Math.min(...weights) : null;
   const maxWeight = weights.length > 0 ? Math.max(...weights) : null;
 
-  // Most used brand
   const topBrand =
     Object.entries(byBrand).sort((a, b) => b[1] - a[1])[0] || null;
 
-  // Bag completeness
   const hasType = (type: string) =>
     bag.some((d) => d.type?.toLowerCase().includes(type.toLowerCase()));
   const completeness = ['Putter', 'Midrange', 'Fairway', 'Distance'].filter((t) =>
     hasType(t)
   ).length;
 
+  // Shared stats JSX
+  const statsContent = (
+    <div className="space-y-3 text-sm text-gray-700">
+      <p>
+        <b>Total Discs:</b> {total}
+      </p>
+      <p>
+        <b>Unique Molds:</b> {uniqueMolds}
+      </p>
+      {avgWear !== null && (
+        <p>
+          <b>Avg Wear:</b> {avgWear.toFixed(0)}%{' '}
+          <span
+            className={
+              avgWear < 30
+                ? 'text-green-600'
+                : avgWear < 70
+                ? 'text-yellow-600'
+                : 'text-red-600'
+            }
+          >
+            ({wearLabel})
+          </span>
+        </p>
+      )}
+      {avgWeight && (
+        <p>
+          <b>Avg Weight:</b> {avgWeight}g{' '}
+          {minWeight && maxWeight && (
+            <span className="text-gray-500">
+              ({minWeight}–{maxWeight}g)
+            </span>
+          )}
+        </p>
+      )}
+      {topBrand && (
+        <p>
+          <b>Top Brand:</b> {topBrand[0]} ({topBrand[1]})
+        </p>
+      )}
+      <p>
+        <b>Bag Completeness:</b> {completeness}/4
+      </p>
+      {Object.keys(byPlastic).length > 0 && (
+        <div>
+          <p className="font-medium text-green-700">Plastics:</p>
+          <ul className="ml-3 list-disc text-gray-600">
+            {Object.entries(byPlastic)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3)
+              .map(([plastic, count]) => (
+                <li key={plastic}>
+                  {plastic}: {count}
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+      {Object.keys(byStability).length > 0 && (
+        <div>
+          <p className="font-medium text-green-700">Stability:</p>
+          <ul className="ml-3 list-disc text-gray-600">
+            {Object.entries(byStability).map(([stab, count]) => (
+              <li key={stab}>
+                {stab}: {count}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {avgFlight && (
+        <div>
+          <p className="font-medium text-green-700">Avg Flight:</p>
+          <div className="ml-3 text-gray-600 grid grid-cols-2 gap-x-3">
+            <p>
+              <b>Speed:</b> {avgFlight.speed}
+            </p>
+            <p>
+              <b>Glide:</b> {avgFlight.glide}
+            </p>
+            <p>
+              <b>Turn:</b> {avgFlight.turn}
+            </p>
+            <p>
+              <b>Fade:</b> {avgFlight.fade}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div className="relative inline-block text-left" ref={popoverRef}>
+    <div ref={popoverRef} className="relative inline-block text-left">
       <button
-        onClick={() => setOpen((prev) => !prev)}
-        className="p-2 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
+        onClick={() => setOpen(!open)}
+        className="p-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 text-white shadow-md transition"
         title="View Bag Stats"
       >
-        <BarChart3 className="w-6 h-6 text-green-700" />
+        <BarChart3 className="w-5 h-5" />
       </button>
 
-      {open && (
-        <>
-          {/* Overlay for mobile */}
-          <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" />
-
-          {/* Popover panel */}
-          <div
-            className={`
-              absolute z-50 right-0 mt-2 w-72 rounded-xl bg-white shadow-xl border border-gray-200 p-4
-              transform transition-all duration-200
-              ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
-              lg:absolute lg:right-0 lg:top-full lg:translate-y-2
-            `}
-          >
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-semibold text-green-700">Bag Stats</h3>
-              <button
-                onClick={() => setOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* === Desktop popover === */}
+            {!isMobile && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute z-50 right-0 mt-3 w-80 rounded-2xl border border-green-100 bg-white/90 backdrop-blur-xl shadow-2xl p-5"
               >
-                ✕
-              </button>
-            </div>
-
-            {total === 0 ? (
-              <p className="text-sm text-gray-500 italic">No discs in bag</p>
-            ) : (
-              <div className="space-y-3 text-sm text-gray-700">
-                <p><b>Total Discs:</b> {total}</p>
-                <p><b>Unique Molds:</b> {uniqueMolds}</p>
-
-                {avgWear !== null && (
-                  <p>
-                    <b>Avg Wear:</b> {avgWear.toFixed(0)}%{' '}
-                    <span
-                      className={
-                        avgWear < 30
-                          ? 'text-green-600'
-                          : avgWear < 70
-                          ? 'text-yellow-600'
-                          : 'text-red-600'
-                      }
-                    >
-                      ({wearLabel})
-                    </span>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-green-700">
+                    Bag Stats
+                  </h3>
+                  <button
+                    onClick={() => setOpen(false)}
+                    className="text-gray-500 hover:text-red-500 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+                {total === 0 ? (
+                  <p className="text-sm text-gray-500 italic">
+                    No discs in bag
                   </p>
+                ) : (
+                  statsContent
                 )}
-
-                {avgWeight && (
-                  <p>
-                    <b>Avg Weight:</b> {avgWeight} g
-                    {minWeight && maxWeight && (
-                      <span className="text-gray-500"> ({minWeight}–{maxWeight}g)</span>
-                    )}
-                  </p>
-                )}
-
-                {topBrand && (
-                  <p><b>Top Brand:</b> {topBrand[0]} ({topBrand[1]})</p>
-                )}
-
-                <p><b>Bag Completeness:</b> {completeness}/4</p>
-
-                {Object.keys(byPlastic).length > 0 && (
-                  <div>
-                    <p><b>Plastics:</b></p>
-                    <ul className="ml-3 list-disc text-gray-600">
-                      {Object.entries(byPlastic)
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 3)
-                        .map(([plastic, count]) => (
-                          <li key={plastic}>{plastic}: {count}</li>
-                        ))}
-                    </ul>
-                  </div>
-                )}
-
-                {Object.keys(byStability).length > 0 && (
-                  <div>
-                    <p><b>Stability:</b></p>
-                    <ul className="ml-3 list-disc text-gray-600">
-                      {Object.entries(byStability).map(([stab, count]) => (
-                        <li key={stab}>{stab}: {count}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {avgFlight && (
-                  <div>
-                    <p><b>Avg Flight:</b></p>
-                    <div className="ml-3 text-gray-600 grid grid-cols-2 gap-x-3">
-                      <p><b>Speed:</b> {avgFlight.speed}</p>
-                      <p><b>Glide:</b> {avgFlight.glide}</p>
-                      <p><b>Turn:</b> {avgFlight.turn}</p>
-                      <p><b>Fade:</b> {avgFlight.fade}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              </motion.div>
             )}
-          </div>
-        </>
-      )}
+
+            {/* === Mobile bottom sheet === */}
+            {isMobile && (
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white/95 backdrop-blur-xl shadow-2xl border-t border-green-100 p-6 max-h-[75vh] overflow-y-auto"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-green-700">
+                    Bag Stats
+                  </h3>
+                  <button
+                    onClick={() => setOpen(false)}
+                    className="text-gray-500 hover:text-red-500 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+                {total === 0 ? (
+                  <p className="text-sm text-gray-500 italic">
+                    No discs in bag
+                  </p>
+                ) : (
+                  statsContent
+                )}
+              </motion.div>
+            )}
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

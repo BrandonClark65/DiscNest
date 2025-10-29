@@ -110,10 +110,7 @@ function MobileReorderSection({
 
   return (
     <div
-      className="
-        grid gap-6 justify-center
-        grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
-      "
+      className="grid gap-6 justify-center grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
       style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
     >
       {local.map((disc, idx) => (
@@ -160,7 +157,6 @@ function MobileReorderSection({
               </select>
             </div>
           )}
-
           <DiscCard
             disc={disc}
             actionLabel={actionLabel}
@@ -207,7 +203,7 @@ export default function GearPage() {
       toast.error('Failed to load discs. Please try again.');
     }
   };
-  
+
   const handleSaveDisc = async (updated: Partial<Disc> & { discId: string }) => {
     try {
       const res = await fetch('/api/user/discs/update', {
@@ -215,14 +211,11 @@ export default function GearPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
       });
-
-      const data = await res.json(); // 👈 capture the JSON response
-
+      const data = await res.json();
       if (!res.ok) {
         console.error('❌ Update error details:', data);
         throw new Error(data?.error || 'Failed to update disc');
       }
-
       toast.success('Disc updated successfully!');
       await fetchDiscs();
       setEditingDisc(null);
@@ -231,8 +224,6 @@ export default function GearPage() {
       toast.error((err as Error).message || 'Failed to save changes');
     }
   };
-
-
 
   useEffect(() => {
     fetchDiscs();
@@ -345,33 +336,59 @@ export default function GearPage() {
           />
 
           {/* --- Bag --- */}
-          <GearSection
-            title="Disc Bag"
-            icon={<ShoppingBag className="w-5 h-5 text-green-600" />}
-            discs={isLoggedIn ? bag : []}
-            emptyMessage="No discs here yet."
-            zoneId="bag"
-            actionLabel="Move to Shelf"
-            onAction={(id) => moveDisc(id, 'bag', 'shelf')}
-            onDelete={(id) => deleteDisc(id, 'bag')}
-            onEdit={handleEdit}
-            sortable
-            isMobile={isMobile}
-            onReorder={persistReorder}
-            reorderMode={mobileReorderMode}
-            onToggleReorder={() => setMobileReorderMode((v) => !v)}
-          />
+          <motion.section
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={{ once: true }}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h2 className="text-2xl font-bold flex items-center gap-2 text-green-700">
+                <ShoppingBag className="w-5 h-5 text-green-600" />
+                Disc Bag
+              </h2>
 
-          {isLoggedIn && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.8 }}
-              className="flex justify-center mt-10"
-            >
-              <DiscBagDisplay bag={bag} />
-            </motion.div>
-          )}
+              {/* ✅ Bag Stats restored inline */}
+              {isLoggedIn && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex items-center"
+                >
+                  <BagStats bag={bag} />
+                </motion.div>
+              )}
+            </div>
+
+            <GearSection
+              title=""
+              discs={isLoggedIn ? bag : []}
+              emptyMessage="No discs here yet."
+              zoneId="bag"
+              actionLabel="Move to Shelf"
+              onAction={(id) => moveDisc(id, 'bag', 'shelf')}
+              onDelete={(id) => deleteDisc(id, 'bag')}
+              onEdit={handleEdit}
+              sortable
+              isMobile={isMobile}
+              onReorder={persistReorder}
+              reorderMode={mobileReorderMode}
+              onToggleReorder={() => setMobileReorderMode((v) => !v)}
+            />
+
+            {isLoggedIn && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 0.8 }}
+                className="flex justify-center mt-10"
+              >
+                <DiscBagDisplay bag={bag} />
+              </motion.div>
+            )}
+          </motion.section>
         </DndContext>
       </div>
     </div>
@@ -484,7 +501,9 @@ function GearSection({
       )}
       <div
         ref={setNodeRef}
-        className={`transition p-2 rounded-lg ${isOver ? 'bg-green-50 ring-2 ring-green-400' : 'bg-white/50'}`}
+        className={`transition p-2 rounded-lg ${
+          isOver ? 'bg-green-50 ring-2 ring-green-400' : 'bg-white/50'
+        }`}
       >
         {content}
       </div>
