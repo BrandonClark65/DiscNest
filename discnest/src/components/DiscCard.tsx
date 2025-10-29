@@ -82,7 +82,7 @@ export default function DiscCard({
       {circleView && dragHandleProps && (
         <div
           {...dragHandleProps}
-          className="absolute -top-5 left-1/2 -translate-x-1/2 cursor-grab z-10"
+          className="absolute -top-5 left-1/2 -translate-x-1/2 cursor-grab z-10 touch-none"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="bg-white/80 rounded-full shadow-sm p-0.5 hover:bg-white text-gray-700 hover:text-gray-900 transition">
