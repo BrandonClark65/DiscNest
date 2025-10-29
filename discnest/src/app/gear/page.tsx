@@ -207,6 +207,32 @@ export default function GearPage() {
       toast.error('Failed to load discs. Please try again.');
     }
   };
+  
+  const handleSaveDisc = async (updated: Partial<Disc> & { discId: string }) => {
+    try {
+      const res = await fetch('/api/user/discs/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+
+      const data = await res.json(); // 👈 capture the JSON response
+
+      if (!res.ok) {
+        console.error('❌ Update error details:', data);
+        throw new Error(data?.error || 'Failed to update disc');
+      }
+
+      toast.success('Disc updated successfully!');
+      await fetchDiscs();
+      setEditingDisc(null);
+    } catch (err) {
+      console.error('❌ Failed to update disc:', err);
+      toast.error((err as Error).message || 'Failed to save changes');
+    }
+  };
+
+
 
   useEffect(() => {
     fetchDiscs();
@@ -275,7 +301,7 @@ export default function GearPage() {
 
   return (
     <div className="relative">
-      {editingDisc && <DiscEditModal disc={editingDisc} onClose={closeModal} onSave={fetchDiscs} />}
+      {editingDisc && <DiscEditModal disc={editingDisc} onClose={closeModal} onSave={handleSaveDisc} />}
 
       <div className="max-w-6xl mx-auto p-6 space-y-12 relative">
         {/* ===== HEADER ===== */}

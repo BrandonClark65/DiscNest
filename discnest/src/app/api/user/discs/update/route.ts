@@ -35,13 +35,13 @@ export const POST = withUserAuth(async (req, session) => {
   if (notes !== undefined) updateFields.notes = notes;
   if (color !== undefined) updateFields.color = color;
 
-  if (weight !== undefined) {
+  if (weight !== undefined && weight !== null && weight !== '') {
     const parsedWeight = Number(weight);
-    if (isNaN(parsedWeight) || parsedWeight < 100 || parsedWeight > 200) {
-      return NextResponse.json({ error: 'Weight must be a valid number between 100–200g' }, { status: 400 });
+    if (!isNaN(parsedWeight) && parsedWeight >= 100 && parsedWeight <= 200) {
+      updateFields.weight = parsedWeight;
     }
-    updateFields.weight = parsedWeight;
   }
+
 
   try {
     const updatedDisc = await Disc.findByIdAndUpdate(discId, updateFields, { new: true });
