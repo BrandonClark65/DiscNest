@@ -66,20 +66,36 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     );
   }, []);
 
-  // Fetch user's discs
+    // Fetch user's discs (bag + shelf)
   useEffect(() => {
     async function fetchDiscs() {
       if (!user?.email) return;
       try {
-        const res = await fetch(`/api/user/discs/bag?email=${encodeURIComponent(user.email)}`);
-        const data = await res.json();
-        setDiscs(data.bag || []);
+        const [bagRes, shelfRes] = await Promise.all([
+          fetch(`/api/user/discs/bag?email=${encodeURIComponent(user.email)}`),
+          fetch(`/api/user/discs/shelf?email=${encodeURIComponent(user.email)}`),
+        ]);
+
+        const bagData = await bagRes.json();
+        const shelfData = await shelfRes.json();
+
+        const bag = Array.isArray(bagData.bag) ? bagData.bag : [];
+        const shelf = Array.isArray(shelfData.shelf) ? shelfData.shelf : [];
+
+        // Merge + deduplicate (in case of overlap)
+        const merged = [...bag, ...shelf].filter(
+          (disc, index, arr) => arr.findIndex((d) => d._id === disc._id) === index
+        );
+
+        setDiscs(merged);
       } catch (err) {
         console.error('Failed to fetch discs:', err);
       }
     }
+
     fetchDiscs();
   }, [user?.email]);
+
 
   // Autofill form when a disc is selected
   useEffect(() => {
