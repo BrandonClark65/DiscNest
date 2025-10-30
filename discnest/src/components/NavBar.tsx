@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   Home,
   ChevronDown,
+  MessageCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
@@ -90,9 +91,20 @@ export default function NavBar() {
             </Link>
           )}
 
+          {/* ✉️ MESSAGES BUTTON (icon-only gradient style) */}
+          {status === 'authenticated' && (
+            <Link
+              href="/messages"
+              className="ml-2 flex items-center justify-center bg-gradient-to-r from-green-400 to-emerald-600 text-white rounded-full p-2 hover:scale-105 transition-transform shadow-md"
+              title="Messages"
+            >
+              <MessageCircle size={20} />
+            </Link>
+          )}
+
           {/* User Dropdown */}
           {status === 'authenticated' ? (
-            <div className="relative">
+            <div className="relative ml-3">
               <button
                 onClick={toggleDropdown}
                 className="flex items-center gap-1 bg-white text-green-800 px-3 py-1 rounded-md hover:bg-green-100 transition"
@@ -194,6 +206,17 @@ export default function NavBar() {
                   }`}
                 >
                   <User size={18} /> Admin
+                </Link>
+              )}
+
+              {/* 💬 Messages link in mobile dropdown */}
+              {status === 'authenticated' && (
+                <Link
+                  href="/messages"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 w-full text-white hover:text-green-200"
+                >
+                  <MessageCircle size={18} /> Messages
                 </Link>
               )}
 
