@@ -7,6 +7,7 @@ import type { Disc } from '@/types/disc';
 import DiscCard from '@/components/DiscCard';
 import DiscEditModal from '@/components/DiscEditModal';
 import DiscBagDisplay from '@/components/DiscbagDisplay';
+import ShareButton from '@/components/ui/ShareButton';
 import BagStats from '@/components/BagStats';
 import {
   DndContext,
@@ -179,9 +180,37 @@ export default function GearPage() {
   const [editingDisc, setEditingDisc] = useState<Disc | null>(null);
   const [mobileReorderMode, setMobileReorderMode] = useState(false);
 
+  const [shareableBagId, setShareableBagId] = useState<string | null>(null);
+  const [bagVisibility, setBagVisibility] = useState<'private' | 'public'>('private');
+
   const isLoggedIn = !!session?.user;
   const isMobile = useIsMobile();
   const fieldMap = { shelf: 'discShelf', bag: 'bag' };
+
+  // 🆕 Toggle bag sharing handler
+  async function toggleShare() {
+    try {
+      const res = await fetch('/api/user/discs/share', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to toggle bag sharing');
+      const data = await res.json();
+      setShareableBagId(data.shareableBagId);
+      setBagVisibility(data.bagVisibility);
+      toast.success(
+        data.bagVisibility === 'public'
+          ? 'Your bag is now shareable!'
+          : 'Your bag has been set to private.'
+      );
+    } catch (err) {
+      console.error('❌ Toggle share failed:', err);
+      toast.error('Could not update share status.');
+    }
+  }
+
+  // 🆕 Derived share URL (safe for SSR)
+  const shareUrl =
+    typeof window !== 'undefined' && shareableBagId
+      ? `${window.location.origin}/share/${shareableBagId}`
+      : '';
 
   const handleEdit = (disc: Disc) => setEditingDisc(disc);
   const closeModal = () => setEditingDisc(null);
@@ -343,25 +372,28 @@ export default function GearPage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             viewport={{ once: true }}
           >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="text-2xl font-bold flex items-center gap-2 text-green-700">
-                <ShoppingBag className="w-5 h-5 text-green-600" />
-                Disc Bag
-              </h2>
+            {/* ===== DISC BAG HEADER ===== */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold flex items-center gap-2 text-green-700">
+                  <ShoppingBag className="w-5 h-5 text-green-600" />
+                  Disc Bag
+                </h2>
+                {isLoggedIn && <BagStats bag={bag} />}
+              </div>
 
-              {/* ✅ Bag Stats restored inline */}
               {isLoggedIn && (
-                <motion.div
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex items-center"
-                >
-                  <BagStats bag={bag} />
-                </motion.div>
+                <ShareButton
+                  title="My Disc Bag"
+                  text="Check out my disc bag on DiscNest!"
+                  url={
+                    typeof window !== 'undefined'
+                      ? `${window.location.origin}/share/bag/${session?.user?.id}`
+                      : ''
+                  }
+                />
               )}
             </div>
-
             <GearSection
               title=""
               discs={isLoggedIn ? bag : []}

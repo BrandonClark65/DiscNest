@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
-import type { ThreadUI} from "@/types/thread"; 
+import type { ThreadUI } from "@/types/thread";
 import type { MessageUI } from "@/types/message";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Send } from "lucide-react";
 
 type ChatModalProps = {
   threadId: string;
@@ -14,14 +17,14 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
   const [thread, setThread] = useState<ThreadUI | null>(null);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
+  const [mounted, setMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const { data: session, status } = useSession();
-  
-
   if (status !== "authenticated" || !session?.user?.id) return null;
-  const currentUserId = session?.user?.id;
+  const currentUserId = session.user.id;
 
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
     fetchThread();
   }, [threadId]);
@@ -35,10 +38,12 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
       const res = await fetch(`/api/messages/${threadId}`);
       const data = await res.json();
 
-      // Map backend messages to UI-friendly messages
       const mappedThread: ThreadUI = {
         _id: data._id,
-        participants: data.participants.map((p: any) => ({ _id: p._id, name: p.name })),
+        participants: data.participants.map((p: any) => ({
+          _id: p._id,
+          name: p.name,
+        })),
         listingId: {
           _id: data.listingId._id,
           title: data.listingId.title,
@@ -71,7 +76,6 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
       readBy: [],
     };
 
-    // Optimistic UI
     setThread({ ...thread, messages: [...(thread.messages ?? []), tempMsg] });
     setNewMessage("");
 
@@ -81,66 +85,107 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newMessage }),
       });
-      fetchThread(); // refresh from backend
+      fetchThread();
     } catch (error) {
       console.error("Failed to send message:", error);
     }
   }
 
-  if (loading || !thread) return null;
+  if (loading || !thread || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center" style={{ zIndex: 9999 }}>
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md flex flex-col h-[80vh]">
-        {/* Header */}
-        <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="text-lg font-semibold">{thread.listingId?.title ?? "No Title"}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-black">✕</button>
-        </div>
+  // ✅ Use a portal so it renders above everything (like the map)
+  return createPortal(
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        {/* Wrapper adjusts for mobile */}
+        <motion.div
+          className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 flex flex-col h-[80vh] sm:h-[70vh] sm:max-h-[700px] border border-gray-200 dark:border-gray-700 overflow-hidden"
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+        >
+          {/* Header */}
+          <div className="p-4 border-b flex justify-between items-center bg-gradient-to-r from-blue-600 to-indigo-500 text-white">
+            <h2 className="text-lg font-semibold truncate">
+              {thread.listingId?.title ?? "Chat"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-white/20 rounded-full transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-gray-50">
-          {thread.messages?.map((msg, i) => {
-            const isOwn = msg.sender._id === currentUserId;
-            return (
-              <div key={i} className={`flex ${isOwn ? "justify-end" : "justify-start"} items-end`}>
-                <div className={`max-w-[75%] p-3 rounded-2xl shadow-sm ${
-                  isOwn
-                    ? "bg-blue-600 text-white rounded-br-none"
-                    : "bg-white text-gray-900 rounded-bl-none border"
-                }`}>
-                  <p className="text-sm font-semibold mb-1 opacity-90">
-                    {isOwn ? "You" : msg.sender.name}
-                  </p>
-                  <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
-                  <p className={`text-[0.7rem] mt-1 ${isOwn ? "text-blue-200 text-right" : "text-gray-400 text-left"}`}>
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </p>
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-gray-50 dark:bg-gray-800">
+            {thread.messages?.map((msg, i) => {
+              const isOwn = msg.sender._id === currentUserId;
+              return (
+                <div
+                  key={i}
+                  className={`flex ${
+                    isOwn ? "justify-end" : "justify-start"
+                  } items-end`}
+                >
+                  <div
+                    className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${
+                      isOwn
+                        ? "bg-blue-600 text-white rounded-br-none"
+                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-gray-600"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold mb-1 opacity-90">
+                      {isOwn ? "You" : msg.sender.name}
+                    </p>
+                    <p className="whitespace-pre-wrap break-words leading-relaxed text-sm">
+                      {msg.content}
+                    </p>
+                    <p
+                      className={`text-[0.7rem] mt-1 ${
+                        isOwn
+                          ? "text-blue-200 text-right"
+                          : "text-gray-400 text-left"
+                      }`}
+                    >
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
 
-        {/* Input */}
-        <div className="p-4 border-t flex gap-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 border p-2 rounded"
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          />
-          <button
-            onClick={sendMessage}
-            className="bg-blue-600 text-white px-3 py-2 rounded"
-          >
-            Send
-          </button>
-        </div>
-      </div>
-    </div>
+          {/* Input */}
+          <div className="p-3 border-t flex gap-2 bg-white dark:bg-gray-900">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type your message..."
+              className="flex-1 border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            />
+            <button
+              onClick={sendMessage}
+              className="bg-gradient-to-r from-blue-600 to-indigo-500 text-white px-3 py-2 rounded-lg flex items-center gap-1 text-sm font-medium hover:opacity-90"
+            >
+              <Send className="w-4 h-4" />
+              Send
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>,
+    document.body
   );
 }

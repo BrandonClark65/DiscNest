@@ -40,6 +40,8 @@ export interface DiscNestUser {
   // ---- Disc Collections ----
   discShelf?: string[];
   bag?: string[];
+  shareableBagId?: string | null;
+  bagVisibility?: 'private' | 'public';
   discCount?: number;
 
   // ---- Meta ----

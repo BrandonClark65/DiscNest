@@ -14,6 +14,7 @@ type MessageSellerButtonProps = {
 export default function MessageSellerButton({
   sellerId,
   listingId,
+  
 }: MessageSellerButtonProps) {
   const { data: session } = useSession();
   const [threadId, setThreadId] = useState<string | null>(null);
