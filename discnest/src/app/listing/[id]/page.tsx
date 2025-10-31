@@ -9,6 +9,8 @@ import type { Listing } from '@/types/listing';
 import GradientButton from '@/components/ui/GradientButton';
 import { ArrowBigLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ShareButton from '@/components/ui/ShareButton';
+
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
@@ -136,10 +138,18 @@ export default function ListingPage() {
         {/* ---------- RIGHT: DETAILS ---------- */}
         <div className="flex-1 flex flex-col justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent mb-3">
-              {listing.title}
-            </h1>
-
+            <div className="flex justify-between items-start mb-3">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+                {listing.title}
+              </h1>
+              <ShareButton
+                title={listing.title}
+                text={`Check out this disc on DiscNest: ${listing.title}`}
+                url={`${typeof window !== 'undefined' ? window.location.href : ''}`}
+                label="Share"
+                className="!px-2 !py-1 text-sm"
+              />
+            </div>
             <p className="text-gray-700 dark:text-gray-300 mb-5 leading-relaxed">
               {listing.description || 'No description provided.'}
             </p>
