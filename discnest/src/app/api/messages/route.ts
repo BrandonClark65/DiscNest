@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import MessageThread from "@/models/MessageThread";
+import "@/models/Listing"; 
 import { connectToDatabase } from "@/lib/mongodb";
 import type { Thread } from "@/types/thread";
 import type { Message } from "@/types/message";

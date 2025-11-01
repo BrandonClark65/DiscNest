@@ -77,7 +77,7 @@ const UserSchema = new mongoose.Schema(
     // ---- Disc Collections ----
     discShelf: [{ type: mongoose.Schema.Types.ObjectId, ref: "Disc" }],
     bag: [{ type: mongoose.Schema.Types.ObjectId, ref: "Disc" }],
-    shareableBagId: { type: String, default: null },
+    shareableBagId: { type: String, unique: true, sparse: true, default: null },
     bagVisibility: { type: String, enum: ['private', 'public'], default: 'private' },
     discCount: { type: Number, default: 0 },
   },

@@ -38,7 +38,7 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-/* ---------- Sortable Card Wrapper (Desktop DnD) ---------- */
+/* ---------- Sortable Disc Card ---------- */
 function SortableDiscCard({
   disc,
   onAction,
@@ -73,7 +73,7 @@ function SortableDiscCard({
   );
 }
 
-/* ---------- Mobile Reorder (No Drag) ---------- */
+/* ---------- Mobile Reorder Section ---------- */
 function MobileReorderSection({
   discs,
   zone,
@@ -172,64 +172,55 @@ function MobileReorderSection({
   );
 }
 
-/* ---------- Main Page ---------- */
+/* ---------- Main Gear Page ---------- */
 export default function GearPage() {
   const { data: session } = useSession();
   const [shelf, setShelf] = useState<Disc[]>([]);
   const [bag, setBag] = useState<Disc[]>([]);
   const [editingDisc, setEditingDisc] = useState<Disc | null>(null);
   const [mobileReorderMode, setMobileReorderMode] = useState(false);
-
-  const [shareableBagId, setShareableBagId] = useState<string | null>(null);
-  const [bagVisibility, setBagVisibility] = useState<'private' | 'public'>('private');
+  const [shareUrl, setShareUrl] = useState<string>('');
 
   const isLoggedIn = !!session?.user;
   const isMobile = useIsMobile();
   const fieldMap = { shelf: 'discShelf', bag: 'bag' };
 
-  // 🆕 Toggle bag sharing handler
-  async function toggleShare() {
+  /* 🔒 Securely fetch the shareable bag link */
+  async function fetchShareUrl() {
     try {
       const res = await fetch('/api/user/discs/share', { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to toggle bag sharing');
+      if (!res.ok) throw new Error('Failed to generate share link');
       const data = await res.json();
-      setShareableBagId(data.shareableBagId);
-      setBagVisibility(data.bagVisibility);
-      toast.success(
-        data.bagVisibility === 'public'
-          ? 'Your bag is now shareable!'
-          : 'Your bag has been set to private.'
-      );
+      setShareUrl(data.shareUrl);
     } catch (err) {
-      console.error('❌ Toggle share failed:', err);
-      toast.error('Could not update share status.');
+      console.error('Share link fetch failed:', err);
+      toast.error('Could not create share link.');
     }
   }
 
-  // 🆕 Derived share URL (safe for SSR)
-  const shareUrl =
-    typeof window !== 'undefined' && shareableBagId
-      ? `${window.location.origin}/share/${shareableBagId}`
-      : '';
+  useEffect(() => {
+    if (!isLoggedIn || shareUrl) return; // prevent refetch if already fetched
+    fetchShareUrl();
+  }, [isLoggedIn, shareUrl]);
 
+
+  /* --- Disc CRUD + reorder functions (unchanged) --- */
   const handleEdit = (disc: Disc) => setEditingDisc(disc);
   const closeModal = () => setEditingDisc(null);
 
-  const fetchDiscs = async () => {
+  async function fetchDiscs() {
     if (!isLoggedIn) return;
     try {
       const [shelfRes, bagRes] = await Promise.all([
         fetch(`/api/user/discs/shelf`),
         fetch(`/api/user/discs/bag`),
       ]);
-      if (!shelfRes.ok || !bagRes.ok) throw new Error('Failed to fetch discs');
       const shelfData = await shelfRes.json();
       const bagData = await bagRes.json();
       setShelf((shelfData.shelf || []).sort((a: Disc, b: Disc) => (a.order ?? 0) - (b.order ?? 0)));
       setBag((bagData.bag || []).sort((a: Disc, b: Disc) => (a.order ?? 0) - (b.order ?? 0)));
     } catch (err) {
-      console.error('❌ Error fetching discs:', err);
-      toast.error('Failed to load discs. Please try again.');
+      toast.error('Failed to load discs.');
     }
   };
 
@@ -260,12 +251,11 @@ export default function GearPage() {
 
   const persistReorder = async (orderedIds: string[], zone: 'shelf' | 'bag') => {
     try {
-      const res = await fetch('/api/user/discs/reorder', {
+      await fetch('/api/user/discs/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderedIds, zone }),
       });
-      if (!res.ok) throw new Error('Failed to save order');
     } catch {
       toast.error(`Could not save ${zone} order`);
     }
@@ -293,7 +283,7 @@ export default function GearPage() {
     });
     if (res.ok) {
       toast.success('Disc removed!');
-      fetchDiscs();
+    fetchDiscs();
     } else {
       toast.error('Failed to delete disc');
     }
@@ -319,6 +309,7 @@ export default function GearPage() {
     }
   };
 
+  /* ---------- JSX ---------- */
   return (
     <div className="relative">
       {editingDisc && <DiscEditModal disc={editingDisc} onClose={closeModal} onSave={handleSaveDisc} />}
@@ -334,8 +325,7 @@ export default function GearPage() {
           <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 drop-shadow-md tracking-tight">
             Your Gear
           </h1>
-          <div className="h-1 w-24 mx-auto bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"></div>
-
+          <div className="h-1 w-24 mx-auto bg-gradient-to-r from-green-500 to-emerald-400 rounded-full" />
           <GradientButton
             label="Browse Disc Catalog"
             href="/catalog"
@@ -382,18 +372,15 @@ export default function GearPage() {
                 {isLoggedIn && <BagStats bag={bag} />}
               </div>
 
-              {isLoggedIn && (
+              {isLoggedIn && shareUrl && (
                 <ShareButton
                   title="My Disc Bag"
                   text="Check out my disc bag on DiscNest!"
-                  url={
-                    typeof window !== 'undefined'
-                      ? `${window.location.origin}/share/bag/${session?.user?.id}`
-                      : ''
-                  }
+                  url={shareUrl}
                 />
               )}
             </div>
+
             <GearSection
               title=""
               discs={isLoggedIn ? bag : []}

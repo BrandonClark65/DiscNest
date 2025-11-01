@@ -1,5 +1,9 @@
-// models/index.ts
-import Disc from './Disc';
-import User from './User';
+// src/models/index.ts
+import mongoose from "mongoose";
+import User from "./User";
+import Disc from "./Disc";
+import Listing from "./Listing";
+import MessageThread from "./MessageThread";
 
-export { Disc, User };
+export { User, Disc, Listing, MessageThread };
+
