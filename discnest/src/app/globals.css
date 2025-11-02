@@ -1,34 +1,31 @@
-/* Tailwind Base + Utilities */
+/* Tailwind v4 base + utilities */
 @import "tailwindcss";
 
 /* ===============================
-   🌿 Custom Root Variables
+   🌿  DiscNest Brand Variables
    =============================== */
-
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-  --primary: #15803d;      /* DiscNest green placeholder */
-  --secondary: #3b82f6;    /* Accent blue placeholder */
-  --surface: #f9fafb;      /* Light gray for cards */
+  --foreground: #011627; /* rich-black */
+  --primary: #3c91e6;    /* tufts-blue */
+  --secondary: #4d685a;  /* feldgrau */
+  --accent: #f17300;     /* safety-orange */
+  --surface: #f9fafb;
+  --muted: #b1b6a6;      /* ash-gray */
+}
+
+[data-theme='dark'] {
+  --background: #011627;
+  --foreground: #f9fafb;
+  --primary: #3c91e6;
+  --secondary: #b1b6a6;
+  --accent: #f17300;
+  --surface: #1a1a1a;
+  --muted: #4d685a;
 }
 
 /* ===============================
-   🌙 Dark Mode Variables
-   =============================== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --primary: #22c55e;
-    --secondary: #60a5fa;
-    --surface: #1f2937;
-  }
-}
-
-/* ===============================
-   🧩 Tailwind Theme Tokens
-   (These make variables usable with Tailwind classes)
+   🧩  Tailwind 4 Design Tokens
    =============================== */
 @theme inline {
   --color-background: var(--background);
@@ -36,13 +33,14 @@
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
   --color-surface: var(--surface);
+  --color-accent: var(--accent);
 
-  --font-sans: var(--font-inter);     /* ✅ Link to your Inter variable */
+  --font-sans: var(--font-inter);
   --font-heading: var(--font-poppins);
 }
 
 /* ===============================
-   🖋️ Base Global Styles
+   🖋️  Base Global Styles
    =============================== */
 body {
   background: var(--background);
@@ -52,27 +50,23 @@ body {
 }
 
 /* ===============================
-   🎬 Simple Modal Animations
+   ✨  Brand Utilities
    =============================== */
-.modal-enter {
-  opacity: 0;
-  transform: translateY(20px);
-}
-.modal-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.2s, transform 0.2s;
+@layer utilities {
+  .bg-gradient-brand {
+    @apply bg-gradient-to-r from-primary to-accent;
+  }
+  .text-gradient-brand {
+    background: linear-gradient(to right, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .shadow-brand {
+    box-shadow: 0 4px 20px rgba(60, 145, 230, 0.25);
+  }
 }
 
-/* ===============================
-   ✨ Optional Typography Helpers
-   =============================== */
-.h1 {
-  @apply text-4xl sm:text-5xl font-heading font-extrabold text-primary;
-}
-.h2 {
-  @apply text-2xl sm:text-3xl font-heading font-semibold text-primary;
-}
-.p {
-  @apply text-base text-foreground leading-relaxed;
-}
+/* Typography helpers */
+.h1 { @apply text-4xl sm:text-5xl font-heading font-extrabold text-primary; }
+.h2 { @apply text-2xl sm:text-3xl font-heading font-semibold text-primary; }
+.p  { @apply text-base text-foreground leading-relaxed; }

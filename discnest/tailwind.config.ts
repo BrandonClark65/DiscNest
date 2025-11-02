@@ -9,27 +9,37 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // 🌿 Brand Palette (Replace later)
         primary: {
-          DEFAULT: '#15803d', // Deep green (main)
-          light: '#4ade80',
-          dark: '#14532d',
+          DEFAULT: '#3c91e6', // tufts-blue
+          light: '#60abf0',
+          dark: '#1f5faa',
         },
         secondary: {
-          DEFAULT: '#3b82f6', // Blue accent
-          light: '#60a5fa',
-          dark: '#1e3a8a',
+          DEFAULT: '#4d685a', // feldgrau
+          light: '#6d897b',
+          dark: '#344b41',
         },
-        neutral: {
-          50: '#fafafa',
-          100: '#f5f5f5',
-          200: '#e5e5e5',
-          300: '#d4d4d4',
-          700: '#404040',
-          900: '#171717',
+        accent: {
+          DEFAULT: '#f17300', // safety-orange
+          light: '#ffa347',
+          dark: '#b35300',
         },
-        background: '#f9fafb',
-        surface: '#ffffff',
+        muted: {
+          DEFAULT: '#b1b6a6', // ash-gray
+          dark: '#4d685a',
+        },
+        background: {
+          DEFAULT: '#ffffff',
+          dark: '#011627', // rich-black
+        },
+        surface: {
+          DEFAULT: '#f9fafb',
+          dark: '#1a1a1a',
+        },
+        foreground: {
+          DEFAULT: '#011627',
+          dark: '#f9fafb',
+        },
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'sans-serif'],

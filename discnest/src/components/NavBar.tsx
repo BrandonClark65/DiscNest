@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function NavBar() {
   const { data: session, status } = useSession();
@@ -24,8 +25,8 @@ export default function NavBar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
 
-  const toggleMenu = () => setMenuOpen((prev) => !prev);
-  const toggleDropdown = () => setDropdownOpen((prev) => !prev);
+  const toggleMenu = () => setMenuOpen((p) => !p);
+  const toggleDropdown = () => setDropdownOpen((p) => !p);
 
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
@@ -39,30 +40,32 @@ export default function NavBar() {
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-green-700 via-green-800 to-green-900 text-white shadow-md"
+      className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-primary to-accent text-foreground/90 shadow-md"
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3 md:py-4">
         {/* Logo */}
         <Link
           href="/"
-          className="text-2xl font-extrabold tracking-wide text-white hover:opacity-90 transition"
+          className="text-2xl font-heading font-extrabold tracking-wide text-foreground hover:opacity-90 transition"
         >
           DiscNest
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6 text-sm font-medium">
           {navLinks.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
               className={`relative group transition-colors duration-200 ${
-                pathname === href ? 'text-green-200' : 'text-white hover:text-green-200'
+                pathname === href
+                  ? 'text-accent'
+                  : 'text-foreground hover:text-accent'
               }`}
             >
               {label}
               <span
-                className={`absolute left-0 -bottom-1 h-0.5 rounded-full bg-green-200 transition-all duration-300 ${
+                className={`absolute left-0 -bottom-1 h-0.5 rounded-full bg-accent transition-all duration-300 ${
                   pathname === href
                     ? 'w-full opacity-100'
                     : 'w-0 group-hover:w-full opacity-70'
@@ -76,13 +79,13 @@ export default function NavBar() {
               href="/admin"
               className={`relative group transition-colors duration-200 ${
                 pathname === '/admin'
-                  ? 'text-green-200'
-                  : 'text-white hover:text-green-200'
+                  ? 'text-accent'
+                  : 'text-foreground hover:text-accent'
               }`}
             >
               Admin
               <span
-                className={`absolute left-0 -bottom-1 h-0.5 rounded-full bg-green-200 transition-all duration-300 ${
+                className={`absolute left-0 -bottom-1 h-0.5 rounded-full bg-accent transition-all duration-300 ${
                   pathname === '/admin'
                     ? 'w-full opacity-100'
                     : 'w-0 group-hover:w-full opacity-70'
@@ -91,23 +94,26 @@ export default function NavBar() {
             </Link>
           )}
 
-          {/* ✉️ MESSAGES BUTTON (icon-only gradient style) */}
+          {/* 💬 Messages */}
           {status === 'authenticated' && (
             <Link
               href="/messages"
-              className="ml-2 flex items-center justify-center bg-gradient-to-r from-green-400 to-emerald-600 text-white rounded-full p-2 hover:scale-105 transition-transform shadow-md"
+              className="ml-2 flex items-center justify-center bg-gradient-brand text-white rounded-full p-2 hover:scale-105 transition-transform shadow-md"
               title="Messages"
             >
               <MessageCircle size={20} />
             </Link>
           )}
 
-          {/* User Dropdown */}
+          {/* 🌙 Theme toggle */}
+          <ThemeToggle />
+
+          {/* User dropdown / login */}
           {status === 'authenticated' ? (
             <div className="relative ml-3">
               <button
                 onClick={toggleDropdown}
-                className="flex items-center gap-1 bg-white text-green-800 px-3 py-1 rounded-md hover:bg-green-100 transition"
+                className="flex items-center gap-1 bg-surface text-foreground px-3 py-1 rounded-md hover:bg-muted/20 transition"
               >
                 <User size={16} />
                 {session.user?.name?.split(' ')[0]}
@@ -126,12 +132,12 @@ export default function NavBar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-md overflow-hidden z-50"
+                    className="absolute right-0 mt-2 w-40 bg-surface rounded-lg shadow-md overflow-hidden z-50 border border-muted/30"
                   >
                     <Link
                       href="/profile"
                       onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2 text-sm text-green-900 hover:bg-green-100 transition"
+                      className="block px-4 py-2 text-sm text-foreground hover:bg-muted/20 transition"
                     >
                       Profile
                     </Link>
@@ -140,7 +146,7 @@ export default function NavBar() {
                         setDropdownOpen(false);
                         signOut();
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                      className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-muted/10 transition"
                     >
                       Logout
                     </button>
@@ -151,7 +157,7 @@ export default function NavBar() {
           ) : (
             <Link
               href="/login"
-              className="bg-white text-green-800 px-3 py-1 rounded-md hover:bg-green-100 transition"
+              className="bg-surface text-foreground px-3 py-1 rounded-md hover:bg-muted/20 transition"
             >
               Login
             </Link>
@@ -161,7 +167,7 @@ export default function NavBar() {
         {/* Mobile Menu Button */}
         <button
           onClick={toggleMenu}
-          className="md:hidden p-2 rounded-md hover:bg-green-900/40 transition"
+          className="md:hidden p-2 rounded-md hover:bg-surface/30 transition"
         >
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -176,7 +182,7 @@ export default function NavBar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="md:hidden bg-green-900 border-t border-green-700 shadow-inner"
+            className="md:hidden bg-surface border-t border-muted/40 shadow-inner"
           >
             <div className="flex flex-col items-start px-6 py-4 space-y-3">
               {navLinks.map(({ href, label, icon: Icon }) => (
@@ -186,8 +192,8 @@ export default function NavBar() {
                   onClick={() => setMenuOpen(false)}
                   className={`flex items-center gap-2 w-full transition ${
                     pathname === href
-                      ? 'text-green-200'
-                      : 'text-white hover:text-green-200'
+                      ? 'text-accent'
+                      : 'text-foreground hover:text-accent'
                   }`}
                 >
                   <Icon size={18} />
@@ -201,31 +207,36 @@ export default function NavBar() {
                   onClick={() => setMenuOpen(false)}
                   className={`flex items-center gap-2 w-full transition ${
                     pathname === '/admin'
-                      ? 'text-green-200'
-                      : 'text-white hover:text-green-200'
+                      ? 'text-accent'
+                      : 'text-foreground hover:text-accent'
                   }`}
                 >
                   <User size={18} /> Admin
                 </Link>
               )}
 
-              {/* 💬 Messages link in mobile dropdown */}
               {status === 'authenticated' && (
                 <Link
                   href="/messages"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 w-full text-white hover:text-green-200"
+                  className="flex items-center gap-2 w-full text-foreground hover:text-accent"
                 >
                   <MessageCircle size={18} /> Messages
                 </Link>
               )}
+
+              {/* 🌙 Theme toggle for mobile */}
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <span className="text-sm text-foreground">Toggle Theme</span>
+              </div>
 
               {status === 'authenticated' ? (
                 <>
                   <Link
                     href="/profile"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 w-full text-white hover:text-green-200"
+                    className="flex items-center gap-2 w-full text-foreground hover:text-accent"
                   >
                     <User size={18} /> Profile
                   </Link>
@@ -234,7 +245,7 @@ export default function NavBar() {
                       setMenuOpen(false);
                       signOut();
                     }}
-                    className="flex items-center gap-2 w-full bg-white text-green-800 px-3 py-2 rounded-md hover:bg-green-100 transition"
+                    className="flex items-center gap-2 w-full bg-accent/10 text-accent px-3 py-2 rounded-md hover:bg-accent/20 transition"
                   >
                     <LogOut size={18} /> Logout
                   </button>
@@ -243,7 +254,7 @@ export default function NavBar() {
                 <Link
                   href="/login"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 w-full bg-white text-green-800 px-3 py-2 rounded-md hover:bg-green-100 transition"
+                  className="flex items-center gap-2 w-full bg-accent/10 text-accent px-3 py-2 rounded-md hover:bg-accent/20 transition"
                 >
                   <User size={18} /> Login
                 </Link>
