@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Package, BookOpen, User } from 'lucide-react';
+import { Package, BookOpen, User, Disc as DiscIcon } from 'lucide-react';
 import DiscbagDisplay from '@/components/DiscbagDisplay';
 import GradientButton from '@/components/ui/GradientButton';
-import { DiscIcon } from 'lucide-react';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col items-center justify-center px-4 py-12 space-y-10">
+    <main className="min-h-screen bg-gradient-to-b from-[var(--background)] via-[var(--surface)] to-[var(--background)] flex flex-col items-center justify-center px-4 py-16 space-y-12 text-foreground">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -17,18 +16,19 @@ export default function HomePage() {
         transition={{ duration: 0.6 }}
         className="text-center space-y-4"
       >
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-green-700">
-          Welcome to <span className="text-green-600">DiscNest</span> 
+        <h1 className="h1">
+          Welcome to <span className="text-gradient-brand">DiscNest</span>
         </h1>
-        <p className="text-base sm:text-lg text-gray-600 max-w-xl mx-auto">
+        <p className="p max-w-xl mx-auto text-muted">
           Track your disc golf gear, build your bag, and explore new discs with ease.
         </p>
+
         <div className="mt-6">
           <GradientButton
             label="Browse Disc Catalog"
             href="/catalog"
             icon={<DiscIcon className="w-5 h-5" />}
-            variant="green"
+            variant="primary"
           />
         </div>
       </motion.div>
@@ -48,7 +48,7 @@ export default function HomePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.6 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl mt-10"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl mt-12"
       >
         <NavCard
           href="/gear"
@@ -73,6 +73,9 @@ export default function HomePage() {
   );
 }
 
+/* -------------------------------------
+   🧱 Nav Card Component
+------------------------------------- */
 function NavCard({
   href,
   title,
@@ -88,11 +91,14 @@ function NavCard({
     <Link href={href} className="block group">
       <motion.div
         whileHover={{ scale: 1.05 }}
-        className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center space-y-3"
+        transition={{ type: 'spring', stiffness: 250, damping: 15 }}
+        className="border border-muted/40 rounded-2xl p-6 bg-surface shadow-soft hover:shadow-md transition-all flex flex-col items-center text-center space-y-3"
       >
-        <Icon className="w-10 h-10 text-green-600 group-hover:text-green-700" />
-        <h2 className="text-lg sm:text-xl font-semibold text-green-800">{title}</h2>
-        <p className="text-sm text-gray-500">{description}</p>
+        <Icon className="w-10 h-10 text-primary group-hover:text-accent transition-colors" />
+        <h2 className="font-heading text-lg sm:text-xl font-semibold text-foreground">
+          {title}
+        </h2>
+        <p className="text-sm text-muted">{description}</p>
       </motion.div>
     </Link>
   );

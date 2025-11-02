@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import React from 'react';
 
 type GradientButtonProps = {
   label: string;
@@ -9,9 +11,14 @@ type GradientButtonProps = {
   onClick?: () => void;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
-  variant?: 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'gray';
+  /** theme-based variants */
+  variant?: 'primary' | 'accent' | 'secondary' | 'danger' | 'surface';
 };
 
+/**
+ * Theme-aware gradient button.
+ * Pulls from DiscNest CSS variables (globals.css).
+ */
 export default function GradientButton({
   label,
   icon,
@@ -19,21 +26,21 @@ export default function GradientButton({
   onClick,
   className = '',
   type = 'button',
-  variant = 'blue',
+  variant = 'primary',
 }: GradientButtonProps) {
   const variantClasses: Record<string, string> = {
-    blue: 'from-blue-600 to-indigo-600',
-    green: 'from-green-600 to-emerald-500',
-    purple: 'from-violet-600 to-fuchsia-600',
-    red: 'from-rose-600 to-red-500',
-    orange: 'from-orange-500 to-amber-500',
-    gray: 'from-slate-500 to-gray-600',
+    /** gradients derived from theme tokens */
+    primary: 'from-[var(--primary)] to-[var(--accent)] text-white',
+    accent: 'from-[var(--accent)] to-[var(--primary)] text-white',
+    secondary: 'from-[var(--secondary)] to-[var(--primary)] text-white',
+    danger: 'from-rose-600 to-red-500 text-white',
+    surface: 'from-[var(--surface)] to-[var(--muted)] text-foreground',
   };
 
   const baseStyles =
-    'inline-flex items-center justify-center gap-2 text-white px-6 py-3 rounded-full shadow-md hover:shadow-xl hover:scale-[1.05] active:scale-95 transition-all duration-300 font-semibold bg-gradient-to-r';
+    'inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-heading font-semibold shadow-md hover:shadow-lg hover:scale-[1.05] active:scale-95 transition-all duration-300 bg-gradient-to-r';
 
-  const combinedClass = `${baseStyles} ${variantClasses[variant]} ${className}`;
+  const combined = `${baseStyles} ${variantClasses[variant]} ${className}`;
 
   const content = (
     <motion.span
@@ -49,14 +56,14 @@ export default function GradientButton({
 
   if (href) {
     return (
-      <a href={href} className={combinedClass}>
+      <Link href={href} className={combined}>
         {content}
-      </a>
+      </Link>
     );
   }
 
   return (
-    <button type={type} onClick={onClick} className={combinedClass}>
+    <button type={type} onClick={onClick} className={combined}>
       {content}
     </button>
   );
