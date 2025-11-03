@@ -2,45 +2,36 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation"; // <-- added useRouter
+import { useParams, useRouter } from "next/navigation";
 import type { ThreadDB, ThreadUI } from "@/types/thread";
 import type { MessageDB, MessageUI } from "@/types/message";
+import GradientButton from "@/components/ui/GradientButton";
+import { ArrowBigLeft } from "lucide-react";
 
 export default function ChatPage() {
   const { data: session } = useSession();
   const currentUserId = session?.user?.id;
   const { threadId } = useParams();
-  const router = useRouter(); // <-- added router
+  const router = useRouter();
+
   const [thread, setThread] = useState<ThreadUI | null>(null);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Back button handler
-  const goBack = () => {
-    router.push("/messages"); // Adjust to your messages page route
-  };
+  // Navigation
+  const goBack = () => router.push("/messages");
 
-  // Convert DB message → UI message
+  // --- Mapping helpers ---
   function mapMessageDBtoUI(msg: MessageDB): MessageUI {
-    let senderId: string;
-    let senderName: string;
-
-    if (typeof msg.sender === "string") {
-      senderId = msg.sender;
-      senderName = "Unknown";
-    } else if (
-      typeof msg.sender === "object" &&
-      msg.sender !== null &&
-      "_id" in msg.sender
-    ) {
-      senderId = (msg.sender._id as any).toString();
-      senderName = (msg.sender as any).name || "Unknown";
-    } else {
-      senderId = (msg.sender as any)?.toString?.() || "unknown";
-      senderName = "Unknown";
-    }
-
+    const senderId =
+      typeof msg.sender === "string"
+        ? msg.sender
+        : (msg.sender as any)?._id?.toString?.() || "unknown";
+    const senderName =
+      typeof msg.sender === "object" && msg.sender && "_id" in msg.sender
+        ? (msg.sender as any).name || "Unknown"
+        : "Unknown";
     return {
       sender: { _id: senderId, name: senderName },
       content: msg.content,
@@ -49,13 +40,7 @@ export default function ChatPage() {
     };
   }
 
-  // Convert DB thread → UI thread
   function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
-    const updatedAt =
-      thread.updatedAt instanceof Date
-        ? thread.updatedAt.toISOString()
-        : new Date(thread.updatedAt).toISOString();
-
     return {
       _id: thread._id.toString(),
       messages: thread.messages.map(mapMessageDBtoUI),
@@ -72,11 +57,14 @@ export default function ChatPage() {
               imageUrls: (thread.listingId as any).imageUrls || [],
             }
           : { _id: thread.listingId.toString(), title: "", imageUrls: [] },
-      updatedAt,
+      updatedAt:
+        thread.updatedAt instanceof Date
+          ? thread.updatedAt.toISOString()
+          : new Date(thread.updatedAt).toISOString(),
     };
   }
 
-  // Fetch thread
+  // --- Fetch thread ---
   async function fetchThread() {
     if (!threadId) return;
     setLoading(true);
@@ -111,12 +99,12 @@ export default function ChatPage() {
     markRead();
   }, [threadId, currentUserId]);
 
-  // Auto-scroll
+  // Auto-scroll to latest
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread?.messages]);
 
-  // Send message
+  // --- Send message ---
   async function sendMessage() {
     if (!newMessage.trim() || !thread || !currentUserId) return;
 
@@ -127,7 +115,6 @@ export default function ChatPage() {
       readBy: [currentUserId],
     };
 
-    // Optimistic UI
     setThread({ ...thread, messages: [...thread.messages, tempMsg] });
     setNewMessage("");
 
@@ -144,36 +131,79 @@ export default function ChatPage() {
     }
   }
 
-  if (loading) return <p>Loading chat...</p>;
-  if (!thread) return <p>Thread not found.</p>;
+  // --- States ---
+  if (loading)
+    return (
+      <p className="p-6 text-center text-[var(--foreground)]/70 animate-pulse">
+        Loading chat...
+      </p>
+    );
+  if (!thread)
+    return (
+      <p className="p-6 text-center text-[var(--foreground)]/70">
+        Thread not found.
+      </p>
+    );
 
+  // --- UI ---
   return (
-    <div className="relative max-w-3xl mx-auto p-4 flex flex-col h-[80vh]">
-      {/* Back Button above the chat */}
-      <div className="mb-2">
-        <button
+    <div className="relative max-w-3xl mx-auto p-4 sm:p-6 flex flex-col h-[80vh] text-[var(--foreground)]">
+      {/* BACK BUTTON */}
+      <div className="mb-3">
+        <GradientButton
+          label="Back to Messages"
+          icon={<ArrowBigLeft className="w-5 h-5" />}
           onClick={goBack}
-          className="
-            px-4 py-2 bg-blue-500 text-white rounded-full
-            shadow hover:bg-blue-600 transition-colors
-          "
-        >
-          ← Back
-        </button>
+          variant="muted"
+          className="px-4 py-2"
+        />
       </div>
 
-      <h1 className="text-2xl font-bold mb-2">{thread.listingId.title}</h1>
+      {/* HEADER */}
+      <h1 className="text-2xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">
+        {thread.listingId.title || "Conversation"}
+      </h1>
 
-      <div className="flex-1 overflow-y-auto border rounded p-4 mb-4 flex flex-col gap-3 bg-gray-50">
+      {/* MESSAGES */}
+      <div
+        className="
+          flex-1 overflow-y-auto rounded-2xl border border-[var(--muted)]/30 shadow-sm
+          bg-[var(--surface)] p-4 sm:p-5 space-y-3
+        "
+      >
         {thread.messages.map((msg, i) => {
           const isOwn = msg.sender._id === currentUserId;
           return (
-            <div key={i} className={`flex ${isOwn ? "justify-end" : "justify-start"} items-end`}>
-              <div className={`max-w-[75%] p-3 rounded-2xl shadow-sm ${isOwn ? "bg-blue-600 text-white rounded-br-none" : "bg-white text-gray-900 rounded-bl-none border"}`}>
-                <p className="text-sm font-semibold mb-1 opacity-90">{isOwn ? "You" : msg.sender.name}</p>
-                <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
-                <p className={`text-[0.7rem] mt-1 ${isOwn ? "text-blue-200 text-right" : "text-gray-400 text-left"}`}>
-                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            <div key={i} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+              <div
+                className={`
+                  max-w-[75%] px-4 py-3 rounded-2xl shadow-sm break-words
+                  ${isOwn
+                    ? "bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-[var(--background)] rounded-br-none"
+                    : "bg-[var(--background)] text-[var(--foreground)] border border-[var(--muted)]/30 rounded-bl-none"}
+                `}
+              >
+                <p
+                  className={`text-xs font-semibold mb-1 ${
+                    isOwn
+                      ? "text-[var(--background)]/90 text-right"
+                      : "text-[var(--foreground)]/60"
+                  }`}
+                >
+                  {isOwn ? "You" : msg.sender.name}
+                </p>
+                <p className="text-sm leading-relaxed">{msg.content}</p>
+                <p
+                  className={`text-[0.7rem] mt-1 ${
+                    isOwn
+                      ? "text-[var(--background)]/70 text-right"
+                      : "text-[var(--foreground)]/50 text-left"
+                  }`}
+                >
+                  {new Date(msg.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
               </div>
             </div>
@@ -182,16 +212,31 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="flex gap-2">
+      {/* INPUT BAR */}
+      <div
+        className="
+          mt-4 flex gap-2 items-center
+          bg-[var(--surface)] border border-[var(--muted)]/30 rounded-full shadow-sm
+          px-3 py-2
+        "
+      >
         <input
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type your message..."
-          className="flex-1 border p-2 rounded"
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          className="
+            flex-1 bg-transparent text-[var(--foreground)] placeholder-[var(--foreground)]/50
+            focus:outline-none text-sm px-2
+          "
         />
-        <button onClick={sendMessage} className="bg-blue-600 text-white px-3 rounded">Send</button>
+        <GradientButton
+          label="Send"
+          onClick={sendMessage}
+          variant="primary"
+          className="!px-5 !py-2 text-sm"
+        />
       </div>
     </div>
   );

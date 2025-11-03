@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import GradientButton from '@/components/ui/GradientButton';
 
 export default function ContactPage() {
   const [email, setEmail] = useState('');
@@ -20,7 +21,7 @@ export default function ContactPage() {
       });
 
       if (res.ok) {
-        setStatus('Message sent successfully!');
+        setStatus('✅ Message sent successfully!');
         setEmail('');
         setSubject('');
         setMessage('');
@@ -28,51 +29,102 @@ export default function ContactPage() {
         const { error } = await res.json();
         setStatus(`Error: ${error}`);
       }
-    } catch (err) {
-      setStatus('Something went wrong.');
+    } catch {
+      setStatus('Something went wrong. Please try again later.');
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-green-700">Contact Us</h1>
-      <p className="text-gray-600">
-        Have questions or feedback? We'd love to hear from you.
-      </p>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Your email"
-          required
-          className="w-full border px-4 py-2 rounded"
-        />
-        <input
-          type="text"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          placeholder="Subject"
-          required
-          className="w-full border px-4 py-2 rounded"
-        />
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Your message"
-          required
-          className="w-full border px-4 py-2 rounded h-32"
-        />
-        <button
-          type="submit"
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-        >
-          Send Message
-        </button>
+    <div className="max-w-xl mx-auto p-6 sm:p-10 space-y-6 text-[var(--foreground)]">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] drop-shadow-sm">
+          Contact Us
+        </h1>
+        <p className="text-[var(--foreground)]/70 text-sm sm:text-base">
+          Have questions, feedback, or ideas? We’d love to hear from you.
+        </p>
+      </div>
+
+      {/* Form */}
+      <form
+        onSubmit={handleSubmit}
+        className="
+          bg-[var(--surface)] border border-[var(--muted)]/30 rounded-2xl shadow-sm
+          p-5 sm:p-8 space-y-5 transition-all
+        "
+      >
+        <div>
+          <label className="block text-sm font-medium mb-1 text-[var(--foreground)]/90">
+            Email
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
+            className="
+              w-full bg-[var(--background)] border border-[var(--muted)]/40
+              rounded-lg px-4 py-2 text-sm
+              text-[var(--foreground)] placeholder-[var(--foreground)]/50
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40
+            "
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-[var(--foreground)]/90">
+            Subject
+          </label>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="What's this about?"
+            required
+            className="
+              w-full bg-[var(--background)] border border-[var(--muted)]/40
+              rounded-lg px-4 py-2 text-sm
+              text-[var(--foreground)] placeholder-[var(--foreground)]/50
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40
+            "
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-[var(--foreground)]/90">
+            Message
+          </label>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your message..."
+            required
+            className="
+              w-full bg-[var(--background)] border border-[var(--muted)]/40
+              rounded-lg px-4 py-2 text-sm h-32 resize-none
+              text-[var(--foreground)] placeholder-[var(--foreground)]/50
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40
+            "
+          />
+        </div>
+
+        <div className="flex justify-center sm:justify-end">
+          <GradientButton
+            label="Send Message"
+            type="submit"
+            variant="primary"
+            className="px-8 py-3"
+          />
+        </div>
+
         {status && (
           <p
-            className={`text-sm ${
-              status.includes('Error') ? 'text-red-600' : 'text-green-600'
+            className={`text-sm text-center mt-2 ${
+              status.startsWith('Error') || status.includes('wrong')
+                ? 'text-red-500'
+                : 'text-green-500'
             }`}
           >
             {status}

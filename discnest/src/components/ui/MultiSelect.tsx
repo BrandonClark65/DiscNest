@@ -21,16 +21,26 @@ export default function MultiSelect({ label, options, value, onChange }: MultiSe
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-semibold text-[var(--foreground)]/90">{label}</label>
 
       <select
         multiple
         value={value}
         onChange={handleSelectChange}
-        className="h-32 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+        className="
+          h-32 rounded-lg border border-[var(--muted)]/40
+          bg-[var(--surface)] text-[var(--foreground)]
+          px-3 py-2 text-sm shadow-sm
+          focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40
+          transition-colors duration-200
+        "
       >
         {options.map((option) => (
-          <option key={option} value={option} className="py-1">
+          <option
+            key={option}
+            value={option}
+            className="py-1 bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--accent)]/10"
+          >
             {option}
           </option>
         ))}
@@ -41,13 +51,20 @@ export default function MultiSelect({ label, options, value, onChange }: MultiSe
           {value.map((v) => (
             <span
               key={v}
-              className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium"
+              className="
+                flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+                bg-[color-mix(in srgb, var(--accent) 25%, transparent)]
+                text-[var(--foreground)] shadow-sm
+              "
             >
               {v}
               <button
                 type="button"
                 onClick={() => handleRemove(v)}
-                className="text-blue-500 hover:text-blue-700"
+                className="
+                  text-[var(--accent)] hover:text-[var(--accent)]/80
+                  transition-colors
+                "
               >
                 ✕
               </button>

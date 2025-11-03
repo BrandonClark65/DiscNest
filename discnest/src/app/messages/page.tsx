@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import type { ThreadDB, ThreadUI } from "@/types/thread";
 import type { MessageDB, MessageUI } from "@/types/message";
 
-// Convert DB message → UI message
+// --- Helpers ---
 function mapMessageDBtoUI(msg: MessageDB): MessageUI {
   let senderId = "";
   let senderName = "Unknown";
@@ -25,7 +25,6 @@ function mapMessageDBtoUI(msg: MessageDB): MessageUI {
   };
 }
 
-// Convert DB thread → UI thread
 function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
   return {
     _id: thread._id.toString(),
@@ -63,7 +62,6 @@ export default function MessagesPage() {
       try {
         const res = await fetch("/api/messages");
         const data: ThreadDB[] = await res.json();
-
         const threadsUI = data.map(mapThreadDBtoUI);
 
         const sorted = threadsUI.sort((a, b) => {
@@ -81,24 +79,42 @@ export default function MessagesPage() {
     };
 
     fetchThreads();
-
     const handleFocus = () => fetchThreads();
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [currentUserId]);
 
-  if (!currentUserId) return <p className="p-4 text-center text-gray-500">Log in to view messages</p>;
-  if (loading) return <p className="p-4">Loading threads...</p>;
-  if (!threads.length) return <p className="p-4">No messages yet.</p>;
+  // --- States ---
+  if (!currentUserId)
+    return (
+      <p className="p-6 text-center text-[var(--foreground)]/70">
+        Log in to view messages
+      </p>
+    );
+  if (loading)
+    return (
+      <p className="p-6 text-center text-[var(--foreground)]/70 animate-pulse">
+        Loading threads...
+      </p>
+    );
+  if (!threads.length)
+    return (
+      <p className="p-6 text-center text-[var(--foreground)]/70">
+        No messages yet.
+      </p>
+    );
 
+  // --- UI ---
   return (
-    <div className="max-w-3xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Messages</h1>
-      <ul className="space-y-2">
+    <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6 text-[var(--foreground)]">
+      <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] drop-shadow-sm">
+        Messages
+      </h1>
+
+      <ul className="space-y-3">
         {threads.map((thread) => {
           const otherUser = thread.participants.find((p) => p._id !== currentUserId);
           const lastMessage = thread.messages?.[thread.messages.length - 1];
-
           const hasUnread = currentUserId
             ? thread.messages?.some((m) => !(m.readBy || []).includes(currentUserId))
             : false;
@@ -106,29 +122,38 @@ export default function MessagesPage() {
           return (
             <li
               key={thread._id}
-              className={`border rounded p-3 hover:bg-gray-50 ${
-                hasUnread ? "bg-blue-50" : ""
-              }`}
+              className={`
+                transition-all duration-200 rounded-xl border shadow-sm
+                ${hasUnread
+                  ? 'border-[var(--accent)]/40 bg-[color-mix(in srgb, var(--accent) 8%, var(--surface))]'
+                  : 'border-[var(--muted)]/40 bg-[var(--surface)] hover:border-[var(--accent)]/30'}
+              `}
             >
-              <Link href={`/messages/${thread._id}`}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold flex items-center gap-2">
-                      {otherUser?.name}
-                      {hasUnread && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-                          New
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-sm text-gray-500">{thread.listingId?.title}</p>
-                    <p className="text-sm text-gray-700 truncate">
-                      {lastMessage?.content || "No messages yet"}
-                    </p>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    {new Date(lastMessage?.timestamp || thread.updatedAt).toLocaleString()}
+              <Link
+                href={`/messages/${thread._id}`}
+                className="flex justify-between items-start gap-3 p-4 sm:p-5 rounded-xl"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold flex items-center gap-2 text-[var(--foreground)]">
+                    {otherUser?.name || "Unknown User"}
+                    {hasUnread && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent)] text-[var(--background)] font-semibold">
+                        New
+                      </span>
+                    )}
                   </p>
+                  <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
+                    {thread.listingId?.title || "No listing"}
+                  </p>
+                  <p className="text-sm text-[var(--foreground)]/80 truncate mt-1">
+                    {lastMessage?.content || "No messages yet"}
+                  </p>
+                </div>
+
+                <div className="text-xs text-[var(--foreground)]/50 whitespace-nowrap">
+                  {new Date(
+                    lastMessage?.timestamp || thread.updatedAt
+                  ).toLocaleString()}
                 </div>
               </Link>
             </li>
