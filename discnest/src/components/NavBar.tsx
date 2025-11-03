@@ -59,13 +59,14 @@ export default function NavBar() {
               href={href}
               className={`relative group transition-colors duration-200 ${
                 pathname === href
-                  ? 'text-accent'
-                  : 'text-foreground hover:text-accent'
+                  ? 'text-[var(--foreground)] font-semibold drop-shadow-sm'
+                  : 'text-foreground/90 hover:text-[var(--foreground)]'
+
               }`}
             >
               {label}
               <span
-                className={`absolute left-0 -bottom-1 h-0.5 rounded-full bg-accent transition-all duration-300 ${
+                className={`absolute left-0 -bottom-1 h-0.5 rounded-full bg-[var(--foreground)]/80 transition-all duration-300 ${
                   pathname === href
                     ? 'w-full opacity-100'
                     : 'w-0 group-hover:w-full opacity-70'
@@ -79,13 +80,13 @@ export default function NavBar() {
               href="/admin"
               className={`relative group transition-colors duration-200 ${
                 pathname === '/admin'
-                  ? 'text-accent'
-                  : 'text-foreground hover:text-accent'
+                  ? 'text-[var(--foreground)] font-semibold drop-shadow-sm'
+                  : 'text-foreground/90 hover:text-[var(--foreground)]'
               }`}
             >
               Admin
               <span
-                className={`absolute left-0 -bottom-1 h-0.5 rounded-full bg-accent transition-all duration-300 ${
+                className={`absolute left-0 -bottom-1 h-0.5 rounded-full bg-[var(--foreground)]/80 transition-all duration-300 ${
                   pathname === '/admin'
                     ? 'w-full opacity-100'
                     : 'w-0 group-hover:w-full opacity-70'
