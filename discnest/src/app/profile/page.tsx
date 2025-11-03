@@ -6,6 +6,7 @@ import { editableProfileSchema, type UserSchema } from '@/lib/validation/userSch
 import { DiscBrands, DiscPlastics } from '@/app/constants/discData';
 import clsx from 'clsx';
 import MultiSelect from '@/components/ui/MultiSelect';
+import GradientButton from '@/components/ui/GradientButton';
 import { z } from 'zod';
 
 type EditableUserFields = z.infer<typeof editableProfileSchema>;
@@ -17,7 +18,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'basic' | 'disc' | 'play'>('basic');
   const [discCount, setDiscCount] = useState<number>(0);
 
-  // 🧠 Fetch profile data including discCount
+  // Fetch profile data
   useEffect(() => {
     if (status === 'authenticated') {
       fetch('/api/profile')
@@ -34,8 +35,9 @@ export default function ProfilePage() {
     }
   }, [status]);
 
-  if (status === 'loading') return <p className="p-4 text-center">Loading...</p>;
-  if (!session?.user) return <p className="p-4 text-center text-gray-600">Log in to view profile</p>;
+  if (status === 'loading') return <p className="p-6 text-center text-[var(--foreground)]/70">Loading...</p>;
+  if (!session?.user)
+    return <p className="p-6 text-center text-[var(--foreground)]/70">Log in to view profile</p>;
 
   const handleSave = async () => {
     setLoading(true);
@@ -76,52 +78,51 @@ export default function ProfilePage() {
   ];
 
   const filledFields = profileFields.filter((f) => {
-    const value = profile[f] ?? defaults[f];
-    if (Array.isArray(value)) return value.length > 0;
-    if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'number') return value !== 0;
-    return value !== null && value !== undefined;
+    const val = profile[f];
+    if (Array.isArray(val)) return val.length > 0;
+    if (typeof val === 'string') return val.trim().length > 0;
+    if (typeof val === 'number') return val > 0;
+    return !!val;
   }).length;
-
   const completionPercent = Math.round((filledFields / profileFields.length) * 100);
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6">
-      {/* Header */}
+    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-8 text-[var(--foreground)]">
+      {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <h1 className="text-2xl font-bold text-center sm:text-left">
+        <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] drop-shadow-sm">
           Welcome, {profile.name || profile.username || session.user.name}
         </h1>
 
-        <div className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold text-center">
+        <div className="bg-[var(--primary)] text-[var(--background)] px-3 py-1 rounded-full text-sm font-semibold shadow-sm">
           {discCount} Disc{discCount !== 1 ? 's' : ''}
         </div>
       </div>
 
-      {/* Progress Bar */}
+      {/* PROGRESS BAR */}
       <div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="w-full bg-[var(--surface)] rounded-full h-3 shadow-inner">
           <div
-            className="bg-green-500 h-3 rounded-full transition-all"
+            className="h-3 rounded-full transition-all bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]"
             style={{ width: `${completionPercent}%` }}
           />
         </div>
-        <p className="text-sm text-gray-600 mt-1 text-center sm:text-left">
+        <p className="text-sm text-[var(--foreground)]/70 mt-1 text-center sm:text-left">
           Profile Completion: {completionPercent}%
         </p>
       </div>
 
-      {/* Tabs */}
+      {/* TABS */}
       <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-4">
         {['basic', 'disc', 'play'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
             className={clsx(
-              'px-4 py-2 rounded-lg font-medium transition-colors w-full sm:w-auto',
+              'px-4 py-2 rounded-lg font-semibold transition-all duration-200',
               activeTab === tab
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white shadow-sm scale-[1.02]'
+                : 'bg-[var(--surface)] text-[var(--foreground)]/80 hover:bg-[var(--muted)]/20'
             )}
           >
             {tab === 'basic' ? 'Basic Info' : tab === 'disc' ? 'Disc Golf Info' : 'Play Style'}
@@ -129,90 +130,67 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* Panels */}
-      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border space-y-4">
+      {/* PANEL */}
+      <div className="bg-[var(--surface)] p-5 sm:p-6 rounded-2xl shadow-md border border-[var(--muted)]/30 space-y-5">
         {activeTab === 'basic' && (
           <div className="space-y-4">
-            <div>
-              <label className="block font-medium">Name</label>
-              <input
-                type="text"
-                value={profile.name ?? ''}
-                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                className="border px-3 py-2 rounded w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium">Username</label>
-              <input
-                type="text"
-                value={profile.username ?? ''}
-                onChange={(e) => setProfile({ ...profile, username: e.target.value })}
-                className="border px-3 py-2 rounded w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium">Bio</label>
-              <textarea
-                value={profile.bio ?? ''}
-                onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                className="border px-3 py-2 rounded w-full min-h-[80px]"
-              />
-            </div>
+            {['name', 'username', 'bio'].map((field) => (
+              <div key={field}>
+                <label className="block font-medium capitalize mb-1">{field}</label>
+                {field === 'bio' ? (
+                  <textarea
+                    value={profile.bio ?? ''}
+                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                    className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded-lg w-full min-h-[80px] focus:ring-2 focus:ring-[var(--accent)]/40"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={profile[field as keyof EditableUserFields] as string ?? ''}
+                    onChange={(e) => setProfile({ ...profile, [field]: e.target.value })}
+                    className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded-lg w-full focus:ring-2 focus:ring-[var(--accent)]/40"
+                  />
+                )}
+              </div>
+            ))}
           </div>
         )}
 
         {activeTab === 'disc' && (
           <div className="space-y-4">
-            <div>
-              <label className="block font-medium">PDGA Number</label>
-              <input
-                type="number"
-                value={profile.pdgaNumber ?? ''}
-                onChange={(e) =>
-                  setProfile({ ...profile, pdgaNumber: Number(e.target.value) })
-                }
-                className="border px-3 py-2 rounded w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium">Home Course</label>
-              <input
-                type="text"
-                value={profile.homeCourse ?? ''}
-                onChange={(e) => setProfile({ ...profile, homeCourse: e.target.value })}
-                className="border px-3 py-2 rounded w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium">Goals</label>
-              <input
-                type="text"
-                value={profile.goals ?? ''}
-                onChange={(e) => setProfile({ ...profile, goals: e.target.value })}
-                className="border px-3 py-2 rounded w-full"
-              />
-            </div>
+            {[
+              { key: 'pdgaNumber', label: 'PDGA Number', type: 'number' },
+              { key: 'homeCourse', label: 'Home Course', type: 'text' },
+              { key: 'goals', label: 'Goals', type: 'text' },
+            ].map(({ key, label, type }) => (
+              <div key={key}>
+                <label className="block font-medium mb-1">{label}</label>
+                <input
+                  type={type}
+                  value={
+                    typeof profile[key as keyof EditableUserFields] === 'object'
+                      ? ''
+                      : (profile[key as keyof EditableUserFields] as string | number | undefined) ?? ''
+                  }
+                  onChange={(e) =>
+                    setProfile({ ...profile, [key]: type === 'number' ? Number(e.target.value) : e.target.value })
+                  }
+                  className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded-lg w-full focus:ring-2 focus:ring-[var(--accent)]/40"
+                />
+              </div>
+            ))}
           </div>
         )}
 
         {activeTab === 'play' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Select + MultiSelect sections */}
             <div>
               <label className="block font-medium">Dominant Hand</label>
               <select
                 value={profile.dominantHand ?? 'Right'}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    dominantHand: e.target.value as EditableUserFields['dominantHand'],
-                  })
-                }
-                className="border px-3 py-2 rounded w-full"
+                onChange={(e) => setProfile({ ...profile, dominantHand: e.target.value as EditableUserFields['dominantHand'] })}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded-lg w-full"
               >
                 <option>Left</option>
                 <option>Right</option>
@@ -224,13 +202,8 @@ export default function ProfilePage() {
               <label className="block font-medium">Throw Style</label>
               <select
                 value={profile.throwStyle ?? 'Backhand'}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    throwStyle: e.target.value as EditableUserFields['throwStyle'],
-                  })
-                }
-                className="border px-3 py-2 rounded w-full"
+                onChange={(e) => setProfile({ ...profile, throwStyle: e.target.value as EditableUserFields['throwStyle'] })}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded-lg w-full"
               >
                 <option>Backhand</option>
                 <option>Forehand</option>
@@ -238,7 +211,7 @@ export default function ProfilePage() {
               </select>
             </div>
 
-            <div className="col-span-1 md:col-span-2">
+            <div className="col-span-2">
               <MultiSelect
                 label="Favorite Brands"
                 options={[...DiscBrands]}
@@ -252,7 +225,7 @@ export default function ProfilePage() {
               />
             </div>
 
-            <div className="col-span-1 md:col-span-2">
+            <div className="col-span-2">
               <MultiSelect
                 label="Preferred Disc Types"
                 options={['Putter', 'Midrange', 'Fairway Driver', 'Distance Driver']}
@@ -270,13 +243,8 @@ export default function ProfilePage() {
               <label className="block font-medium">Stability Preference</label>
               <select
                 value={profile.stabilityPreference ?? 'Straight'}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    stabilityPreference: e.target.value as EditableUserFields['stabilityPreference'],
-                  })
-                }
-                className="border px-3 py-2 rounded w-full"
+                onChange={(e) => setProfile({ ...profile, stabilityPreference: e.target.value as EditableUserFields['stabilityPreference'] })}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded-lg w-full"
               >
                 <option>Straight</option>
                 <option>Overstable</option>
@@ -288,13 +256,8 @@ export default function ProfilePage() {
               <label className="block font-medium">Arm Speed</label>
               <select
                 value={profile.armSpeed ?? 'Medium'}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    armSpeed: e.target.value as EditableUserFields['armSpeed'],
-                  })
-                }
-                className="border px-3 py-2 rounded w-full"
+                onChange={(e) => setProfile({ ...profile, armSpeed: e.target.value as EditableUserFields['armSpeed'] })}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded-lg w-full"
               >
                 <option>Slow</option>
                 <option>Medium</option>
@@ -306,13 +269,8 @@ export default function ProfilePage() {
               <label className="block font-medium">Skill Level</label>
               <select
                 value={profile.skillLevel ?? 'Intermediate'}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    skillLevel: e.target.value as EditableUserFields['skillLevel'],
-                  })
-                }
-                className="border px-3 py-2 rounded w-full"
+                onChange={(e) => setProfile({ ...profile, skillLevel: e.target.value as EditableUserFields['skillLevel'] })}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded-lg w-full"
               >
                 <option>Beginner</option>
                 <option>Intermediate</option>
@@ -325,13 +283,8 @@ export default function ProfilePage() {
               <label className="block font-medium">Play Frequency</label>
               <select
                 value={profile.playFrequency ?? '1-2 times per week'}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    playFrequency: e.target.value as EditableUserFields['playFrequency'],
-                  })
-                }
-                className="border px-3 py-2 rounded w-full"
+                onChange={(e) => setProfile({ ...profile, playFrequency: e.target.value as EditableUserFields['playFrequency'] })}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded-lg w-full"
               >
                 <option>&lt;1 per week</option>
                 <option>1-2 times per week</option>
@@ -339,7 +292,7 @@ export default function ProfilePage() {
               </select>
             </div>
 
-            <div className="col-span-1 md:col-span-2">
+            <div className="col-span-2">
               <MultiSelect
                 label="Preferred Plastics"
                 options={[...DiscPlastics]}
@@ -356,14 +309,14 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {/* SAVE BUTTON */}
       <div className="flex justify-center sm:justify-end">
-        <button
+        <GradientButton
+          label={loading ? 'Saving...' : 'Save Profile'}
           onClick={handleSave}
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md w-full sm:w-auto transition"
-        >
-          {loading ? 'Saving...' : 'Save Profile'}
-        </button>
+          variant="primary"
+          className="px-8 py-3"
+        />
       </div>
     </div>
   );

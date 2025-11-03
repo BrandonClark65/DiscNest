@@ -2,7 +2,6 @@
 
 import type { Listing } from '@/types/listing';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useState } from 'react';
 import GradientButton from '@/components/ui/GradientButton';
 
@@ -34,13 +33,19 @@ export default function ListingCard({
 
   return (
     <div
-      className="group border rounded-xl overflow-hidden shadow-sm hover:shadow-md 
-                 transition-all duration-200 bg-white flex flex-col"
+      className={`
+        group border border-[var(--muted)]/30 rounded-xl overflow-hidden 
+        shadow-sm hover:shadow-lg hover:border-[var(--accent)]/40
+        transition-all duration-300 flex flex-col text-[var(--foreground)]
+        bg-[var(--surface)]
+        dark:bg-[var(--surface)]
+        bg-[color-mix(in srgb, var(--surface) 85%, var(--foreground) 5%)]  /* ✨ Light mode: a bit darker */
+      `}
     >
       {/* ---------- IMAGE ---------- */}
-      <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden">
+      <div className="relative w-full aspect-[4/3] bg-[var(--muted)]/10 overflow-hidden">
         {!imageLoaded && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+          <div className="absolute inset-0 bg-[var(--muted)]/20 animate-pulse rounded-none" />
         )}
 
         <Image
@@ -58,8 +63,8 @@ export default function ListingCard({
 
         {/* Sold overlay */}
         {listing.sold && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-            <span className="text-white text-lg font-semibold uppercase tracking-wide">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <span className="text-white text-lg font-semibold uppercase tracking-wide drop-shadow">
               Sold
             </span>
           </div>
@@ -67,38 +72,53 @@ export default function ListingCard({
       </div>
 
       {/* ---------- DETAILS ---------- */}
-      <div className="flex flex-col flex-1 p-4">
+      <div className="flex flex-col flex-1 p-4 space-y-1.5">
         <h3
-          className="text-base sm:text-lg font-bold mb-1 text-gray-800 line-clamp-1
-                     group-hover:text-blue-600 transition-colors"
+          className="text-base sm:text-lg font-bold line-clamp-1 
+                     text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors"
         >
           {listing.title}
         </h3>
 
-        <p className="text-sm text-gray-600 mb-1 line-clamp-1">
-          {listing.brand} – {listing.condition}
+        <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
+          {listing.brand} • {listing.condition}
         </p>
 
         {cityState && (
-          <p className="text-sm text-gray-500 mb-2 line-clamp-1">{cityState}</p>
+          <p className="text-sm text-[var(--foreground)]/60 line-clamp-1">
+            {cityState}
+          </p>
         )}
 
-        <p className="text-base font-semibold mb-3 text-gray-800">
+        <p className="text-base font-semibold mt-1 mb-3 text-[var(--foreground)]">
           {listing.price !== undefined
             ? `$${listing.price.toFixed(2)}`
             : 'Price not listed'}
         </p>
 
+        {/* ---------- ACTIONS ---------- */}
         <div className="mt-auto space-y-2 flex flex-col items-center">
           <GradientButton
             label="View Listing"
             href={`/listing/${listing._id}`}
-            variant="blue"
+            variant="blueGradient"
+            className="w-full"
           />
+
           {isOwner && !listing.sold && (
-            <div className="flex gap-2 justify-center">
-              <GradientButton label="Sold" onClick={onMarkSold} variant="green" />
-              <GradientButton label="Delete" onClick={onDelete} variant="red" />
+            <div className="flex gap-2 justify-center w-full">
+              <GradientButton
+                label="Sold"
+                onClick={onMarkSold}
+                variant="accentGradient"
+                className="flex-1"
+              />
+              <GradientButton
+                label="Delete"
+                onClick={onDelete}
+                variant="danger"
+                className="flex-1"
+              />
             </div>
           )}
         </div>

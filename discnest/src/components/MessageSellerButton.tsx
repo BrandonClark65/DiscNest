@@ -58,7 +58,7 @@ export default function MessageSellerButton({
     <>
       <GradientButton label={isLoading ? 'Loading...' : 'Message Seller'} 
         onClick={handleClick} 
-        variant="blue" 
+        variant="blueGradient" 
         icon={<MessageCircle className="w-5 h-5" />}
       />
       {threadId && (

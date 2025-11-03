@@ -128,10 +128,6 @@ export async function GET(req: Request) {
   return NextResponse.json({ listings, totalPages, totalCount });
 }
 
-
-
-
-
 // ✅ POST new listing (must be logged in)
 export const POST = withUserAuth(async (req, session) => {
   await connectToDatabase();
