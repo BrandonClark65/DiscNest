@@ -116,51 +116,50 @@ export default function BagStats({ bag }: BagStatsProps) {
 
   // Shared stats JSX
   const statsContent = (
-    <div className="space-y-3 text-sm text-gray-700">
-      <p>
-        <b>Total Discs:</b> {total}
-      </p>
-      <p>
-        <b>Unique Molds:</b> {uniqueMolds}
-      </p>
+    <div className="space-y-3 text-sm text-[var(--foreground)]/90">
+      <p><b>Total Discs:</b> {total}</p>
+      <p><b>Unique Molds:</b> {uniqueMolds}</p>
+
       {avgWear !== null && (
         <p>
           <b>Avg Wear:</b> {avgWear.toFixed(0)}%{' '}
           <span
             className={
               avgWear < 30
-                ? 'text-green-600'
+                ? 'text-[var(--primary)]'
                 : avgWear < 70
-                ? 'text-yellow-600'
-                : 'text-red-600'
+                ? 'text-amber-500'
+                : 'text-rose-500'
             }
           >
             ({wearLabel})
           </span>
         </p>
       )}
+
       {avgWeight && (
         <p>
           <b>Avg Weight:</b> {avgWeight}g{' '}
           {minWeight && maxWeight && (
-            <span className="text-gray-500">
+            <span className="text-[var(--muted)]">
               ({minWeight}–{maxWeight}g)
             </span>
           )}
         </p>
       )}
+
       {topBrand && (
         <p>
           <b>Top Brand:</b> {topBrand[0]} ({topBrand[1]})
         </p>
       )}
-      <p>
-        <b>Bag Completeness:</b> {completeness}/4
-      </p>
+
+      <p><b>Bag Completeness:</b> {completeness}/4</p>
+
       {Object.keys(byPlastic).length > 0 && (
         <div>
-          <p className="font-medium text-green-700">Plastics:</p>
-          <ul className="ml-3 list-disc text-gray-600">
+          <p className="font-medium text-[var(--primary)]">Plastics:</p>
+          <ul className="ml-3 list-disc text-[var(--foreground)]/70">
             {Object.entries(byPlastic)
               .sort((a, b) => b[1] - a[1])
               .slice(0, 3)
@@ -172,10 +171,11 @@ export default function BagStats({ bag }: BagStatsProps) {
           </ul>
         </div>
       )}
+
       {Object.keys(byStability).length > 0 && (
         <div>
-          <p className="font-medium text-green-700">Stability:</p>
-          <ul className="ml-3 list-disc text-gray-600">
+          <p className="font-medium text-[var(--primary)]">Stability:</p>
+          <ul className="ml-3 list-disc text-[var(--foreground)]/70">
             {Object.entries(byStability).map(([stab, count]) => (
               <li key={stab}>
                 {stab}: {count}
@@ -184,22 +184,15 @@ export default function BagStats({ bag }: BagStatsProps) {
           </ul>
         </div>
       )}
+
       {avgFlight && (
         <div>
-          <p className="font-medium text-green-700">Avg Flight:</p>
-          <div className="ml-3 text-gray-600 grid grid-cols-2 gap-x-3">
-            <p>
-              <b>Speed:</b> {avgFlight.speed}
-            </p>
-            <p>
-              <b>Glide:</b> {avgFlight.glide}
-            </p>
-            <p>
-              <b>Turn:</b> {avgFlight.turn}
-            </p>
-            <p>
-              <b>Fade:</b> {avgFlight.fade}
-            </p>
+          <p className="font-medium text-[var(--primary)]">Avg Flight:</p>
+          <div className="ml-3 text-[var(--foreground)]/70 grid grid-cols-2 gap-x-3">
+            <p><b>Speed:</b> {avgFlight.speed}</p>
+            <p><b>Glide:</b> {avgFlight.glide}</p>
+            <p><b>Turn:</b> {avgFlight.turn}</p>
+            <p><b>Fade:</b> {avgFlight.fade}</p>
           </div>
         </div>
       )}
@@ -208,39 +201,49 @@ export default function BagStats({ bag }: BagStatsProps) {
 
   return (
     <div ref={popoverRef} className="relative inline-block text-left">
+      {/* Trigger Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="p-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 text-white shadow-md transition"
         title="View Bag Stats"
+        className="
+          p-2 rounded-full 
+          bg-[var(--primary)]/85 
+          hover:bg-[var(--primary)]/95 
+          text-[var(--background)] 
+          shadow-md hover:shadow-lg 
+          border border-[var(--primary)]/20 
+          transition-colors duration-200
+        "
       >
         <BarChart3 className="w-5 h-5" />
       </button>
 
+
       <AnimatePresence>
         {open && (
           <>
-            {/* === Desktop popover === */}
+            {/* === Desktop Popover === */}
             {!isMobile && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute z-50 right-0 mt-3 w-80 rounded-2xl border border-green-100 bg-white/90 backdrop-blur-xl shadow-2xl p-5"
+                className="absolute z-50 right-0 mt-3 w-80 rounded-2xl border border-[var(--primary)]/20 bg-[var(--surface)]/80 backdrop-blur-xl shadow-2xl p-5"
               >
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-green-700">
+                  <h3 className="text-lg font-semibold text-[var(--primary)]">
                     Bag Stats
                   </h3>
                   <button
                     onClick={() => setOpen(false)}
-                    className="text-gray-500 hover:text-red-500 transition"
+                    className="text-[var(--muted)] hover:text-rose-500 transition"
                   >
                     ✕
                   </button>
                 </div>
                 {total === 0 ? (
-                  <p className="text-sm text-gray-500 italic">
+                  <p className="text-sm text-[var(--muted)] italic">
                     No discs in bag
                   </p>
                 ) : (
@@ -249,28 +252,28 @@ export default function BagStats({ bag }: BagStatsProps) {
               </motion.div>
             )}
 
-            {/* === Mobile bottom sheet === */}
+            {/* === Mobile Bottom Sheet === */}
             {isMobile && (
               <motion.div
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white/95 backdrop-blur-xl shadow-2xl border-t border-green-100 p-6 max-h-[75vh] overflow-y-auto"
+                className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-[var(--surface)]/95 backdrop-blur-xl shadow-2xl border-t border-[var(--primary)]/20 p-6 max-h-[75vh] overflow-y-auto"
               >
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-green-700">
+                  <h3 className="text-lg font-semibold text-[var(--primary)]">
                     Bag Stats
                   </h3>
                   <button
                     onClick={() => setOpen(false)}
-                    className="text-gray-500 hover:text-red-500 transition"
+                    className="text-[var(--muted)] hover:text-rose-500 transition"
                   >
                     ✕
                   </button>
                 </div>
                 {total === 0 ? (
-                  <p className="text-sm text-gray-500 italic">
+                  <p className="text-sm text-[var(--muted)] italic">
                     No discs in bag
                   </p>
                 ) : (

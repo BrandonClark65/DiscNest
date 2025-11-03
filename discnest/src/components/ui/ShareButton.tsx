@@ -39,10 +39,26 @@ export default function ShareButton({
   return (
     <button
       onClick={handleShare}
-      className={`flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:opacity-90 transition ${className}`}
+      className={`
+        flex items-center gap-2 px-3 py-2 rounded-full
+        bg-[var(--primary)]/85 
+        hover:bg-[var(--primary)]/95 
+        text-[var(--background)]
+        shadow-md hover:shadow-lg
+        border border-[var(--primary)]/20
+        transition-all duration-200
+        ${className}
+      `}
+      title="Share this page"
     >
-      {copied ? <Copy size={16} /> : <Share2 size={16} />}
-      <span>{copied ? 'Copied!' : label}</span>
+      {copied ? (
+        <Copy size={16} className="opacity-90" />
+      ) : (
+        <Share2 size={16} className="opacity-90" />
+      )}
+      <span className="font-medium text-sm">
+        {copied ? 'Copied!' : label}
+      </span>
     </button>
   );
 }

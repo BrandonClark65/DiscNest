@@ -24,7 +24,7 @@ export default function DiscEditModal({
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setVisible(true); // Trigger slide-in
+    setVisible(true);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,23 +41,24 @@ export default function DiscEditModal({
 
   return (
     <div
-      className={`fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 overflow-y-auto transform transition-transform duration-300 ${
+      className={`fixed inset-y-0 right-0 w-full max-w-md z-50 overflow-y-auto transform transition-transform duration-300 ${
         visible ? 'translate-x-0' : 'translate-x-full'
-      }`}
+      } 
+      bg-[var(--surface)]/95 backdrop-blur-xl border-l border-[var(--primary)]/10 shadow-2xl`}
     >
-      <form onSubmit={handleSubmit} className="p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="p-6 space-y-6 text-[var(--foreground)]">
         {/* ---------- HEADER ---------- */}
-        <div className="flex items-center justify-between border-b pb-3 mb-4">
+        <div className="flex items-center justify-between border-b border-[var(--primary)]/20 pb-3 mb-4">
           <div>
-            <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 drop-shadow-md">
+            <h2 className="text-2xl font-extrabold text-gradient-brand drop-shadow-sm">
               Edit Disc
             </h2>
-            <div className="h-1 w-20 bg-gradient-to-r from-green-500 to-emerald-400 rounded-full mt-1"></div>
+            <div className="h-1 w-20 bg-[var(--primary)]/60 rounded-full mt-1"></div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-500 hover:text-red-600 transition-colors"
+            className="text-[var(--muted)] hover:text-rose-500 transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
@@ -66,11 +67,11 @@ export default function DiscEditModal({
         {/* ---------- FORM FIELDS ---------- */}
         {/* Plastic */}
         <div>
-          <label className="block text-sm font-medium mb-1 text-gray-700">Plastic</label>
+          <label className="block text-sm font-medium mb-1">Plastic</label>
           <select
             value={plastic}
             onChange={(e) => setPlastic(e.target.value as DiscPlastic)}
-            className="w-full border rounded px-2 py-1 focus:ring-2 focus:ring-green-400"
+            className="w-full rounded-md px-3 py-2 bg-[var(--background)]/60 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/40 outline-none transition"
           >
             <option value="">Select Plastic</option>
             {DiscPlastics.map((p) => (
@@ -83,7 +84,7 @@ export default function DiscEditModal({
 
         {/* Wear Level */}
         <div>
-          <label className="block text-sm font-medium mb-1 text-gray-700">Wear Level (0–100)</label>
+          <label className="block text-sm font-medium mb-1">Wear Level (0–100)</label>
           <input
             type="number"
             min={0}
@@ -91,16 +92,15 @@ export default function DiscEditModal({
             value={wearLevel}
             onChange={(e) => {
               const val = Number(e.target.value);
-              if (isNaN(val)) return;
-              setWearLevel(val);
+              if (!isNaN(val)) setWearLevel(val);
             }}
-            className={`w-full border rounded px-2 py-1 focus:ring-2 focus:ring-green-400 ${
-              wearLevel < 0 || wearLevel > 100 ? 'border-red-500' : ''
+            className={`w-full rounded-md px-3 py-2 bg-[var(--background)]/60 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/40 outline-none transition ${
+              wearLevel < 0 || wearLevel > 100 ? 'border-rose-500' : ''
             }`}
             placeholder="0–100"
           />
           {(wearLevel < 0 || wearLevel > 100) && (
-            <p className="text-red-500 text-sm mt-1">
+            <p className="text-rose-500 text-sm mt-1">
               Wear level must be between 0 and 100
             </p>
           )}
@@ -108,7 +108,7 @@ export default function DiscEditModal({
 
         {/* Weight */}
         <div>
-          <label className="block text-sm font-medium mb-1 text-gray-700">Weight (grams)</label>
+          <label className="block text-sm font-medium mb-1">Weight (grams)</label>
           <input
             type="number"
             min={100}
@@ -118,13 +118,13 @@ export default function DiscEditModal({
               const val = e.target.value;
               setWeight(val === '' ? undefined : Number(val));
             }}
-            className={`w-full border rounded px-2 py-1 focus:ring-2 focus:ring-green-400 ${
-              weight && (weight < 100 || weight > 200) ? 'border-yellow-500' : ''
+            className={`w-full rounded-md px-3 py-2 bg-[var(--background)]/60 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/40 outline-none transition ${
+              weight && (weight < 100 || weight > 200) ? 'border-amber-500' : ''
             }`}
             placeholder="e.g. 175"
           />
           {weight && (weight < 100 || weight > 200) && (
-            <p className="text-yellow-600 text-sm mt-1">
+            <p className="text-amber-500 text-sm mt-1">
               Typical disc weights range between 150–180g
             </p>
           )}
@@ -132,37 +132,38 @@ export default function DiscEditModal({
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium mb-1 text-gray-700">Notes</label>
+          <label className="block text-sm font-medium mb-1">Notes</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full border rounded px-2 py-1 focus:ring-2 focus:ring-green-400"
+            className="w-full min-h-[80px] rounded-md px-3 py-2 bg-[var(--background)]/60 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/40 outline-none transition resize-none"
           />
         </div>
 
         {/* Color */}
         <div>
-          <label className="block text-sm font-medium mb-1 text-gray-700">Color</label>
+          <label className="block text-sm font-medium mb-1">Color</label>
           <input
             type="color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            className="w-12 h-8 p-0 border rounded cursor-pointer"
+            className="w-12 h-8 p-0 border border-[var(--primary)]/20 rounded cursor-pointer"
           />
         </div>
 
         {/* ---------- ACTIONS ---------- */}
-        <div className="flex justify-end gap-3 pt-6">
+        <div className="flex justify-end gap-3 pt-6 border-t border-[var(--primary)]/10">
           <GradientButton
             label="Cancel"
             onClick={onClose}
-            variant="gray"
             type="button"
+            variant="surface"
+            className="ring-1 ring-[var(--muted)]/40 hover:bg-[var(--surface)]/90"
           />
           <GradientButton
             label="Save Changes"
             type="submit"
-            variant="green"
+            variant="brand"
           />
         </div>
       </form>

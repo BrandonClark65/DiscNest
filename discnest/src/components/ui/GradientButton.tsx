@@ -11,9 +11,16 @@ type GradientButtonProps = {
   onClick?: () => void;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
-  /** theme-based variants */
-  variant?: 'primary' | 'accent' | 'secondary' | 'danger' | 'surface';
+  variant?: 
+    | 'primary'
+    | 'accent'
+    | 'secondary'
+    | 'danger'
+    | 'surface'
+    | 'brand'
+    | 'muted';
 };
+
 
 /**
  * Theme-aware gradient button.
@@ -35,6 +42,9 @@ export default function GradientButton({
     secondary: 'from-[var(--secondary)] to-[var(--primary)] text-white',
     danger: 'from-rose-600 to-red-500 text-white',
     surface: 'from-[var(--surface)] to-[var(--muted)] text-foreground',
+
+    brand: 'from-[var(--primary)] to-[var(--primary-dark)]',
+    muted: 'from-[var(--muted)]/40 to-[var(--muted)]/60',
   };
 
   const baseStyles =

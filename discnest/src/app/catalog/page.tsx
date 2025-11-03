@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import type { Disc } from '@/types/disc';
-import DiscCard from '@/components/DiscCard';
+import DiscCardCatalog from '@/components/DiscCardCatalog';
 import toast from 'react-hot-toast';
 import GradientButton from '@/components/ui/GradientButton';
 import { Filter } from 'lucide-react';
@@ -333,7 +333,7 @@ export default function CatalogPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {paginated.map((disc) => (
-            <DiscCard
+            <DiscCardCatalog
               key={disc._id}
               disc={disc}
               actionLabel="Add to Shelf"

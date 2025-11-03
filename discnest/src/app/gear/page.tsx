@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import type { Disc } from '@/types/disc';
-import DiscCard from '@/components/DiscCard';
+import DiscCardGear from '@/components/DiscCardGear';
 import DiscEditModal from '@/components/DiscEditModal';
 import DiscBagDisplay from '@/components/DiscbagDisplay';
 import ShareButton from '@/components/ui/ShareButton';
@@ -60,13 +60,12 @@ function SortableDiscCard({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <DiscCard
+      <DiscCardGear
         disc={disc}
         actionLabel={actionLabel}
         onAction={onAction}
-        onDelete={onDelete}
         onEdit={() => onEdit(disc)}
-        circleView
+        onDelete={onDelete}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
     </div>
@@ -105,24 +104,17 @@ function MobileReorderSection({
     await onReorder(updated.map((d) => d._id), zone);
   };
 
-  const moveToIndex = async (from: number, to: number) => {
-    await move(from, to);
-  };
-
   return (
     <div
-      className="grid gap-6 justify-center grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+      className="grid gap-6 justify-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
       style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
     >
       {local.map((disc, idx) => (
         <div key={disc._id} className="relative">
           {reorderMode && (
-            <div
-              className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10
-                       bg-white/80 backdrop-blur-md rounded-full px-2 py-1 shadow-sm"
-            >
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10 bg-[var(--background)]/80 backdrop-blur-md rounded-full px-2 py-1 shadow-sm border border-[var(--muted)]/40">
               <button
-                className="px-2 py-1 text-xs rounded bg-white shadow hover:bg-gray-50"
+                className="px-2 py-1 text-xs rounded bg-[var(--surface)] shadow hover:bg-[var(--muted)]/20"
                 onClick={(e) => {
                   e.stopPropagation();
                   move(idx, idx - 1);
@@ -132,7 +124,7 @@ function MobileReorderSection({
                 ↑
               </button>
               <button
-                className="px-2 py-1 text-xs rounded bg-white shadow hover:bg-gray-50"
+                className="px-2 py-1 text-xs rounded bg-[var(--surface)] shadow hover:bg-[var(--muted)]/20"
                 onClick={(e) => {
                   e.stopPropagation();
                   move(idx, idx + 1);
@@ -141,30 +133,14 @@ function MobileReorderSection({
               >
                 ↓
               </button>
-              <select
-                className="px-1 py-1 text-xs rounded bg-white shadow"
-                value={idx}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  moveToIndex(idx, Number(e.target.value));
-                }}
-                aria-label="Move to position"
-              >
-                {local.map((_, i) => (
-                  <option key={i} value={i}>
-                    {i + 1}
-                  </option>
-                ))}
-              </select>
             </div>
           )}
-          <DiscCard
+          <DiscCardGear
             disc={disc}
             actionLabel={actionLabel}
             onAction={() => onAction(disc._id)}
-            onDelete={() => onDelete(disc._id)}
             onEdit={() => onEdit(disc)}
-            circleView
+            onDelete={() => onDelete(disc._id)}
           />
         </div>
       ))}
@@ -185,28 +161,21 @@ export default function GearPage() {
   const isMobile = useIsMobile();
   const fieldMap = { shelf: 'discShelf', bag: 'bag' };
 
-  /* 🔒 Securely fetch the shareable bag link */
   async function fetchShareUrl() {
     try {
       const res = await fetch('/api/user/discs/share', { method: 'POST' });
       if (!res.ok) throw new Error('Failed to generate share link');
       const data = await res.json();
       setShareUrl(data.shareUrl);
-    } catch (err) {
-      console.error('Share link fetch failed:', err);
+    } catch {
       toast.error('Could not create share link.');
     }
   }
 
   useEffect(() => {
-    if (!isLoggedIn || shareUrl) return; // prevent refetch if already fetched
+    if (!isLoggedIn || shareUrl) return;
     fetchShareUrl();
   }, [isLoggedIn, shareUrl]);
-
-
-  /* --- Disc CRUD + reorder functions (unchanged) --- */
-  const handleEdit = (disc: Disc) => setEditingDisc(disc);
-  const closeModal = () => setEditingDisc(null);
 
   async function fetchDiscs() {
     if (!isLoggedIn) return;
@@ -219,10 +188,14 @@ export default function GearPage() {
       const bagData = await bagRes.json();
       setShelf((shelfData.shelf || []).sort((a: Disc, b: Disc) => (a.order ?? 0) - (b.order ?? 0)));
       setBag((bagData.bag || []).sort((a: Disc, b: Disc) => (a.order ?? 0) - (b.order ?? 0)));
-    } catch (err) {
+    } catch {
       toast.error('Failed to load discs.');
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchDiscs();
+  }, [isLoggedIn]);
 
   const handleSaveDisc = async (updated: Partial<Disc> & { discId: string }) => {
     try {
@@ -231,23 +204,14 @@ export default function GearPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        console.error('❌ Update error details:', data);
-        throw new Error(data?.error || 'Failed to update disc');
-      }
+      if (!res.ok) throw new Error('Failed to update disc');
       toast.success('Disc updated successfully!');
       await fetchDiscs();
       setEditingDisc(null);
-    } catch (err) {
-      console.error('❌ Failed to update disc:', err);
-      toast.error((err as Error).message || 'Failed to save changes');
+    } catch {
+      toast.error('Failed to save changes');
     }
   };
-
-  useEffect(() => {
-    fetchDiscs();
-  }, [isLoggedIn]);
 
   const persistReorder = async (orderedIds: string[], zone: 'shelf' | 'bag') => {
     try {
@@ -270,9 +234,7 @@ export default function GearPage() {
     if (res.ok) {
       toast.success(`Moved disc to ${to === 'bag' ? 'Bag' : 'Shelf'}!`);
       fetchDiscs();
-    } else {
-      toast.error('Failed to move disc');
-    }
+    } else toast.error('Failed to move disc');
   };
 
   const deleteDisc = async (discId: string, target: 'shelf' | 'bag') => {
@@ -283,15 +245,14 @@ export default function GearPage() {
     });
     if (res.ok) {
       toast.success('Disc removed!');
-    fetchDiscs();
-    } else {
-      toast.error('Failed to delete disc');
-    }
+      fetchDiscs();
+    } else toast.error('Failed to delete disc');
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
+
     const oldShelfIndex = shelf.findIndex((d) => d._id === active.id);
     const newShelfIndex = shelf.findIndex((d) => d._id === over.id);
     if (oldShelfIndex !== -1 && newShelfIndex !== -1) {
@@ -300,6 +261,7 @@ export default function GearPage() {
       await persistReorder(newShelf.map((d) => d._id), 'shelf');
       return;
     }
+
     const oldBagIndex = bag.findIndex((d) => d._id === active.id);
     const newBagIndex = bag.findIndex((d) => d._id === over.id);
     if (oldBagIndex !== -1 && newBagIndex !== -1) {
@@ -309,44 +271,44 @@ export default function GearPage() {
     }
   };
 
-  /* ---------- JSX ---------- */
   return (
     <div className="relative">
-      {editingDisc && <DiscEditModal disc={editingDisc} onClose={closeModal} onSave={handleSaveDisc} />}
+      {editingDisc && (
+        <DiscEditModal disc={editingDisc} onClose={() => setEditingDisc(null)} onSave={handleSaveDisc} />
+      )}
 
-      <div className="max-w-6xl mx-auto p-6 space-y-12 relative">
-        {/* ===== HEADER ===== */}
+      <div className="max-w-6xl mx-auto p-6 space-y-12 relative text-foreground">
+        {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-center space-y-4"
         >
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 drop-shadow-md tracking-tight">
-            Your Gear
+          <h1 className="h1">
+            <span className="text-gradient-brand">Your Gear</span>
           </h1>
-          <div className="h-1 w-24 mx-auto bg-gradient-to-r from-green-500 to-emerald-400 rounded-full" />
           <GradientButton
             label="Browse Disc Catalog"
             href="/catalog"
             icon={<DiscIcon className="w-5 h-5" />}
-            variant="blue"
+            variant="brand"
+            className="px-5 py-2.5"
           />
         </motion.div>
 
-        {/* ===== MAIN CONTENT ===== */}
+        {/* SHELF + BAG */}
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          {/* --- Shelf --- */}
           <GearSection
             title="Disc Shelf"
-            icon={<Package className="w-5 h-5 text-green-600" />}
+            icon={<Package className="w-5 h-5 text-[var(--primary)]" />}
             discs={isLoggedIn ? shelf : []}
             emptyMessage="No discs here yet."
             zoneId="shelf"
             actionLabel="Move to Bag"
             onAction={(id) => moveDisc(id, 'shelf', 'bag')}
             onDelete={(id) => deleteDisc(id, 'shelf')}
-            onEdit={handleEdit}
+            onEdit={setEditingDisc}
             sortable
             isMobile={isMobile}
             onReorder={persistReorder}
@@ -354,7 +316,6 @@ export default function GearPage() {
             onToggleReorder={() => setMobileReorderMode((v) => !v)}
           />
 
-          {/* --- Bag --- */}
           <motion.section
             className="space-y-6"
             initial={{ opacity: 0, y: 20 }}
@@ -362,16 +323,14 @@ export default function GearPage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             viewport={{ once: true }}
           >
-            {/* ===== DISC BAG HEADER ===== */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-bold flex items-center gap-2 text-green-700">
-                  <ShoppingBag className="w-5 h-5 text-green-600" />
+                <h2 className="text-2xl font-bold flex items-center gap-2 text-[var(--primary)]">
+                  <ShoppingBag className="w-5 h-5 text-[var(--primary)]" />
                   Disc Bag
                 </h2>
                 {isLoggedIn && <BagStats bag={bag} />}
               </div>
-
               {isLoggedIn && shareUrl && (
                 <ShareButton
                   title="My Disc Bag"
@@ -389,7 +348,7 @@ export default function GearPage() {
               actionLabel="Move to Shelf"
               onAction={(id) => moveDisc(id, 'bag', 'shelf')}
               onDelete={(id) => deleteDisc(id, 'bag')}
-              onEdit={handleEdit}
+              onEdit={setEditingDisc}
               sortable
               isMobile={isMobile}
               onReorder={persistReorder}
@@ -424,7 +383,7 @@ function GearSection({
   onAction,
   onDelete,
   onEdit,
-  emptyMessage,
+  emptyMessage = 'No discs here yet.',
   sortable = false,
   isMobile = false,
   onReorder,
@@ -450,7 +409,7 @@ function GearSection({
 
   const content =
     discs.length === 0 ? (
-      <p className="text-gray-500 italic text-center py-8">{emptyMessage}</p>
+      <p className="text-muted italic text-center py-8">{emptyMessage}</p>
     ) : sortable && isMobile && (zoneId === 'shelf' || zoneId === 'bag') && onReorder ? (
       <MobileReorderSection
         discs={discs}
@@ -463,12 +422,12 @@ function GearSection({
         reorderMode={reorderMode}
       />
     ) : sortable ? (
-      <SortableContext items={discs.map((d) => d._id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={discs.map((d: Disc) => d._id)} strategy={verticalListSortingStrategy}>
         <div
-          className="grid gap-6 justify-center grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          className="grid gap-6 justify-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
           style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
         >
-          {discs.map((disc) => (
+          {discs.map((disc: Disc) => (
             <SortableDiscCard
               key={disc._id}
               disc={disc}
@@ -482,18 +441,17 @@ function GearSection({
       </SortableContext>
     ) : (
       <div
-        className="grid gap-6 justify-center grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+        className="grid gap-6 justify-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
         style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
       >
-        {discs.map((disc) => (
-          <DiscCard
+        {discs.map((disc: Disc) => (
+          <DiscCardGear
             key={disc._id}
             disc={disc}
             actionLabel={actionLabel}
             onAction={() => onAction(disc._id)}
-            onDelete={() => onDelete(disc._id)}
             onEdit={onEdit}
-            circleView
+            onDelete={() => onDelete(disc._id)}
           />
         ))}
       </div>
@@ -503,8 +461,7 @@ function GearSection({
     <section className="w-full mb-10">
       {title && (
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold flex items-center gap-2 text-green-700">
-            <span className="inline-block w-2 h-6 bg-green-500 rounded"></span>
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-[var(--primary)]">
             {icon}
             {title}
           </h2>
@@ -512,8 +469,8 @@ function GearSection({
             <GradientButton
               label={reorderMode ? 'Done Reordering' : 'Reorder'}
               onClick={onToggleReorder}
-              variant={reorderMode ? 'green' : 'gray'}
-              className="text-xs py-1 px-3"
+              variant={reorderMode ? 'brand' : 'muted'}
+              className="text-xs px-3 py-1.5"
             />
           )}
         </div>
@@ -521,7 +478,7 @@ function GearSection({
       <div
         ref={setNodeRef}
         className={`transition p-2 rounded-lg ${
-          isOver ? 'bg-green-50 ring-2 ring-green-400' : 'bg-white/50'
+          isOver ? 'bg-[var(--surface)] ring-2 ring-[var(--primary)]/50' : 'bg-[var(--background)]/70'
         }`}
       >
         {content}
