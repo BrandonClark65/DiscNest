@@ -9,6 +9,8 @@ import DiscEditModal from '@/components/DiscEditModal';
 import DiscBagDisplay from '@/components/DiscbagDisplay';
 import ShareButton from '@/components/ui/ShareButton';
 import BagStats from '@/components/BagStats';
+import BagAnalyzer from '@/components/BagAnalyzer';
+import PersonalizedRecommendations from '@/components/PersonalizedRecommendations';
 import {
   DndContext,
   closestCenter,
@@ -339,7 +341,13 @@ export default function GearPage() {
                 />
               )}
             </div>
-
+            {/* Bag Analyzer and recommendations */}
+            {isLoggedIn && bag.length > 0 && (
+              <>
+                <BagAnalyzer bag={bag} />
+                <PersonalizedRecommendations />
+              </>
+            )}
             <GearSection
               title=""
               discs={isLoggedIn ? bag : []}

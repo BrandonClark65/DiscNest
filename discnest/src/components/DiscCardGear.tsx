@@ -14,6 +14,7 @@ type DiscCardGearProps = {
   onDelete?: () => void;
   onHover?: (disc: Disc | null) => void;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+  compact?: boolean;
 };
 
 export default function DiscCardGear({
@@ -24,10 +25,17 @@ export default function DiscCardGear({
   onDelete,
   onHover,
   dragHandleProps,
+  compact = false,
 }: DiscCardGearProps) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
   const baseColor = disc.color ?? '#ffffff';
+  // If the disc has no color, give it a subtle brand-tinted gradient background
+  const isDefaultWhite = !disc.color || disc.color === '#ffffff';
+  const gradientBackground = isDefaultWhite
+    ? 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(59,130,246,0.15) 100%)' // indigo → blue tint
+    : baseColor;
+
   const textColor = getContrastColor(baseColor);
 
   const handleActionClick = () => {
@@ -44,12 +52,17 @@ export default function DiscCardGear({
       onMouseLeave={() => onHover?.(null)}
       className="relative rounded-full border shadow-md flex flex-col items-center justify-center overflow-hidden cursor-pointer transition hover:ring-2 hover:ring-[var(--primary)]"
       style={{
-        backgroundColor: baseColor,
+        background: gradientBackground,
         color: textColor,
-        width: 'clamp(260px, 28vw, 320px)',
-        height: 'clamp(260px, 28vw, 320px)',
-        filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.25))',
+        width: compact ? '100%' : 'clamp(260px, 28vw, 320px)',
+        height: compact ? 'auto' : 'clamp(260px, 28vw, 320px)',
+        aspectRatio: compact ? '1 / 1' : undefined,
+        filter: compact
+          ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.15))'
+          : 'drop-shadow(0 6px 10px rgba(0,0,0,0.25))',
+
       }}
+
     >
       {/* Drag handle */}
       {dragHandleProps && (
