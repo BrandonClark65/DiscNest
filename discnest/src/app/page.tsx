@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Package, BookOpen, User, Disc as DiscIcon } from 'lucide-react';
 import DiscbagDisplay from '@/components/DiscbagDisplay';
 import GradientButton from '@/components/ui/GradientButton';
+import SiteAnnouncement from '@/components/SiteAnnouncement';
 
 export default function HomePage() {
   return (
@@ -30,6 +31,7 @@ export default function HomePage() {
             icon={<DiscIcon className="w-5 h-5" />}
             variant="primary"
           />
+          <SiteAnnouncement />
         </div>
       </motion.div>
 
