@@ -7,6 +7,8 @@ import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 import { Toaster } from 'react-hot-toast';
 import { Inter, Poppins } from 'next/font/google';
+import { useEffect } from 'react';
+import { logClientError } from '@/lib/clientLogger';
 
 // ✅ Include weight and subset options for Poppins and Inter
 const inter = Inter({
@@ -22,6 +24,39 @@ const poppins = Poppins({
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    // 🔹 Capture uncaught JS runtime errors
+    const handleError = (event: ErrorEvent) => {
+      logClientError(event.error || event.message, {
+        route: window.location.pathname,
+        severity: 'high',
+        metadata: {
+          type: 'window.onerror',
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno,
+        },
+      });
+    };
+
+    // 🔹 Capture unhandled Promise rejections
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      logClientError(event.reason || 'Unhandled rejection', {
+        route: window.location.pathname,
+        severity: 'medium',
+        metadata: { type: 'unhandledrejection' },
+      });
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
+
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body className="bg-background text-neutral-900 font-sans antialiased flex flex-col min-h-screen">
