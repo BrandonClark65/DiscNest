@@ -1,25 +1,28 @@
-'use server';
+"use server";
 
-import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import User from '@/models/User';
-import { editableProfileSchema  } from '@/lib/validation/userSchema';
-import { withUserAuth } from '@/lib/auth/withUserAuth';
+import { NextResponse } from "next/server";
+import { connectToDatabase } from "@/lib/mongodb";
+import User from "@/models/User";
+import { editableProfileSchema } from "@/lib/validation/userSchema";
+import { withUserAuth } from "@/lib/auth/withUserAuth";
+import { withErrorHandling } from "@/lib/withErrorHandling";
 
-export const POST = withUserAuth(async (req, session) => {
+// ----------------------
+// POST: update profile
+// ----------------------
+const updateProfileHandler = async (req: Request, session: any) => {
   const body = await req.json();
 
-  // Validate incoming data with Zod
-  const parseResult = editableProfileSchema .safeParse(body);
+  // Validate with Zod
+  const parseResult = editableProfileSchema.safeParse(body);
   if (!parseResult.success) {
     console.error("Zod validation error:", parseResult.error.flatten());
     return NextResponse.json(
-      { error: 'Invalid data', details: parseResult.error.flatten() },
+      { error: "Invalid data", details: parseResult.error.flatten() },
       { status: 400 }
     );
   }
 
-  // Extract only allowed fields for update
   const {
     name,
     username,
@@ -73,15 +76,28 @@ export const POST = withUserAuth(async (req, session) => {
   ).lean();
 
   return NextResponse.json({ user: updatedUser });
-});
+};
 
-export const GET = withUserAuth(async (req, session) => {
+export const POST = withErrorHandling(
+  withUserAuth(updateProfileHandler),
+  "/api/profile"
+);
+
+// ----------------------
+// GET: fetch current user profile
+// ----------------------
+const getProfileHandler = async (req: Request, session: any) => {
   await connectToDatabase();
-  const user = await User.findOne({ email: session.user.email }).lean();
 
+  const user = await User.findOne({ email: session.user.email }).lean();
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   return NextResponse.json({ user });
-});
+};
+
+export const GET = withErrorHandling(
+  withUserAuth(getProfileHandler),
+  "/api/profile"
+);

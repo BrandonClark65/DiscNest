@@ -1,20 +1,30 @@
-// src/app/api/seed/route.ts
-import { NextResponse } from 'next/server';
-import { spawn } from 'child_process';
-import { withAdminAuth } from '@/lib/auth/withAdminAuth';
+import { NextResponse } from "next/server";
+import { spawn } from "child_process";
+import { withAdminAuth } from "@/lib/auth/withAdminAuth";
+import { withErrorHandling } from "@/lib/withErrorHandling";
 
-export const POST = withAdminAuth(async () => {
+const seedHandler = async () => {
   // Spawn the seed script
   const seed = spawn(
-    'npx',
-    ['ts-node', '-P', 'tsconfig.seed.json', 'scripts/seed/seedDiscs.ts'],
-    { stdio: 'inherit' } // automatically pipe stdout/stderr to console
+    "npx",
+    ["ts-node", "-P", "tsconfig.seed.json", "scripts/seed/seedDiscs.ts"],
+    { stdio: "inherit" } // pipe stdout/stderr to console
   );
 
-  // Listen for script exit
-  seed.on('close', (code) => {
+  // Log process exit
+  seed.on("close", (code) => {
     console.log(`Seed script exited with code ${code}`);
   });
 
-  return NextResponse.json({ message: 'Seeding started' });
-});
+  // Log spawn errors (optional safety)
+  seed.on("error", (err) => {
+    console.error("❌ Failed to start seed script:", err);
+  });
+
+  return NextResponse.json({ message: "Seeding started" });
+};
+
+export const POST = withErrorHandling(
+  withAdminAuth(seedHandler),
+  "/api/seed"
+);

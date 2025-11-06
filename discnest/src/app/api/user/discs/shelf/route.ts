@@ -1,21 +1,25 @@
-import { NextResponse } from 'next/server';
-import { User } from '@/models';
-import { connectToDatabase } from '@/lib/mongodb';
-import { withUserAuth } from '@/lib/auth/withUserAuth';
+import { NextResponse } from "next/server";
+import { User } from "@/models";
+import { connectToDatabase } from "@/lib/mongodb";
+import { withUserAuth } from "@/lib/auth/withUserAuth";
+import { withErrorHandling } from "@/lib/withErrorHandling";
 
-export const GET = withUserAuth(async (_req, session) => {
-  try {
-    await connectToDatabase();
+/* ---------- Handler ---------- */
+const getShelfHandler = async (_req: Request, session: any) => {
+  await connectToDatabase();
 
-    const user = await User.findById(session.user.id).populate('discShelf');
+  const user = await User.findById(session.user.id).populate("discShelf");
 
-    if (!user) {
-      return NextResponse.json({ shelf: [] }, { status: 200 }); // ✅ return empty array instead of error
-    }
-
-    return NextResponse.json({ shelf: user.discShelf || [] }, { status: 200 });
-  } catch (err) {
-    console.error('❌ Error in shelf route:', err);
-    return NextResponse.json({ shelf: [] }, { status: 500 }); // ✅ always return JSON
+  if (!user) {
+    // ✅ Return empty shelf for missing user
+    return NextResponse.json({ shelf: [] }, { status: 200 });
   }
-});
+
+  return NextResponse.json({ shelf: user.discShelf || [] }, { status: 200 });
+};
+
+/* ---------- Export ---------- */
+export const GET = withErrorHandling(
+  withUserAuth(getShelfHandler),
+  "/api/shelf"
+);

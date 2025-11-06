@@ -5,6 +5,7 @@ import User from "@/models/User";
 import { Resend } from "resend";
 import mongoose from "mongoose";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
+import { withErrorHandling } from "@/lib/withErrorHandling";
 import { requireUser } from "@/lib/auth/requireUser";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -22,8 +23,10 @@ async function reverseGeocode(lat: number, lng: number) {
   };
 }
 
-// ✅ GET listings (marketplace or "myListings")
-export async function GET(req: Request) {
+// ----------------------
+// GET: marketplace or myListings
+// ----------------------
+const getListingsHandler = async (req: Request) => {
   await connectToDatabase();
   const { searchParams } = new URL(req.url);
 
@@ -126,10 +129,14 @@ export async function GET(req: Request) {
   const totalPages = Math.ceil(totalCount / limit);
 
   return NextResponse.json({ listings, totalPages, totalCount });
-}
+};
 
-// ✅ POST new listing (must be logged in)
-export const POST = withUserAuth(async (req, session) => {
+export const GET = withErrorHandling(getListingsHandler, "/api/listings");
+
+// ----------------------
+// POST: create listing (auth required)
+// ----------------------
+const createListingHandler = async (req: Request, session: any) => {
   await connectToDatabase();
   const body = await req.json();
   const pendingReview = body.pendingReview || false;
@@ -163,7 +170,7 @@ export const POST = withUserAuth(async (req, session) => {
 
   if (pendingReview) {
     const user = await User.findById(session.user.id);
-    const fromEmail = process.env.FROM_ALERT_EMAIL || "<alerts@discnest.com>";
+    const fromEmail = process.env.FROM_ALERT_EMAIL || "alerts@discnest.com";
     await resend.emails.send({
       from: fromEmail,
       to: process.env.ADMIN_EMAIL!,
@@ -171,13 +178,20 @@ export const POST = withUserAuth(async (req, session) => {
       html: `
         <p><strong>User:</strong> ${user?.name} (${user?.email})</p>
         <p><strong>Listing:</strong> ${listing.title}</p>
-        <p><strong>Images:</strong> ${body.imageUrls
-          .map((url: string) => `<a href="${url}">${url}</a>`)
-          .join("<br>")}</p>
+        <p><strong>Images:</strong> ${
+          body.imageUrls
+            ?.map((url: string) => `<a href="${url}">${url}</a>`)
+            .join("<br>") || "None"
+        }</p>
         <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
       `,
     });
   }
 
   return NextResponse.json(listing, { status: 201 });
-});
+};
+
+export const POST = withErrorHandling(
+  withUserAuth(createListingHandler),
+  "/api/listings"
+);

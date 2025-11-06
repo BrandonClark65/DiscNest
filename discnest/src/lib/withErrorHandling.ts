@@ -2,29 +2,31 @@ import { NextResponse } from "next/server";
 import { logError } from "@/lib/errorLogger";
 
 /**
- * Wraps an API route handler to automatically log uncaught errors
- * and return a standardized JSON error response.
- *
- * Usage:
- *   export const GET = withErrorHandling(handler, "/api/example");
+ * Generic error-handling wrapper for API routes.
+ * Works with any handler signature, including (req, session, context?).
  */
-export function withErrorHandling(
-  handler: (req: Request) => Promise<NextResponse>,
+export function withErrorHandling<
+  T extends (...args: any[]) => Promise<NextResponse>
+>(
+  handler: T,
   routePath?: string
-) {
-  return async (req: Request) => {
+): (...args: Parameters<T>) => Promise<NextResponse> {
+  return async (...args: Parameters<T>): Promise<NextResponse> => {
     try {
-      return await handler(req);
+      return await handler(...args);
     } catch (err) {
-      // Log error to DB + email alert
-      await logError({
-        error: err,
-        route: routePath || req.url || "unknown",
-        severity: "high",
-        metadata: { method: req.method },
-      });
+      try {
+        const req = args[0] as Request;
+        await logError({
+          error: err,
+          route: routePath || req?.url || "unknown",
+          severity: "high",
+          metadata: { method: req?.method },
+        });
+      } catch (logErr) {
+        console.error("Failed to log error:", logErr);
+      }
 
-      // Return safe JSON response
       return NextResponse.json(
         { error: "Internal Server Error" },
         { status: 500 }

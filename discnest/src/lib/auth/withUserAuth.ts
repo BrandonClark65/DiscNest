@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "./requireUser";
 
-export function withUserAuth<
-  T extends { params?: any } = {}
->(
+/**
+ * Wraps any API route handler to enforce user authentication.
+ * Passes (req, session, context) into the wrapped handler.
+ */
+export function withUserAuth<T extends { params?: any } = {}>(
   handler: (
     req: Request,
     session: Awaited<ReturnType<typeof requireUser>>,
     context?: T
   ) => Promise<NextResponse>
-) {
+): (req: Request, context?: T) => Promise<NextResponse> {
   return async (req: Request, context?: T) => {
     try {
       const session = await requireUser();

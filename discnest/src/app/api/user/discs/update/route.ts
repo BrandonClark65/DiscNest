@@ -1,23 +1,28 @@
-import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Disc } from '@/models';
-import type { Disc as DiscType } from '@/types/disc';
-import { withUserAuth } from '@/lib/auth/withUserAuth';
+import { NextResponse } from "next/server";
+import { connectToDatabase } from "@/lib/mongodb";
+import { Disc } from "@/models";
+import type { Disc as DiscType } from "@/types/disc";
+import { withUserAuth } from "@/lib/auth/withUserAuth";
+import { withErrorHandling } from "@/lib/withErrorHandling";
 
-export const POST = withUserAuth(async (req, session) => {
+/* ---------- Handler ---------- */
+const updateDiscHandler = async (req: Request, session: any) => {
   const body = await req.json();
-
   const { discId, plastic, wearLevel, notes, color, weight } = body;
+
   if (!discId) {
-    return NextResponse.json({ error: 'Missing disc ID' }, { status: 400 });
+    return NextResponse.json({ error: "Missing disc ID" }, { status: 400 });
   }
 
   await connectToDatabase();
 
-  // Ensure the user owns this disc
+  // Ensure user owns this disc
   const disc = await Disc.findById(discId);
   if (!disc || disc.userId.toString() !== session.user.id) {
-    return NextResponse.json({ error: 'Unauthorized or disc not found' }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized or disc not found" },
+      { status: 401 }
+    );
   }
 
   const updateFields: Partial<DiscType> = {};
@@ -27,7 +32,10 @@ export const POST = withUserAuth(async (req, session) => {
   if (wearLevel !== undefined) {
     const wearNumber = Number(wearLevel);
     if (isNaN(wearNumber) || wearNumber < 0 || wearNumber > 100) {
-      return NextResponse.json({ error: 'wearLevel must be a number between 0 and 100' }, { status: 400 });
+      return NextResponse.json(
+        { error: "wearLevel must be a number between 0 and 100" },
+        { status: 400 }
+      );
     }
     updateFields.wearLevel = wearNumber;
   }
@@ -35,20 +43,22 @@ export const POST = withUserAuth(async (req, session) => {
   if (notes !== undefined) updateFields.notes = notes;
   if (color !== undefined) updateFields.color = color;
 
-  if (weight !== undefined && weight !== null && weight !== '') {
+  if (weight !== undefined && weight !== null && weight !== "") {
     const parsedWeight = Number(weight);
     if (!isNaN(parsedWeight) && parsedWeight >= 100 && parsedWeight <= 200) {
       updateFields.weight = parsedWeight;
     }
   }
 
+  const updatedDisc = await Disc.findByIdAndUpdate(discId, updateFields, {
+    new: true,
+  });
 
-  try {
-    const updatedDisc = await Disc.findByIdAndUpdate(discId, updateFields, { new: true });
+  return NextResponse.json({ success: true, disc: updatedDisc }, { status: 200 });
+};
 
-    return NextResponse.json({ success: true, disc: updatedDisc }, { status: 200 });
-  } catch (err) {
-    console.error('❌ Error updating disc:', err);
-    return NextResponse.json({ error: 'Failed to update disc' }, { status: 500 });
-  }
-});
+/* ---------- Export ---------- */
+export const POST = withErrorHandling(
+  withUserAuth(updateDiscHandler),
+  "/api/disc/update"
+);

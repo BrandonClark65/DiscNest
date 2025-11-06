@@ -1,21 +1,24 @@
-import { NextResponse } from 'next/server';
-import { User, Disc } from '@/models';
-import { connectToDatabase } from '@/lib/mongodb';
-import { withUserAuth } from '@/lib/auth/withUserAuth';
+import { NextResponse } from "next/server";
+import { User } from "@/models";
+import { connectToDatabase } from "@/lib/mongodb";
+import { withUserAuth } from "@/lib/auth/withUserAuth";
+import { withErrorHandling } from "@/lib/withErrorHandling";
 
-export const GET = withUserAuth(async (_req, session) => {
-  try {
-    await connectToDatabase();
+/* ---------- Handler ---------- */
+const getBagHandler = async (_req: Request, session: any) => {
+  await connectToDatabase();
 
-    const user = await User.findById(session.user.id).populate('bag');
+  const user = await User.findById(session.user.id).populate("bag");
 
-    if (!user) {
-      return NextResponse.json({ bag: [] }, { status: 200 });
-    }
-
-    return NextResponse.json({ bag: user.bag || [] }, { status: 200 });
-  } catch (err) {
-    console.error('❌ Error in bag route:', err);
-    return NextResponse.json({ bag: [] }, { status: 500 });
+  if (!user) {
+    return NextResponse.json({ bag: [] }, { status: 200 });
   }
-});
+
+  return NextResponse.json({ bag: user.bag || [] }, { status: 200 });
+};
+
+/* ---------- Export ---------- */
+export const GET = withErrorHandling(
+  withUserAuth(getBagHandler),
+  "/api/bag"
+);
