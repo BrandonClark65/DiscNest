@@ -163,9 +163,10 @@ export const POST = withUserAuth(async (req, session) => {
 
   if (pendingReview) {
     const user = await User.findById(session.user.id);
+    const fromEmail = process.env.FROM_ALERT_EMAIL || "<alerts@discnest.com>";
     await resend.emails.send({
-      from: "alerts@yourdomain.com",
-      to: process.env.ADMIN_ALERT_EMAIL!,
+      from: fromEmail,
+      to: process.env.ADMIN_EMAIL!,
       subject: `⚠️ Listing from ${user?.name || "Unknown"} requires review`,
       html: `
         <p><strong>User:</strong> ${user?.name} (${user?.email})</p>

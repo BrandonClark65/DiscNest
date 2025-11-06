@@ -14,10 +14,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const toEmail = process.env.ADMIN_ALERT_EMAIL;
+    const toEmail = process.env.ADMIN_EMAIL;
     if (!toEmail) {
       return NextResponse.json(
-        { error: 'ADMIN_ALERT_EMAIL not configured' },
+        { error: 'ADMIN_EMAIL not configured' },
         { status: 500 }
       );
     }
