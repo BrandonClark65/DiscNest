@@ -16,6 +16,7 @@ export async function logClientError(
         route: options?.route || window.location.pathname,
         severity: options?.severity || "medium",
         metadata: options?.metadata,
+        source: "client", // ✅ added here
       }),
     });
   } catch (err) {

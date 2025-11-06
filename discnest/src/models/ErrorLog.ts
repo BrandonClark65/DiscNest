@@ -11,8 +11,15 @@ const ErrorLogSchema = new Schema(
       default: "medium",
     },
     userId: { type: Schema.Types.ObjectId, ref: "User" },
-    metadata: { type: Object }, // any extra context
+    metadata: { type: Object },
     resolved: { type: Boolean, default: false },
+
+    // ✅ NEW — distinguishes error origin
+    source: {
+      type: String,
+      enum: ["server", "client"],
+      default: "server",
+    },
   },
   { timestamps: true }
 );

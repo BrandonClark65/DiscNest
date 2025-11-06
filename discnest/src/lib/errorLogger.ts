@@ -3,8 +3,8 @@ import ErrorLog from "@/models/ErrorLog";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@discnest.com";
-const ALERTS_EMAIL = process.env.ALERTS_EMAIL || "alerts@discnest.com"; // sender
+const ADMIN_EMAIL = "admin@discnest.com";
+const ALERTS_EMAIL = "alerts@discnest.com";
 
 type LogErrorOptions = {
   error: unknown;
@@ -12,6 +12,7 @@ type LogErrorOptions = {
   severity?: "low" | "medium" | "high" | "critical";
   userId?: string;
   metadata?: Record<string, any>;
+  source?: "server" | "client"; // ✅ NEW
 };
 
 export async function logError({
@@ -20,14 +21,14 @@ export async function logError({
   severity = "medium",
   userId,
   metadata = {},
+  source = "server", // ✅ default to server
 }: LogErrorOptions) {
   try {
     await connectToDatabase();
 
     const message =
       error instanceof Error ? error.message : String(error);
-    const stack =
-      error instanceof Error ? error.stack : undefined;
+    const stack = error instanceof Error ? error.stack : undefined;
 
     // 1️⃣ Save to DB
     const newLog = await ErrorLog.create({
@@ -37,27 +38,32 @@ export async function logError({
       severity,
       userId,
       metadata,
+      source,
     });
 
     // 2️⃣ Send alert email
-    const subject = `[${severity.toUpperCase()}] Error in ${route ?? "Unknown Route"}`;
+    const subject = `[${severity.toUpperCase()}] ${source.toUpperCase()} Error in ${
+      route ?? "Unknown Route"
+    }`;
+
     const text = `
-An error occurred on DiscNest:
+        A ${source} error occurred on DiscNest:
 
-Message: ${message}
-Route: ${route ?? "Unknown"}
-Severity: ${severity}
-Time: ${new Date().toISOString()}
+        Message: ${message}
+        Route: ${route ?? "Unknown"}
+        Severity: ${severity}
+        Source: ${source}
+        Time: ${new Date().toISOString()}
 
-Stack:
-${stack ?? "(no stack trace)"}
+        Stack:
+        ${stack ?? "(no stack trace)"}
 
-Metadata:
-${JSON.stringify(metadata, null, 2)}
+        Metadata:
+        ${JSON.stringify(metadata, null, 2)}
     `;
 
     await resend.emails.send({
-      from: ALERTS_EMAIL,
+      from: `DiscNest Alerts <${ALERTS_EMAIL}>`,
       to: ADMIN_EMAIL,
       subject,
       text,

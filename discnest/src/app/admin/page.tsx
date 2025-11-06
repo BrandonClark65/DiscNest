@@ -235,6 +235,7 @@ export default function AdminDashboard() {
                     <th className="px-4 py-2 text-left">Message</th>
                     <th className="px-4 py-2 text-left">Route</th>
                     <th className="px-4 py-2 text-left">Severity</th>
+                    <th className="px-4 py-2 text-left">Source</th>
                     <th className="px-4 py-2 text-left">User</th>
                     <th className="px-4 py-2 text-left">Date</th>
                     <th className="px-4 py-2 text-center">Actions</th>
@@ -260,6 +261,17 @@ export default function AdminDashboard() {
                           }`}
                         >
                           {log.severity}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                            log.source === "client"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-200 text-gray-800"
+                          }`}
+                        >
+                          {log.source}
                         </span>
                       </td>
                       <td className="px-4 py-2">
