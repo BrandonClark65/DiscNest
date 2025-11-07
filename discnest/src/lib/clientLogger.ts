@@ -1,12 +1,30 @@
 export async function logClientError(
   error: unknown,
-  options?: { route?: string; severity?: "low" | "medium" | "high" | "critical"; metadata?: any }
+  options?: {
+    route?: string;
+    severity?: "low" | "medium" | "high" | "critical";
+    metadata?: any;
+  }
 ) {
   try {
-    const message =
-      error instanceof Error ? error.message : String(error);
-    const stack = error instanceof Error ? error.stack : undefined;
+    // --- 🧠 Normalize error ---
+    let message: string;
+    let stack: string | undefined;
 
+    if (error instanceof Error) {
+      message = `${error.name}: ${error.message}`;
+      stack = error.stack;
+    } else if (typeof error === "object") {
+      try {
+        message = JSON.stringify(error, Object.getOwnPropertyNames(error));
+      } catch {
+        message = String(error);
+      }
+    } else {
+      message = String(error);
+    }
+
+    // --- 📤 Send to backend logger ---
     await fetch("/api/log-client-error", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -16,7 +34,7 @@ export async function logClientError(
         route: options?.route || window.location.pathname,
         severity: options?.severity || "medium",
         metadata: options?.metadata,
-        source: "client", // ✅ added here
+        source: "client",
       }),
     });
   } catch (err) {
