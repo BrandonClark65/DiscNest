@@ -6,10 +6,10 @@ import { Filter } from 'lucide-react';
 import GradientButton from '@/components/ui/GradientButton';
 import toast from 'react-hot-toast';
 import useCatalogData from './hooks/useCatalogData';
-import CatalogFilters from './components/CatalogFilters';
-import CatalogGrid from './components/CatalogGrid';
-import CatalogPagination from './components/CatalogPagination';
-import HoverPreview from './components/HoverPreview';
+import CatalogFilters from '@/components/catalog/CatalogFilters';
+import CatalogGrid from '@/components/catalog/CatalogGrid';
+import CatalogPagination from '@/components/catalog/CatalogPagination';
+import HoverPreview from '@/components/catalog/HoverPreview';
 import type { Disc } from '@/types/disc';
 
 export default function CatalogPage() {

@@ -3,12 +3,12 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import TabsNav from './components/TabsNav';
-import StatsTab from './components/StatsTab';
-import DiscsTab from './components/DiscsTab';
-import UsersTab from './components/UsersTab';
-import PendingListingsTab from './components/PendingListingsTab';
-import ErrorsTab from './components/ErrorsTab';
+import TabsNav from '@/components/admin/TabsNav';
+import StatsTab from '@/components/admin/StatsTab';
+import DiscsTab from '@/components/admin/DiscsTab';
+import UsersTab from '@/components/admin/UsersTab';
+import PendingListingsTab from '@/components/admin/PendingListingsTab';
+import ErrorsTab from '@/components/admin/ErrorsTab';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
