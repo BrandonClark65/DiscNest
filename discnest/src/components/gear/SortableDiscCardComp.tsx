@@ -3,7 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Disc } from '@/types/disc';
-import DiscCardGear from '@/components/DiscCardGear';
+import DiscCardGear from '@/components/gear/DiscCardGear';
 
 type SortableDiscCardProps = {
   disc: Disc;

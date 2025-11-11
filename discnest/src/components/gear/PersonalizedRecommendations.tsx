@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, RefreshCcw, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { RecommendedDisc } from '@/lib/recommendations';
-import DiscCardGear from '@/components/DiscCardGear';
+import DiscCardGear from '@/components/gear/DiscCardGear';
 import GradientButton from '@/components/ui/GradientButton';
 
 type PersonalizedRecommendationsProps = {

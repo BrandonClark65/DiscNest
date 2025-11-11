@@ -1,6 +1,6 @@
 'use client';
 
-import DiscCardCatalog from '@/components/DiscCardCatalog';
+import DiscCardCatalog from '@/components/catalog/DiscCardCatalog';
 import type { Disc } from '@/types/disc';
 
 type Props = {

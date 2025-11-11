@@ -11,11 +11,11 @@ import { Disc as DiscIcon, ShoppingBag, Package } from 'lucide-react';
 import type { Disc } from '@/types/disc';
 import GradientButton from '@/components/ui/GradientButton';
 import ShareButton from '@/components/ui/ShareButton';
-import DiscEditModal from '@/components/DiscEditModal';
-import BagStats from '@/components/BagStats';
-import BagAnalyzer from '@/components/BagAnalyzer';
+import DiscEditModal from '@/components/gear/DiscEditModal';
+import BagStats from '@/components/gear/BagStats';
+import BagAnalyzer from '@/components/gear/BagAnalyzer';
 import DiscBagDisplay from '@/components/DiscbagDisplay';
-import PersonalizedRecommendations from '@/components/PersonalizedRecommendations';
+import PersonalizedRecommendations from '@/components/gear/PersonalizedRecommendations';
 
 import GearSection from '@/components/gear/GearSection';
 import useIsMobile from '@/components/gear/useIsMobile';

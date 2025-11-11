@@ -3,7 +3,7 @@ import Disc from '@/models/Disc';
 import User from '@/models/User';
 import DiscBagDisplay from '@/components/DiscbagDisplay';
 import DiscCard from '@/components/DiscCard';
-import BagStats from '@/components/BagStats';
+import BagStats from '@/components/gear/BagStats';
 import { ShoppingBag } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import AnimatedHeader from '@/components/AnimatedHeader';

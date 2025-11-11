@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Disc } from '@/types/disc';
-import DiscCardGear from '@/components/DiscCardGear';
+import DiscCardGear from '@/components/gear/DiscCardGear';
 
 type MobileReorderSectionProps = {
   discs: Disc[];
