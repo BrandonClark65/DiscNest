@@ -17,6 +17,7 @@ function mapMessageDBtoUI(msg: MessageDB): MessageUI {
     senderId = msg.sender._id.toString();
     senderName = (msg.sender as any).name || "Unknown";
   }
+
   return {
     sender: { _id: senderId, name: senderName },
     content: msg.content,
@@ -47,11 +48,13 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
 }
 
 export default function MessagesPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const currentUserId = session?.user?.id;
+
   const [threads, setThreads] = useState<ThreadUI[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // --- Run all hooks BEFORE any conditional UI ---
   useEffect(() => {
     if (!currentUserId) {
       setLoading(false);
@@ -80,29 +83,45 @@ export default function MessagesPage() {
 
     fetchThreads();
     const handleFocus = () => fetchThreads();
+
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [currentUserId]);
 
-  // --- States ---
-  if (!currentUserId)
+  // --- UI Logic AFTER all hooks ---
+  const sessionIsLoading = status === "loading";
+
+  if (sessionIsLoading) {
+    return (
+      <p className="p-6 text-center text-[var(--foreground)]/70 animate-pulse">
+        Loading...
+      </p>
+    );
+  }
+
+  if (!currentUserId) {
     return (
       <p className="p-6 text-center text-[var(--foreground)]/70">
         Log in to view messages
       </p>
     );
-  if (loading)
+  }
+
+  if (loading) {
     return (
       <p className="p-6 text-center text-[var(--foreground)]/70 animate-pulse">
         Loading threads...
       </p>
     );
-  if (!threads.length)
+  }
+
+  if (!threads.length) {
     return (
       <p className="p-6 text-center text-[var(--foreground)]/70">
         No messages yet.
       </p>
     );
+  }
 
   // --- UI ---
   return (
@@ -115,9 +134,9 @@ export default function MessagesPage() {
         {threads.map((thread) => {
           const otherUser = thread.participants.find((p) => p._id !== currentUserId);
           const lastMessage = thread.messages?.[thread.messages.length - 1];
-          const hasUnread = currentUserId
-            ? thread.messages?.some((m) => !(m.readBy || []).includes(currentUserId))
-            : false;
+          const hasUnread = thread.messages.some(
+            (m) => !m.readBy.includes(currentUserId)
+          );
 
           return (
             <li
@@ -125,8 +144,8 @@ export default function MessagesPage() {
               className={`
                 transition-all duration-200 rounded-xl border shadow-sm
                 ${hasUnread
-                  ? 'border-[var(--accent)]/40 bg-[color-mix(in srgb, var(--accent) 8%, var(--surface))]'
-                  : 'border-[var(--muted)]/40 bg-[var(--surface)] hover:border-[var(--accent)]/30'}
+                  ? "border-[var(--accent)]/40 bg-[color-mix(in srgb, var(--accent) 8%, var(--surface))]"
+                  : "border-[var(--muted)]/40 bg-[var(--surface)] hover:border-[var(--accent)]/30"}
               `}
             >
               <Link
@@ -142,9 +161,11 @@ export default function MessagesPage() {
                       </span>
                     )}
                   </p>
+
                   <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
                     {thread.listingId?.title || "No listing"}
                   </p>
+
                   <p className="text-sm text-[var(--foreground)]/80 truncate mt-1">
                     {lastMessage?.content || "No messages yet"}
                   </p>
