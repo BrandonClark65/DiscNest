@@ -37,6 +37,8 @@ export default function ChatPage() {
       content: msg.content,
       timestamp: new Date(msg.timestamp),
       readBy: msg.readBy.map((id) => id.toString()),
+      flagged: msg.flagged ?? false,
+      flaggedCategories: msg.flaggedCategories ?? {},
     };
   }
 
@@ -105,31 +107,62 @@ export default function ChatPage() {
   }, [thread?.messages]);
 
   // --- Send message ---
-  async function sendMessage() {
+ async function sendMessage() {
     if (!newMessage.trim() || !thread || !currentUserId) return;
 
+    const userName = session?.user?.name || "You";
+
+    // --- Optimistic UI update ---
     const tempMsg: MessageUI = {
-      sender: { _id: currentUserId, name: session?.user?.name || "You" },
+      sender: { _id: currentUserId, name: userName },
       content: newMessage,
       timestamp: new Date(),
       readBy: [currentUserId],
     };
 
+    const previousThread = thread; // keep backup to restore if error
     setThread({ ...thread, messages: [...thread.messages, tempMsg] });
+    const messageToSend = newMessage;
     setNewMessage("");
 
     try {
       const res = await fetch(`/api/messages/${threadId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newMessage }),
+        body: JSON.stringify({ content: messageToSend }),
       });
-      if (!res.ok) console.error("Failed to send message:", await res.text());
+
+      if (!res.ok) {
+        // get the server error (moderation message)
+        const errData = await res.json().catch(() => null);
+        const errorMessage =
+          errData?.error || "Your message could not be sent.";
+
+        // ❗ Revert optimistic message
+        setThread(previousThread);
+
+        // Show toast to user
+        if (typeof window !== "undefined") {
+          const toast = (await import("react-hot-toast")).toast;
+          toast.error(errorMessage);
+        }
+
+        return;
+      }
+
+      // Success → reload fresh thread
       fetchThread();
     } catch (err) {
       console.error("Failed to send message:", err);
+
+      // Revert optimistic UI on failure
+      setThread(previousThread);
+
+      const toast = (await import("react-hot-toast")).toast;
+      toast.error("Something went wrong while sending.");
     }
   }
+
 
   // --- States ---
   if (loading)
@@ -193,6 +226,15 @@ export default function ChatPage() {
                   {isOwn ? "You" : msg.sender.name}
                 </p>
                 <p className="text-sm leading-relaxed">{msg.content}</p>
+                {msg.flagged && (
+                  <p
+                    className={`text-xs mt-1 font-semibold ${
+                      isOwn ? "text-red-300 text-right" : "text-red-500 text-left"
+                    }`}
+                  >
+                    ⚠️ Message flagged for inappropriate content
+                  </p>
+                )}
                 <p
                   className={`text-[0.7rem] mt-1 ${
                     isOwn

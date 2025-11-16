@@ -6,6 +6,13 @@ import { authOptions } from "@/lib/auth";
 import type { Message } from "@/types/message";
 import mongoose from "mongoose";
 import { withErrorHandling } from "@/lib/withErrorHandling";
+import OpenAI from "openai";
+import { Filter } from "bad-words";
+
+
+// Init AI + Local Filter
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const profanityFilter = new Filter();
 
 // ----------------------
 // GET: fetch a single thread
@@ -42,7 +49,7 @@ export const GET = withErrorHandling(
 );
 
 // ----------------------
-// POST: append a message to existing thread
+// POST: append a message
 // ----------------------
 const postMessageHandler = async (
   req: Request,
@@ -57,6 +64,7 @@ const postMessageHandler = async (
 
   const senderId = session.user.id;
   const { content } = await req.json();
+
   if (!content)
     return NextResponse.json({ error: "Missing message content" }, { status: 400 });
 
@@ -67,14 +75,66 @@ const postMessageHandler = async (
   if (!thread.participants.some((p: any) => p.toString() === senderId))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  // ---------------------------
+  // 1. Profanity Filter (local)
+  // ---------------------------
+  if (profanityFilter.isProfane(content)) {
+    return NextResponse.json(
+      {
+        error:
+          "Your message contains profanity and could not be sent. Please adjust and try again.",
+      },
+      { status: 400 }
+    );
+  }
+
+  // --------------------------------------
+  // 2. AI Text Moderation (OpenAI Safety)
+  // --------------------------------------
+  let flagged = false;
+  let flaggedCategories = {};
+
+  try {
+    const mod = await openai.moderations.create({
+      model: "omni-moderation-latest",
+      input: content,
+    });
+
+    const result = mod.results[0];
+    flagged = result.flagged;
+    flaggedCategories = result.categories;
+
+    if (flagged) {
+      return NextResponse.json(
+        {
+          error:
+            "Your message was blocked for inappropriate content. Please modify and try again.",
+        },
+        { status: 400 }
+      );
+    }
+  } catch (err) {
+    console.error("Moderation error:", err);
+    // Fail-safe: Allow message if moderation API fails
+  }
+
+  // ---------------------------
+  // 3. Construct Message Object
+  // ---------------------------
   const senderObjectId = new mongoose.Types.ObjectId(senderId);
-  const newMessage: Partial<Message> = {
+
+  const newMessage = {
     sender: senderObjectId,
     content,
     readBy: [senderObjectId],
     timestamp: new Date(),
+    flagged,
+    flaggedCategories,
   };
 
+  // ---------------------------
+  // 4. Update DB
+  // ---------------------------
   const updatedThread = await MessageThread.findByIdAndUpdate(
     threadId,
     { $push: { messages: newMessage }, $set: { updatedAt: new Date() } },

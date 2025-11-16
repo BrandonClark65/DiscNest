@@ -15,6 +15,8 @@ export type MessageUI = {
   content: string;
   timestamp: Date;
   readBy: string[];
+  flagged?: boolean;
+  flaggedCategories?: Record<string, boolean>;
 };
 
 // backend type (DB)
@@ -23,4 +25,6 @@ export type MessageDB = {
   content: string;
   timestamp: Date;
   readBy: mongoose.Types.ObjectId[];
+  flagged?: boolean;
+  flaggedCategories?: Record<string, boolean>;
 };

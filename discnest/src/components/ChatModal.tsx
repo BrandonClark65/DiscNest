@@ -54,6 +54,8 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
           content: msg.content,
           timestamp: new Date(msg.timestamp).toISOString(),
           readBy: msg.readBy.map((id: any) => id.toString()),
+          flagged: msg.flagged ?? false,
+          flaggedCategories: msg.flaggedCategories ?? {},
         })),
         updatedAt: new Date(data.updatedAt).toISOString(),
       };
@@ -66,30 +68,64 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
     }
   }
 
-  async function sendMessage() {
-    if (!newMessage.trim() || !thread) return;
+async function sendMessage() {
+  if (!newMessage.trim() || !thread) return;
 
-    const tempMsg: MessageUI = {
-      sender: { _id: currentUserId, name: "You" },
-      content: newMessage,
-      timestamp: new Date(),
-      readBy: [],
-    };
+  const userName = session?.user?.name || "You";
 
-    setThread({ ...thread, messages: [...(thread.messages ?? []), tempMsg] });
-    setNewMessage("");
+  // --- Optimistic UI message ---
+  const tempMsg: MessageUI = {
+    sender: { _id: currentUserId, name: userName },
+    content: newMessage,
+    timestamp: new Date(),
+    readBy: [],
+  };
 
-    try {
-      await fetch(`/api/messages/${thread._id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newMessage }),
-      });
-      fetchThread();
-    } catch (error) {
-      console.error("Failed to send message:", error);
+  const previousThread = thread; // backup before temp message
+  setThread({
+    ...thread,
+    messages: [...(thread.messages ?? []), tempMsg],
+  });
+
+  const messageToSend = newMessage;
+  setNewMessage("");
+
+  try {
+    const res = await fetch(`/api/messages/${thread._id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: messageToSend }),
+    });
+
+    if (!res.ok) {
+      // parse error
+      const err = await res.json().catch(() => null);
+      const msg =
+        err?.error || "Your message could not be sent. Please try again.";
+
+      // revert optimistic UI
+      setThread(previousThread);
+
+      // error toast
+      const toast = (await import("react-hot-toast")).toast;
+      toast.error(msg);
+
+      return;
     }
+
+    // success → reload full thread
+    fetchThread();
+  } catch (error) {
+    console.error("Failed to send message:", error);
+
+    // revert UI on error
+    setThread(previousThread);
+
+    const toast = (await import("react-hot-toast")).toast;
+    toast.error("Something went wrong sending your message.");
   }
+}
+
 
   if (loading || !thread || !mounted) return null;
 
@@ -146,6 +182,15 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
                     <p className="whitespace-pre-wrap break-words leading-relaxed text-sm">
                       {msg.content}
                     </p>
+                    {msg.flagged && (
+                      <p
+                        className={`text-xs mt-1 font-semibold ${
+                          isOwn ? "text-red-200 text-right" : "text-red-500 text-left"
+                        }`}
+                      >
+                        ⚠️ Message flagged for inappropriate content
+                      </p>
+                    )}
                     <p
                       className={`text-[0.7rem] mt-1 ${
                         isOwn
