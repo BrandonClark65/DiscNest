@@ -22,6 +22,7 @@ type GearSectionProps = {
   onReorder?: (ids: string[], zone: 'shelf' | 'bag') => Promise<void>;
   reorderMode?: boolean;
   onToggleReorder?: () => void;
+  loading?: boolean;
 };
 
 /** Generic grid section (shelf or bag) supporting sorting & mobile reorder */
@@ -40,24 +41,27 @@ export default function GearSection({
   onReorder,
   reorderMode = false,
   onToggleReorder,
+  loading = false,
 }: GearSectionProps) {
   const { setNodeRef, isOver } = useDroppable({ id: zoneId });
 
   const content =
-    discs.length === 0 ? (
-      <p className="text-muted italic text-center py-8">{emptyMessage}</p>
-    ) : sortable && isMobile && (zoneId === 'shelf' || zoneId === 'bag') && onReorder ? (
-      <MobileReorderSection
-        discs={discs}
-        zone={zoneId as 'shelf' | 'bag'}
-        actionLabel={actionLabel}
-        onAction={onAction}
-        onDelete={onDelete}
-        onEdit={onEdit}
-        onReorder={onReorder}
-        reorderMode={reorderMode}
-      />
-    ) : sortable ? (
+      loading ? (
+        <p className="text-muted italic text-center py-8">Loading discs...</p>
+      ) : discs.length === 0 ? (
+        <p className="text-muted italic text-center py-8">{emptyMessage}</p>
+      ) : sortable && isMobile && (zoneId === 'shelf' || zoneId === 'bag') && onReorder ? (
+        <MobileReorderSection
+          discs={discs}
+          zone={zoneId as 'shelf' | 'bag'}
+          actionLabel={actionLabel}
+          onAction={onAction}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onReorder={onReorder}
+          reorderMode={reorderMode}
+        />
+      ) : sortable ? (
       <SortableContext items={discs.map((d) => d._id)} strategy={verticalListSortingStrategy}>
         <div
           className="grid gap-6 justify-center grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"

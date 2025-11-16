@@ -30,6 +30,8 @@ export default function GearPage() {
   const [editingDisc, setEditingDisc] = useState<Disc | null>(null);
   const [shareUrl, setShareUrl] = useState('');
   const [mobileReorderMode, setMobileReorderMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+
 
   const fieldMap = { shelf: 'discShelf', bag: 'bag' };
 
@@ -51,6 +53,8 @@ export default function GearPage() {
   const fetchDiscs = async () => {
     if (!isLoggedIn) return;
     try {
+      setLoading(true);
+
       const [shelfRes, bagRes] = await Promise.all([
         fetch(`/api/user/discs/shelf`),
         fetch(`/api/user/discs/bag`),
@@ -63,6 +67,8 @@ export default function GearPage() {
       setBag((bagData.bag || []).sort((a: Disc, b: Disc) => (a.order ?? 0) - (b.order ?? 0)));
     } catch {
       toast.error('Failed to load discs.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -184,6 +190,7 @@ export default function GearPage() {
             onReorder={persistReorder}
             reorderMode={mobileReorderMode}
             onToggleReorder={() => setMobileReorderMode((v) => !v)}
+            loading={loading}
           />
 
           <motion.section className="space-y-6">
@@ -223,6 +230,7 @@ export default function GearPage() {
               onReorder={persistReorder}
               reorderMode={mobileReorderMode}
               onToggleReorder={() => setMobileReorderMode((v) => !v)}
+              loading={loading}
             />
 
             <motion.div className="flex justify-center mt-10">
