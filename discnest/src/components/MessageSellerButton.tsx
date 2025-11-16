@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import ChatModal from '@/components/ChatModal';
+import ChatModal from '@/components/modals/ChatModal';
 import GradientButton from './ui/GradientButton';
 import { MessageCircle } from 'lucide-react';
 
