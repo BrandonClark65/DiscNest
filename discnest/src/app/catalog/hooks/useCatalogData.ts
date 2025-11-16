@@ -21,6 +21,7 @@ export type OpenSections = {
 
 export default function useCatalogData() {
   const [discs, setDiscs] = useState<Disc[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,7 +56,9 @@ export default function useCatalogData() {
           return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
         });
         setDiscs(sorted);
-      });
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   // --- Handle mobile ---
@@ -176,5 +179,6 @@ export default function useCatalogData() {
     isMobile,
     filtersOpen,
     setFiltersOpen,
+    loading,
   };
 }

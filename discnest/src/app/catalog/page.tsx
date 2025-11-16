@@ -20,6 +20,7 @@ export default function CatalogPage() {
     discs,
     paginated,
     filtered,
+    loading,        // ← NEW
     isMobile,
     filtersOpen,
     setFiltersOpen,
@@ -44,6 +45,7 @@ export default function CatalogPage() {
   const handleAdd = async (discId: string, target: 'shelf' | 'bag') => {
     if (!email) return;
     const disc = discs.find((d) => d._id === discId);
+
     const res = await fetch('/api/user/discs/add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -95,6 +97,7 @@ export default function CatalogPage() {
           <span className="text-gradient-brand">Disc Catalog</span>
         </h1>
 
+        {/* Catalog Grid */}
         <CatalogGrid
           discs={paginated}
           addedDiscId={addedDiscId}
@@ -102,11 +105,27 @@ export default function CatalogPage() {
           onHover={setHoveredDisc}
         />
 
-        {filtered.length === 0 && (
-          <p className="text-center text-muted mt-8">No discs match your filters.</p>
+        {/* Status Messages */}
+        {loading && (
+          <p className="text-center text-muted mt-8">
+            Loading discs...
+          </p>
         )}
 
-        {filtered.length > 24 && (
+        {!loading && discs.length > 0 && filtered.length === 0 && (
+          <p className="text-center text-muted mt-8">
+            No discs match your filters.
+          </p>
+        )}
+
+        {!loading && discs.length === 0 && (
+          <p className="text-center text-muted mt-8">
+            No discs available.
+          </p>
+        )}
+
+        {/* Pagination */}
+        {!loading && filtered.length > 24 && (
           <CatalogPagination
             totalPages={totalPages}
             currentPage={currentPage}
@@ -115,7 +134,11 @@ export default function CatalogPage() {
         )}
       </div>
 
-      <HoverPreview disc={hoveredDisc} onClose={() => setHoveredDisc(null)} isMobile={isMobile} />
+      <HoverPreview
+        disc={hoveredDisc}
+        onClose={() => setHoveredDisc(null)}
+        isMobile={isMobile}
+      />
     </div>
   );
 }
