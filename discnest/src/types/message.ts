@@ -6,7 +6,9 @@ export type Message = {
   sender: Types.ObjectId;       // matches Mongoose schema
   content: string;
   timestamp: Date;
-  readBy: Types.ObjectId[];     // array of ObjectIds
+  readBy: Types.ObjectId[];  
+  flagged?: boolean;
+  flaggedCategories?: Record<string, boolean>;   // array of ObjectIds
 };
 
 // frontend type (UI)

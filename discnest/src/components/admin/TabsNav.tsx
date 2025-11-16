@@ -11,6 +11,7 @@ const tabs = [
   { key: 'users', label: 'Users' },
   { key: 'pending', label: 'Pending Listings' },
   { key: 'errors', label: 'Errors' },
+  { key: 'flagged', label: 'Flagged Messages' },
 ];
 
 export default function TabsNav({ activeTab, setActiveTab }: TabsNavProps) {

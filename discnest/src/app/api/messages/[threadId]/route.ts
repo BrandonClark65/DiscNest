@@ -8,6 +8,9 @@ import mongoose from "mongoose";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import OpenAI from "openai";
 import { Filter } from "bad-words";
+import User from "@/models/User";
+import FlaggedMessage from "@/models/FlaggedMessage";
+
 
 
 // Init AI + Local Filter
@@ -51,6 +54,9 @@ export const GET = withErrorHandling(
 // ----------------------
 // POST: append a message
 // ----------------------
+// ----------------------
+// POST: append a message
+// ----------------------
 const postMessageHandler = async (
   req: Request,
   context: { params: Promise<{ threadId: string }> }
@@ -66,7 +72,10 @@ const postMessageHandler = async (
   const { content } = await req.json();
 
   if (!content)
-    return NextResponse.json({ error: "Missing message content" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing message content" },
+      { status: 400 }
+    );
 
   const thread = await MessageThread.findById(threadId);
   if (!thread)
@@ -75,10 +84,26 @@ const postMessageHandler = async (
   if (!thread.participants.some((p: any) => p.toString() === senderId))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  const senderObjectId = new mongoose.Types.ObjectId(senderId);
+
   // ---------------------------
   // 1. Profanity Filter (local)
   // ---------------------------
   if (profanityFilter.isProfane(content)) {
+    // bump moderation flags on user for clear profanity
+    await User.findByIdAndUpdate(senderId, {
+      $inc: { moderationFlags: 1 },
+      $set: { lastFlaggedAt: new Date() },
+    });
+
+    // store as flagged message for admin review
+    await FlaggedMessage.create({
+      sender: senderObjectId,
+      threadId,
+      content,
+      categories: { profanity: true },
+    });
+
     return NextResponse.json(
       {
         error:
@@ -92,7 +117,7 @@ const postMessageHandler = async (
   // 2. AI Text Moderation (OpenAI Safety)
   // --------------------------------------
   let flagged = false;
-  let flaggedCategories = {};
+  let flaggedCategories: Record<string, boolean> = {};
 
   try {
     const mod = await openai.moderations.create({
@@ -100,11 +125,25 @@ const postMessageHandler = async (
       input: content,
     });
 
-    const result = mod.results[0];
+    const result = (mod as any).results[0];
     flagged = result.flagged;
     flaggedCategories = result.categories;
 
     if (flagged) {
+      // Save flagged message for admin review
+      await FlaggedMessage.create({
+        sender: senderObjectId,
+        threadId,
+        content,
+        categories: flaggedCategories,
+      });
+
+      // Increment moderation flags on the user
+      await User.findByIdAndUpdate(senderId, {
+        $inc: { moderationFlags: 1 },
+        $set: { lastFlaggedAt: new Date() },
+      });
+
       return NextResponse.json(
         {
           error:
@@ -115,26 +154,21 @@ const postMessageHandler = async (
     }
   } catch (err) {
     console.error("Moderation error:", err);
-    // Fail-safe: Allow message if moderation API fails
+    // Fail-safe: allow message if moderation API fails
   }
 
   // ---------------------------
-  // 3. Construct Message Object
+  // 3. Construct Message Object (only for allowed messages)
   // ---------------------------
-  const senderObjectId = new mongoose.Types.ObjectId(senderId);
-
-  const newMessage = {
+  const newMessage: Partial<Message> = {
     sender: senderObjectId,
     content,
     readBy: [senderObjectId],
     timestamp: new Date(),
-    flagged,
-    flaggedCategories,
+    flagged: false,
+    flaggedCategories: {}, // all good
   };
 
-  // ---------------------------
-  // 4. Update DB
-  // ---------------------------
   const updatedThread = await MessageThread.findByIdAndUpdate(
     threadId,
     { $push: { messages: newMessage }, $set: { updatedAt: new Date() } },
@@ -146,6 +180,7 @@ const postMessageHandler = async (
 
   return NextResponse.json(updatedThread);
 };
+
 
 export const POST = withErrorHandling(
   postMessageHandler,
