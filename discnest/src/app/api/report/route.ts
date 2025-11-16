@@ -6,14 +6,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import UserReport from "@/models/UserReport";
 import User from "@/models/User";
 
-/**
- * POST /api/report
- * Universal report endpoint supporting:
- * - message reports
- * - thread reports
- * - listing reports
- */
-const reportHandler = async (req: Request) => {
+const reportHandler = async (req: Request, session: any) => {
   await connectToDatabase();
 
   const { reportedUserId, threadId, messageId, listingId, reason } =
@@ -26,13 +19,12 @@ const reportHandler = async (req: Request) => {
     );
   }
 
-  // Extract authenticated user from withUserAuth
-  const user = (req as any).user;
-  if (!user?._id) {
+  // ✔ Correct reporter ID extraction
+  const reporterId = session.user.id;
+
+  if (!reporterId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const reporterId = user._id.toString();
 
   if (reporterId === reportedUserId) {
     return NextResponse.json(
@@ -60,7 +52,8 @@ const reportHandler = async (req: Request) => {
   return NextResponse.json({ success: true });
 };
 
-export const POST = withErrorHandling(
-  withUserAuth(reportHandler),
-  "/api/report"
+
+// ✔ Correct order: withUserAuth wraps withErrorHandling
+export const POST = withUserAuth(
+  withErrorHandling(reportHandler, "/api/report")
 );

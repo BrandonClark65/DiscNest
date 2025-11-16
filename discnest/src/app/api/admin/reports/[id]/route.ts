@@ -7,13 +7,14 @@ import { connectToDatabase } from "@/lib/mongodb";
 
 const actionHandler = async (
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) => {
   await connectToDatabase();
 
+  const { id } = await context.params;     // ← FIXED
   const { action } = await req.json();
-  const report = await UserReport.findById(params.id);
 
+  const report = await UserReport.findById(id);
   if (!report)
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
 
