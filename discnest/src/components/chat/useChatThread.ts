@@ -25,25 +25,53 @@ export default function useChatThread(
 
   // --- Mapping helpers (copied from original) ---
   function mapMessageDBtoUI(msg: MessageDB): MessageUI {
-    const senderId =
-      typeof msg.sender === 'string'
-        ? msg.sender
-        : (msg.sender as any)?._id?.toString?.() || 'unknown';
+  const SYSTEM_IDS = [
+    null,
+    undefined,
+    "",
+    "unknown",
+    "system",
+    "000000000000000000000000", // your fake system ObjectId
+  ];
 
-    const senderName =
-      typeof msg.sender === 'object' && msg.sender && '_id' in msg.sender
-        ? (msg.sender as any).name || 'Unknown'
-        : 'Unknown';
+  // Extract raw sender ID as a string
+  const rawSender =
+    msg.sender === null
+      ? null
+      : typeof msg.sender === "string"
+      ? msg.sender
+      : msg.sender._id?.toString() ?? null;
 
+  // Identify system message
+  const isSystem = SYSTEM_IDS.includes(rawSender as any);
+
+  if (isSystem) {
     return {
-      sender: { _id: senderId, name: senderName },
+      sender: { _id: "system", name: "Automated Message" },
       content: msg.content,
       timestamp: new Date(msg.timestamp),
-      readBy: msg.readBy.map((id) => id.toString()),
+      readBy: msg.readBy?.map((id) => id.toString()) || [],
       flagged: msg.flagged ?? false,
       flaggedCategories: msg.flaggedCategories ?? {},
     };
   }
+
+  // Normal user message
+  const senderName =
+    typeof msg.sender === "object" && msg.sender && "_id" in msg.sender
+      ? (msg.sender as any).name || "Unknown"
+      : "Unknown";
+
+  return {
+    sender: { _id: rawSender!, name: senderName },
+    content: msg.content,
+    timestamp: new Date(msg.timestamp),
+    readBy: msg.readBy?.map((id) => id.toString()) || [],
+    flagged: msg.flagged ?? false,
+    flaggedCategories: msg.flaggedCategories ?? {},
+  };
+}
+
 
   function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
     return {
@@ -55,14 +83,34 @@ export default function useChatThread(
           return { _id: p._id.toString(), name: (p as any).name || 'Unknown' };
         return { _id: p.toString(), name: 'Unknown' };
       }),
-      listingId:
-        typeof t.listingId === 'object' && '_id' in t.listingId
-          ? {
-              _id: t.listingId._id.toString(),
-              title: t.listingId.title,
-              imageUrls: (t.listingId as any).imageUrls || [],
-            }
-          : { _id: t.listingId.toString(), title: '', imageUrls: [] },
+      listingId: (() => {
+        const l = t.listingId;
+
+        // 🔥 Listing deleted or missing
+        if (!l) {
+          return {
+            _id: "unknown",
+            title: "Listing Unavailable",
+            imageUrls: [],
+          };
+        }
+
+        // 🔥 Populated listing object
+        if (typeof l === "object" && "_id" in l) {
+          return {
+            _id: l._id.toString(),
+            title: (l as any).title || "Listing",
+            imageUrls: (l as any).imageUrls || [],
+          };
+        }
+
+        // 🔥 Raw ObjectId string
+        return {
+          _id: l.toString(),
+          title: "",
+          imageUrls: [],
+        };
+      })(),
       updatedAt:
         t.updatedAt instanceof Date
           ? t.updatedAt.toISOString()

@@ -5,6 +5,7 @@ import type { Listing as ListingType } from "@/types/listing";
 import { v2 as cloudinary } from "cloudinary";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
+import { addSystemMessageToThreads } from "@/lib/messages/addSystemMessageToThreads";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -42,7 +43,7 @@ export const GET = withErrorHandling(getListingHandler, "/api/listing/[id]");
 const patchListingHandler = async (
   req: Request,
   session: any,
-  context?: { params: Promise<{ id: string }> } // ✅ optional now
+  context?: { params: Promise<{ id: string }> }
 ) => {
   if (!context?.params)
     return NextResponse.json({ error: "Missing params" }, { status: 400 });
@@ -68,9 +69,16 @@ const patchListingHandler = async (
   if (listingUserId !== session.user.id)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  // Update listing
   listing.sold = true;
   listing.markModified("sold");
   await listing.save();
+
+  // Add system message to all threads connected to this listing
+  await addSystemMessageToThreads(
+    id,
+    "This listing has been marked as SOLD by the seller."
+  );
 
   return NextResponse.json({ listing });
 };
@@ -94,6 +102,7 @@ const deleteListingHandler = async (
     return NextResponse.json({ error: "Missing params" }, { status: 400 });
 
   const { id } = await context.params;
+
   if (!id)
     return NextResponse.json({ error: "Missing listing ID" }, { status: 400 });
 
@@ -118,10 +127,12 @@ const deleteListingHandler = async (
   for (const item of imagesToDelete) {
     try {
       let publicId = item;
+
       if (!listing.publicIds && typeof item === "string") {
-            const match = item.match(/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/);
+        const match = item.match(/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/);
         publicId = match ? match[1] : null;
       }
+
       if (publicId) await cloudinary.uploader.destroy(publicId);
     } catch (err) {
       console.warn("⚠️ Failed to delete Cloudinary image:", err);
@@ -129,6 +140,13 @@ const deleteListingHandler = async (
   }
 
   await listing.deleteOne();
+
+  // 🔥 NEW: Add system message to all threads connected to this listing
+  await addSystemMessageToThreads(
+    id,
+    "This listing has been deleted by the seller."
+  );
+
   return NextResponse.json({ message: "Listing deleted successfully" });
 };
 

@@ -18,6 +18,37 @@ export default function MessageBubble({
   threadId,
   onReportMessage,
 }: MessageBubbleProps) {
+  const isSystem = msg.sender._id === "system";
+  console.log("SENDER: ", msg.sender, " msg: ", msg);
+
+  // --- SYSTEM MESSAGE BUBBLE ---
+  if (isSystem) {
+    return (
+      <div className="flex justify-center my-2">
+        <div className="
+          bg-[var(--muted)]/20 
+          text-[var(--foreground)]/70 
+          px-4 py-2 
+          rounded-xl 
+          text-sm 
+          max-w-[80%] 
+          text-center 
+          shadow-sm
+        ">
+          <p className="font-semibold text-xs mb-1">Automated Message</p>
+          <p>{msg.content}</p>
+          <p className="text-[0.7rem] mt-1 text-[var(--foreground)]/50">
+            {new Date(msg.timestamp).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- NORMAL USER MESSAGE BUBBLE ---
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -65,7 +96,7 @@ export default function MessageBubble({
           })}
         </p>
 
-        {/* Per-message report: identical behavior to original (single click) */}
+        {/* No report button for own messages or system messages */}
         {!isOwn && (
           <button
             onClick={() =>

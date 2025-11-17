@@ -8,23 +8,52 @@ import type { MessageDB, MessageUI } from "@/types/message";
 
 // --- Helpers ---
 function mapMessageDBtoUI(msg: MessageDB): MessageUI {
-  let senderId = "";
+
+  const SYSTEM_ID = "000000000000000000000000";
+
+  // Normalize sender to a raw ID string (or null)
+  const rawSender =
+    msg.sender === null
+      ? null
+      : typeof msg.sender === "string"
+      ? msg.sender
+      : msg.sender._id?.toString();
+
+  // 🔥 SYSTEM MESSAGE DETECTION:
+  // - sender missing
+  // - sender equals fake system ObjectId
+  // - sender already mapped as "system"
+  const isSystem =
+    !rawSender || rawSender === SYSTEM_ID || rawSender === "system";
+
+  if (isSystem) {
+    return {
+      sender: { _id: "system", name: "Automated Message" },
+      content: msg.content,
+      timestamp: new Date(msg.timestamp),
+      readBy: msg.readBy?.map((id) => id.toString()) || [],
+      flagged: msg.flagged,
+      flaggedCategories: msg.flaggedCategories,
+    };
+  }
+
+  // NORMAL USER MESSAGE
   let senderName = "Unknown";
 
-  if (typeof msg.sender === "string") {
-    senderId = msg.sender;
-  } else if ("_id" in msg.sender) {
-    senderId = msg.sender._id.toString();
+  if (typeof msg.sender === "object" && msg.sender && "_id" in msg.sender) {
     senderName = (msg.sender as any).name || "Unknown";
   }
 
   return {
-    sender: { _id: senderId, name: senderName },
+    sender: { _id: rawSender!, name: senderName },
     content: msg.content,
     timestamp: new Date(msg.timestamp),
-    readBy: msg.readBy.map((id) => id.toString()),
+    readBy: msg.readBy?.map((id) => id.toString()) || [],
+    flagged: msg.flagged,
+    flaggedCategories: msg.flaggedCategories,
   };
 }
+
 
 function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
   return {
@@ -34,14 +63,30 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
         ? { _id: p._id.toString(), name: (p as any).name || "Unknown" }
         : { _id: p.toString(), name: "Unknown" }
     ),
-    listingId:
-      typeof thread.listingId === "object" && "_id" in thread.listingId
-        ? {
-            _id: thread.listingId._id.toString(),
-            title: thread.listingId.title,
-            imageUrls: (thread.listingId as any).imageUrls || [],
-          }
-        : { _id: thread.listingId.toString(), title: "", imageUrls: [] },
+    listingId: (() => {
+      const l = thread.listingId;
+
+      // 🔥 No listing (deleted or missing)
+      if (!l) {
+        return { _id: "unknown", title: "Listing Unavailable", imageUrls: [] };
+      }
+
+      // 🔥 If listingId is populated object
+      if (typeof l === "object" && "_id" in l) {
+        return {
+          _id: l._id.toString(),
+          title: (l as any).title || "Listing",
+          imageUrls: (l as any).imageUrls || [],
+        };
+      }
+
+      // 🔥 If listingId is just an ObjectId string
+      return {
+        _id: l.toString(),
+        title: "",
+        imageUrls: [],
+      };
+    })(),
     messages: thread.messages.map(mapMessageDBtoUI),
     updatedAt: new Date(thread.updatedAt).toISOString(),
   };
@@ -54,7 +99,7 @@ export default function MessagesPage() {
   const [threads, setThreads] = useState<ThreadUI[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // --- Run all hooks BEFORE any conditional UI ---
+  // --- Fetch threads ---
   useEffect(() => {
     if (!currentUserId) {
       setLoading(false);
@@ -82,16 +127,14 @@ export default function MessagesPage() {
     };
 
     fetchThreads();
-    const handleFocus = () => fetchThreads();
 
+    const handleFocus = () => fetchThreads();
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [currentUserId]);
 
-  // --- UI Logic AFTER all hooks ---
-  const sessionIsLoading = status === "loading";
-
-  if (sessionIsLoading) {
+  // --- UI Logic ---
+  if (status === "loading") {
     return (
       <p className="p-6 text-center text-[var(--foreground)]/70 animate-pulse">
         Loading...
@@ -143,9 +186,11 @@ export default function MessagesPage() {
               key={thread._id}
               className={`
                 transition-all duration-200 rounded-xl border shadow-sm
-                ${hasUnread
-                  ? "border-[var(--accent)]/40 bg-[color-mix(in srgb, var(--accent) 8%, var(--surface))]"
-                  : "border-[var(--muted)]/40 bg-[var(--surface)] hover:border-[var(--accent)]/30"}
+                ${
+                  hasUnread
+                    ? "border-[var(--accent)]/40 bg-[color-mix(in srgb, var(--accent) 8%, var(--surface))]"
+                    : "border-[var(--muted)]/40 bg-[var(--surface)] hover:border-[var(--accent)]/30"
+                }
               `}
             >
               <Link
@@ -155,6 +200,7 @@ export default function MessagesPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold flex items-center gap-2 text-[var(--foreground)]">
                     {otherUser?.name || "Unknown User"}
+
                     {hasUnread && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent)] text-[var(--background)] font-semibold">
                         New
