@@ -293,7 +293,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
               id="discSelect"
               value={selectedDisc}
               onChange={(e) => setSelectedDisc(e.target.value)}
-              className="border px-3 py-2 rounded w-full"
+              className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
             >
               <option value="">-- None --</option>
               {discs.map((disc) => (
@@ -316,7 +316,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             required
             value={form.title}
             onChange={(e) => handleFieldChange('title', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
+            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
           />
         </div>
 
@@ -328,7 +328,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             id="description"
             value={form.description}
             onChange={(e) => handleFieldChange('description', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
+            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
             rows={3}
           />
         </div>
@@ -342,7 +342,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             id="brand"
             value={form.brand}
             onChange={(e) => handleFieldChange('brand', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
+            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
           >
             <option value="">Select brand</option>
             {DiscBrands.map((brand) => (
@@ -362,7 +362,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             id="plastic"
             value={form.plastic}
             onChange={(e) => handleFieldChange('plastic', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
+            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
           >
             <option value="">Select plastic</option>
             {DiscPlastics.map((plastic) => (
@@ -381,7 +381,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             type="number"
             value={form.weight}
             onChange={(e) => handleFieldChange('weight', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
+            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
             placeholder="e.g. 175"
           />
         </div>
@@ -394,7 +394,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             id="condition"
             value={form.condition}
             onChange={(e) => handleFieldChange('condition', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
+            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
           >
             <option>New</option>
             <option>Like New</option>
@@ -411,7 +411,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             id="type"
             value={form.type}
             onChange={(e) => handleFieldChange('type', e.target.value)}
-            className="border px-3 py-2 rounded w-full"
+            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
           >
             <option>Sell</option>
             <option>Trade</option>
@@ -429,7 +429,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
               required={form.type === 'Sell'}
               value={form.price}
               onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
-              className="border px-3 py-2 rounded w-full"
+              className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
             />
           </div>
         )}
@@ -446,7 +446,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
                 required
                 value={form.city}
                 onChange={(e) => handleFieldChange('city', e.target.value)}
-                className="border px-3 py-2 rounded w-full"
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
               />
             </div>
             <div className="flex-1">
@@ -459,7 +459,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
                 required
                 value={form.state}
                 onChange={(e) => handleFieldChange('state', e.target.value)}
-                className="border px-3 py-2 rounded w-full"
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
               />
             </div>
           </div>
@@ -475,7 +475,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             type="file"
             accept="image/*"
             onChange={handleFileChange}
-            className="border px-3 py-2 rounded w-full"
+            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
             disabled={uploading}
           />
         </div>
