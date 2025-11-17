@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowBigLeft, MoreVertical } from 'lucide-react';
+import { ArrowBigLeft, MoreVertical, ExternalLink } from 'lucide-react';
 import GradientButton from '@/components/ui/GradientButton';
 import ReportMenu from './ReportMenu';
 import type { ThreadUI } from '@/types/thread';
@@ -20,23 +20,34 @@ export default function ChatHeader({
 }: ChatHeaderProps) {
   const otherUser = thread.participants.find((p) => p._id !== currentUserId);
 
+  const listingId = thread.listingId?._id || null;
+
   return (
     <>
-      {/* BACK BUTTON */}
-      <div className="mb-3">
+      {/* TOP BUTTON ROW */}
+      <div className="mb-3 flex flex-col sm:flex-row gap-2">
         <GradientButton
           label="Back to Messages"
           icon={<ArrowBigLeft className="w-5 h-5" />}
           onClick={onBack}
           variant="muted"
-          className="px-4 py-2"
+          className="px-4 py-2 w-full sm:w-auto"
         />
+
+        {listingId && (
+          <GradientButton
+            label="View Listing"
+            icon={<ExternalLink className="w-5 h-5" />}
+            onClick={() => window.location.href = `/listing/${listingId}`}
+            className="px-4 py-2 w-full sm:w-auto"
+          />
+        )}
       </div>
 
-      {/* HEADER WITH REPORT DROPDOWN */}
+      {/* HEADER TITLE + REPORT */}
       <div className="flex items-center justify-between mb-4 relative">
         <h1 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">
-          {thread.listingId.title || 'Conversation'}
+          {thread.listingId?.title || 'Conversation'}
         </h1>
 
         {otherUser && (
