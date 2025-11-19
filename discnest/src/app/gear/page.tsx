@@ -191,6 +191,7 @@ export default function GearPage() {
             reorderMode={mobileReorderMode}
             onToggleReorder={() => setMobileReorderMode((v) => !v)}
             loading={loading}
+            loggedIn={isLoggedIn}
           />
 
           <motion.section className="space-y-6">
@@ -231,6 +232,7 @@ export default function GearPage() {
               reorderMode={mobileReorderMode}
               onToggleReorder={() => setMobileReorderMode((v) => !v)}
               loading={loading}
+              loggedIn={isLoggedIn}
             />
 
             <motion.div className="flex justify-center mt-10">
