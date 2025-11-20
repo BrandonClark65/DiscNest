@@ -3,6 +3,10 @@ import UserReport from "@/models/UserReport";
 import { withAdminAuth } from "@/lib/auth/withAdminAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import { connectToDatabase } from "@/lib/mongodb";
+import "@/models/Listing";
+import "@/models/User";
+import "@/models/MessageThread";
+
 
 const getReports = async () => {
   await connectToDatabase();

@@ -6,6 +6,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import UserReport from "@/models/UserReport";
 import User from "@/models/User";
 
+
 const reportHandler = async (req: Request, session: any) => {
   await connectToDatabase();
 
