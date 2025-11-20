@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import GradientButton from '@/components/ui/GradientButton';
+import { Disc, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,6 +14,7 @@ export default function LoginPage() {
 
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const res = await signIn('credentials', {
       email,
       password,
@@ -26,58 +29,119 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-center">Login to DiscNest</h1>
+    <div className="min-h-[70vh] flex items-center justify-center px-4 bg-background">
+      <div
+        className="
+          w-full max-w-md 
+          bg-surface 
+          border border-gray-200/80 
+          rounded-2xl 
+          shadow-lg 
+          p-8
+        "
+      >
+        {/* Header */}
+        <div className="text-center mb-6">
+          <Disc className="w-10 h-10 mx-auto text-accent" />
+          <h1 className="text-3xl font-heading font-bold mt-3 text-foreground">
+            Welcome Back
+          </h1>
+          <p className="text-sm text-secondary">
+            Login to continue exploring DiscNest
+          </p>
+        </div>
 
-      <form onSubmit={handleCredentialsLogin} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="w-full border px-4 py-2 rounded"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          className="w-full border px-4 py-2 rounded"
-          required
-        />
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
-        >
-          Login with Email
-        </button>
-      </form>
+        {/* Form */}
+        <form onSubmit={handleCredentialsLogin} className="space-y-4">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="
+              w-full px-4 py-3 
+              rounded-xl 
+              bg-background 
+              border border-gray-300/80 
+              focus:ring-2 focus:ring-primary outline-none
+              text-foreground
+              placeholder:text-gray-400
+            "
+            required
+          />
 
-      <div className="text-center text-sm text-gray-500">or</div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="
+              w-full px-4 py-3 
+              rounded-xl 
+              bg-background 
+              border border-gray-300/80 
+              focus:ring-2 focus:ring-primary outline-none
+              text-foreground
+              placeholder:text-gray-400
+            "
+            required
+          />
 
-      <div className="space-y-2">
-        <button
-          onClick={() => signIn('google')}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-        >
-          Continue with Google
-        </button>
-        <button
-          onClick={() => signIn('facebook')}
-          className="w-full bg-blue-800 text-white py-2 rounded hover:bg-blue-900"
-        >
-          Continue with Facebook
-        </button>
+          {error && (
+            <p className="text-red-500 text-sm text-center">{error}</p>
+          )}
+
+          <GradientButton
+            label="Login with Email"
+            icon={<LogIn className="w-5 h-5" />}
+            className="w-full mt-1"
+            type="submit"
+          />
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center my-6">
+          <div className="flex-1 h-px bg-gray-200"></div>
+          <span className="px-3 text-sm text-secondary">or</span>
+          <div className="flex-1 h-px bg-gray-200"></div>
+        </div>
+
+        {/* Social Logins */}
+        <div className="space-y-3">
+          <button
+            onClick={() => signIn('google')}
+            className="
+              w-full py-3 rounded-xl 
+              bg-[#4285F4] text-white font-medium
+              hover:bg-[#3574D4] transition
+            "
+          >
+            Continue with Google
+          </button>
+
+          {/* <button
+            onClick={() => signIn('facebook')}
+            className="
+              w-full py-3 rounded-xl 
+              bg-[#1877F2] text-white font-medium
+              hover:bg-[#1665d8] transition
+            "
+          >
+            Continue with Facebook
+          </button> */}
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-secondary mt-6">
+          Don’t have an account?{' '}
+          <a
+            href="/signup"
+            className="text-primary font-medium hover:underline"
+          >
+            Sign up
+          </a>
+        </p>
       </div>
-
-      <p className="text-center text-sm mt-4">
-        Don’t have an account?{' '}
-        <a href="/signup" className="text-green-600 hover:underline">
-          Sign up
-        </a>
-      </p>
     </div>
   );
 }

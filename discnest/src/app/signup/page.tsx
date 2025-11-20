@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import GradientButton from '@/components/ui/GradientButton';
+import { Disc, UserPlus } from 'lucide-react';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -16,7 +18,8 @@ export default function SignupPage() {
 
   const getPasswordStrength = () => {
     if (password.length < 6) return 'Weak';
-    if (/[A-Z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) return 'Strong';
+    if (/[A-Z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) 
+      return 'Strong';
     return 'Medium';
   };
 
@@ -41,7 +44,6 @@ export default function SignupPage() {
       return;
     }
 
-    // ✅ Auto-login after signup
     const loginRes = await signIn('credentials', {
       email,
       password,
@@ -51,88 +53,174 @@ export default function SignupPage() {
     if (loginRes?.error) {
       setError('Signup succeeded but login failed');
     } else {
-      router.push('/onboarding'); // ✅ Redirect for first-time users
+      router.push('/onboarding');
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-center">Create Your DiscNest Account</h1>
+    <div className="min-h-[70vh] flex items-center justify-center px-4 bg-background">
+      <div
+        className="
+          w-full max-w-md 
+          bg-surface 
+          border border-gray-200/80 
+          rounded-2xl 
+          shadow-lg 
+          p-8
+        "
+      >
+        {/* Header */}
+        <div className="text-center mb-6">
+          <Disc className="w-10 h-10 mx-auto text-accent" />
+          <h1 className="text-3xl font-heading font-bold mt-3 text-foreground">
+            Create Your Account
+          </h1>
+          <p className="text-sm text-secondary">
+            Join DiscNest and start building your bag
+          </p>
+        </div>
 
-      <form onSubmit={handleSignup} className="space-y-4">
-        <input
-          type="text"
-          placeholder="Name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          className="w-full border px-4 py-2 rounded"
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className={`w-full border px-4 py-2 rounded ${email && !isEmailValid ? 'border-red-500' : ''}`}
-          required
-        />
-        {!isEmailValid && email && (
-          <p className="text-red-500 text-sm">Invalid email format</p>
-        )}
-        <div className="relative">
+        {/* Form */}
+        <form onSubmit={handleSignup} className="space-y-4">
+          {/* Name */}
           <input
-            type={showPassword ? 'text' : 'password'}
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full border px-4 py-2 rounded"
+            type="text"
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="
+              w-full px-4 py-3 
+              rounded-xl 
+              bg-background 
+              border border-gray-300/80 
+              focus:ring-2 focus:ring-primary
+              outline-none text-foreground
+              placeholder:text-gray-400
+            "
             required
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2 top-2 text-sm text-gray-500 hover:text-gray-700"
-          >
-            {showPassword ? 'Hide' : 'Show'}
-          </button>
+
+          {/* Email */}
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={`
+              w-full px-4 py-3 rounded-xl 
+              bg-background border 
+              ${email && !isEmailValid ? 'border-red-500' : 'border-gray-300/80'}
+              focus:ring-2 focus:ring-primary
+              text-foreground outline-none
+              placeholder:text-gray-400
+            `}
+            required
+          />
+
+          {!isEmailValid && email && (
+            <p className="text-red-500 text-sm">Invalid email format</p>
+          )}
+
+          {/* Password */}
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="
+                w-full px-4 py-3 
+                rounded-xl 
+                bg-background 
+                border border-gray-300/80
+                focus:ring-2 focus:ring-primary
+                text-foreground outline-none
+                placeholder:text-gray-400
+              "
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3 text-secondary text-sm hover:text-foreground"
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
+
+          {/* Password strength */}
+          {password && (
+            <p
+              className={`
+                text-sm 
+                ${
+                  getPasswordStrength() === 'Weak'
+                    ? 'text-red-500'
+                    : getPasswordStrength() === 'Medium'
+                    ? 'text-yellow-500'
+                    : 'text-green-600'
+                }
+              `}
+            >
+              Password strength: {getPasswordStrength()}
+            </p>
+          )}
+
+          {/* Error */}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          {/* Submit */}
+          <GradientButton
+            label="Sign Up"
+            icon={<UserPlus className="w-5 h-5" />}
+            className="w-full mt-2"
+            type="submit"
+          />
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center my-6">
+          <div className="flex-1 h-px bg-gray-200"></div>
+          <span className="px-3 text-sm text-secondary">or</span>
+          <div className="flex-1 h-px bg-gray-200"></div>
         </div>
-        {password && (
-          <p className={`text-sm ${getPasswordStrength() === 'Weak' ? 'text-red-500' : getPasswordStrength() === 'Medium' ? 'text-yellow-500' : 'text-green-600'}`}>
-            Password strength: {getPasswordStrength()}
-          </p>
-        )}
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
-        >
-          Sign Up
-        </button>
-      </form>
 
-      <div className="text-center text-sm text-gray-500">or</div>
+        {/* Social */}
+        <div className="space-y-3">
+          <button
+            onClick={() => signIn('google')}
+            className="
+              w-full py-3 rounded-xl 
+              bg-[#4285F4] text-white font-medium
+              hover:bg-[#3574D4] transition
+            "
+          >
+            Continue with Google
+          </button>
 
-      <div className="space-y-2">
-        <button
-          onClick={() => signIn('google')}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-        >
-          Continue with Google
-        </button>
-        <button
-          onClick={() => signIn('facebook')}
-          className="w-full bg-blue-800 text-white py-2 rounded hover:bg-blue-900"
-        >
-          Continue with Facebook
-        </button>
+          {/* <button
+            onClick={() => signIn('facebook')}
+            className="
+              w-full py-3 rounded-xl 
+              bg-[#1877F2] text-white font-medium
+              hover:bg-[#1665d8] transition
+            "
+          >
+            Continue with Facebook
+          </button> */}
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-secondary mt-6">
+          Already have an account?{' '}
+          <a
+            href="/login"
+            className="text-primary font-medium hover:underline"
+          >
+            Log in
+          </a>
+        </p>
       </div>
-
-      <p className="text-center text-sm mt-4">
-        Already have an account?{' '}
-        <a href="/login" className="text-green-600 hover:underline">
-          Log in
-        </a>
-      </p>
     </div>
   );
 }
