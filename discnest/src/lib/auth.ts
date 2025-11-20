@@ -1,7 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-// import FacebookProvider from 'next-auth/providers/facebook';
 
 import User from '@/models/User';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -13,24 +12,36 @@ export const authOptions: NextAuthOptions = {
   },
 
   providers: [
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------
     // ⭐ CREDENTIALS LOGIN
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------
     CredentialsProvider({
       name: 'Email & Password',
       credentials: {
         email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
+
       authorize: async (credentials) => {
         if (!credentials?.email || !credentials?.password) return null;
 
         await connectToDatabase();
 
         const userInDb = await User.findOne({ email: credentials.email });
-        if (!userInDb || !userInDb.password) {
-          // Prevent OAuth accounts from using credentials login
-          return null;
+
+        // User does not exist
+        if (!userInDb) return null;
+
+        // 🚫 Banned protection
+        if (userInDb.role === 'banned') {
+          throw new Error('Your account has been banned.');
+        }
+
+        // Prevent OAuth-only users from logging in with password
+        if (!userInDb.password) {
+          throw new Error(
+            'This email is registered with Google. Please sign in with Google.'
+          );
         }
 
         const isValid = await bcrypt.compare(
@@ -39,10 +50,9 @@ export const authOptions: NextAuthOptions = {
         );
         if (!isValid) return null;
 
-        await User.updateOne(
-          { email: credentials.email },
-          { $set: { lastLogin: new Date() } }
-        );
+        // Update last login timestamp
+        userInDb.lastLogin = new Date();
+        await userInDb.save();
 
         return {
           id: userInDb._id.toString(),
@@ -53,44 +63,46 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------
     // ⭐ GOOGLE LOGIN
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-
-    // -------------------------------------------------------------------
-    // ⭐ FACEBOOK LOGIN
-    // -------------------------------------------------------------------
-    // FacebookProvider({
-    //   clientId: process.env.FACEBOOK_CLIENT_ID!,
-    //   clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
-    // }),
   ],
 
-  // -------------------------------------------------------------------
-  // ⭐ CALLBACKS — Runs on login/session creation
-  // -------------------------------------------------------------------
+  // -------------------------------------------------------------
+  // ⭐ CALLBACKS
+  // -------------------------------------------------------------
   callbacks: {
+    /**
+     * Runs on ANY login attempt (OAuth or Credentials)
+     */
     async signIn({ user, account }) {
       await connectToDatabase();
 
-      // If using Google or Facebook
-      if (account?.provider === 'google' || account?.provider === 'facebook') {
-        const existingUser = await User.findOne({ email: user.email });
+      const existingUser = await User.findOne({ email: user.email });
 
+      // 🚫 Banned users CANNOT login via Google or credentials
+      if (existingUser && existingUser.role === 'banned') {
+        return false; // Returning false blocks the login
+      }
+
+      // Handle Google Login auto-create or update login time
+      if (account?.provider === 'google') {
         if (!existingUser) {
+          // Create user automatically
           await User.create({
             name: user.name,
             email: user.email,
             avatarUrl: user.image ?? null,
-            provider: account.provider,
+            provider: 'google',
             providerId: account.providerAccountId,
+            role: 'user',
+            lastLogin: new Date(),
           });
         } else {
-          // Update lastLogin for OAuth users
           existingUser.lastLogin = new Date();
           await existingUser.save();
         }
@@ -99,8 +111,10 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
 
+    /**
+     * Create JWT token
+     */
     async jwt({ token, user }) {
-      // Only runs on initial login
       if (user) {
         token.sub = user.id ?? token.sub;
         token.email = user.email;
@@ -109,8 +123,10 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
 
+    /**
+     * Hydrate session.user with token fields
+     */
     async session({ session, token }) {
-      // Add user.id to session so we can use it everywhere
       if (session.user) {
         session.user.id = token.sub as string;
         session.user.email = token.email as string;
