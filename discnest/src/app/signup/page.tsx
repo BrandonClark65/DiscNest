@@ -53,7 +53,7 @@ export default function SignupPage() {
     if (loginRes?.error) {
       setError('Signup succeeded but login failed');
     } else {
-      router.push('/onboarding');
+      router.push('/profile');
     }
   };
 
