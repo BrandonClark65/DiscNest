@@ -15,7 +15,8 @@ const MessageThreadSchema = new Schema({
   participants: [
     { type: Schema.Types.ObjectId, ref: "User", required: true }
   ],
-  listingId: { type: Schema.Types.ObjectId, ref: "Listing", required: true },
+  listingId: { type: Schema.Types.ObjectId, ref: "Listing", required: false },
+  requestId: { type: Schema.Types.ObjectId, ref: "DiscRequest", required: false },
 
   messages: [MessageSchema], 
 
