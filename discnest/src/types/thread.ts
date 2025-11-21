@@ -1,41 +1,73 @@
 import { DiscNestUser as User } from "./user";
 import { Listing } from "./listing";
+import { DiscRequest } from "./DiscRequest";
 import { Message, MessageDB, MessageUI } from "./message";
 import { ObjectId } from "mongoose";
 
-export type Thread = {
-  _id: string;
-  participants: User[];
-  listingId: Listing;
-  messages: Message[];
-  updatedAt: string;
-};
-
+/* -------------------------------------------------------
+   PARTICIPANTS (UI)
+-------------------------------------------------------- */
 export type Participant = {
   _id: string;
   name: string;
 };
 
+/* -------------------------------------------------------
+   LISTING + REQUEST (UI REFERENCES)
+-------------------------------------------------------- */
 export type ListingRef = {
   _id: string;
   title: string;
   imageUrls?: string[];
 };
 
-// DB representation of thread
+export type RequestRef = {
+  _id: string;
+  title: string;
+};
+
+/* -------------------------------------------------------
+   THREAD (UI — returned to frontend)
+-------------------------------------------------------- */
+export type ThreadUI = {
+  _id: string;
+
+  participants: Participant[];
+
+  // Only ONE of these will exist
+  listingId: ListingRef | null;
+  requestId: RequestRef | null;
+
+  messages: MessageUI[];
+  updatedAt: string;
+};
+
+/* -------------------------------------------------------
+   THREAD (DB — stored in Mongo)
+-------------------------------------------------------- */
 export type ThreadDB = {
   _id: ObjectId;
+
   participants: ObjectId[] | (User & { _id: ObjectId })[];
-  listingId: ObjectId | Listing;
+
+  // Optional and nullable — only one is populated per thread
+  listingId: ObjectId | Listing | null;
+  requestId: ObjectId | DiscRequest | null;
+
   messages: MessageDB[];
   updatedAt: Date;
 };
 
-// UI-friendly thread type (frontend)
-export type ThreadUI = {
+/* -------------------------------------------------------
+   LEGACY TYPE (for older code — safe to keep)
+-------------------------------------------------------- */
+export type Thread = {
   _id: string;
-  participants: Participant[];
-  listingId: ListingRef;
-  messages: MessageUI[];
+  participants: User[];
+
+  listingId: Listing | null;
+  requestId: DiscRequest | null;
+
+  messages: Message[];
   updatedAt: string;
 };

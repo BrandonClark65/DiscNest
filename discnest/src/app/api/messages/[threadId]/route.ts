@@ -34,7 +34,9 @@ const getThreadHandler = async (
   const thread = await MessageThread.findById(threadId)
     .populate("participants", "_id name")
     .populate("listingId", "_id title imageUrls")
+    .populate("requestId", "_id title") 
     .populate("messages.sender", "_id name");
+
 
   if (!thread)
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
@@ -176,7 +178,9 @@ const postMessageHandler = async (
   )
     .populate("participants", "_id name")
     .populate("listingId", "_id title imageUrls")
+    .populate("requestId", "_id title")     
     .populate("messages.sender", "_id name");
+
 
   return NextResponse.json(updatedThread);
 };

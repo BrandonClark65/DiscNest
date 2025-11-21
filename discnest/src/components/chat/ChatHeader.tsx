@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { ArrowBigLeft, MoreVertical, ExternalLink } from 'lucide-react';
-import GradientButton from '@/components/ui/GradientButton';
-import ReportMenu from './ReportMenu';
-import type { ThreadUI } from '@/types/thread';
+import { ArrowBigLeft, MoreVertical, ExternalLink } from "lucide-react";
+import GradientButton from "@/components/ui/GradientButton";
+import ReportMenu from "./ReportMenu";
+import type { ThreadUI } from "@/types/thread";
 
 type ChatHeaderProps = {
   thread: ThreadUI;
@@ -20,7 +20,35 @@ export default function ChatHeader({
 }: ChatHeaderProps) {
   const otherUser = thread.participants.find((p) => p._id !== currentUserId);
 
-  const listingId = thread.listingId?._id || null;
+  const listing = thread.listingId;
+  const request = thread.requestId;
+
+  // 🛠 FIXED: Detect valid IDs only
+  const hasListing = listing?._id && listing._id !== "unknown";
+  const hasRequest = request?._id && request._id !== "unknown";
+
+  // Title priority:
+  // 1) Listing thread
+  // 2) Request thread
+  // 3) Fallback to generic conversation
+  const headerTitle = hasListing
+    ? listing?.title || "Listing"
+    : hasRequest
+    ? `Request: ${request?.title}`
+    : "Conversation";
+
+  // View buttons
+  const viewUrl = hasListing
+    ? `/listing/${listing?._id}`
+    : hasRequest
+    ? `/requests/${request?._id}`
+    : null;
+
+  const viewLabel = hasListing
+    ? "View Listing"
+    : hasRequest
+    ? "View Request"
+    : null;
 
   return (
     <>
@@ -34,20 +62,20 @@ export default function ChatHeader({
           className="px-4 py-2 w-full sm:w-auto"
         />
 
-        {listingId && (
+        {viewUrl && (
           <GradientButton
-            label="View Listing"
+            label={viewLabel!}
             icon={<ExternalLink className="w-5 h-5" />}
-            onClick={() => window.location.href = `/listing/${listingId}`}
+            onClick={() => (window.location.href = viewUrl)}
             className="px-4 py-2 w-full sm:w-auto"
           />
         )}
       </div>
 
-      {/* HEADER TITLE + REPORT */}
+      {/* HEADER + REPORT BUTTON */}
       <div className="flex items-center justify-between mb-4 relative">
         <h1 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">
-          {thread.listingId?.title || 'Conversation'}
+          {headerTitle}
         </h1>
 
         {otherUser && (

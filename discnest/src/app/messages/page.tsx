@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -6,12 +6,12 @@ import { useSession } from "next-auth/react";
 import type { ThreadDB, ThreadUI } from "@/types/thread";
 import type { MessageDB, MessageUI } from "@/types/message";
 
-// --- Helpers ---
+/* -------------------------------------------------------
+   MESSAGE MAPPER — handles system messages + user messages
+-------------------------------------------------------- */
 function mapMessageDBtoUI(msg: MessageDB): MessageUI {
-
   const SYSTEM_ID = "000000000000000000000000";
 
-  // Normalize sender to a raw ID string (or null)
   const rawSender =
     msg.sender === null
       ? null
@@ -19,10 +19,6 @@ function mapMessageDBtoUI(msg: MessageDB): MessageUI {
       ? msg.sender
       : msg.sender._id?.toString();
 
-  // 🔥 SYSTEM MESSAGE DETECTION:
-  // - sender missing
-  // - sender equals fake system ObjectId
-  // - sender already mapped as "system"
   const isSystem =
     !rawSender || rawSender === SYSTEM_ID || rawSender === "system";
 
@@ -37,9 +33,8 @@ function mapMessageDBtoUI(msg: MessageDB): MessageUI {
     };
   }
 
-  // NORMAL USER MESSAGE
+  // Normal user message
   let senderName = "Unknown";
-
   if (typeof msg.sender === "object" && msg.sender && "_id" in msg.sender) {
     senderName = (msg.sender as any).name || "Unknown";
   }
@@ -54,24 +49,24 @@ function mapMessageDBtoUI(msg: MessageDB): MessageUI {
   };
 }
 
-
+/* -------------------------------------------------------
+   THREAD MAPPER — handles listingId AND requestId
+-------------------------------------------------------- */
 function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
   return {
     _id: thread._id.toString(),
+
     participants: thread.participants.map((p) =>
       "_id" in p
         ? { _id: p._id.toString(), name: (p as any).name || "Unknown" }
         : { _id: p.toString(), name: "Unknown" }
     ),
+
+    // ---- LISTING ----
     listingId: (() => {
       const l = thread.listingId;
+      if (!l) return null;
 
-      // 🔥 No listing (deleted or missing)
-      if (!l) {
-        return { _id: "unknown", title: "Listing Unavailable", imageUrls: [] };
-      }
-
-      // 🔥 If listingId is populated object
       if (typeof l === "object" && "_id" in l) {
         return {
           _id: l._id.toString(),
@@ -80,18 +75,32 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
         };
       }
 
-      // 🔥 If listingId is just an ObjectId string
-      return {
-        _id: l.toString(),
-        title: "",
-        imageUrls: [],
-      };
+      return { _id: l.toString(), title: "", imageUrls: [] };
     })(),
+
+    // ---- REQUEST ----
+    requestId: (() => {
+      const r = thread.requestId;
+      if (!r) return null;
+
+      if (typeof r === "object" && "_id" in r) {
+        return {
+          _id: r._id.toString(),
+          title: (r as any).title || "Disc Request",
+        };
+      }
+
+      return { _id: r.toString(), title: "Disc Request" };
+    })(),
+
     messages: thread.messages.map(mapMessageDBtoUI),
     updatedAt: new Date(thread.updatedAt).toISOString(),
   };
 }
 
+/* -------------------------------------------------------
+   MAIN PAGE COMPONENT
+-------------------------------------------------------- */
 export default function MessagesPage() {
   const { data: session, status } = useSession();
   const currentUserId = session?.user?.id;
@@ -99,7 +108,7 @@ export default function MessagesPage() {
   const [threads, setThreads] = useState<ThreadUI[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // --- Fetch threads ---
+  /* ---- Fetch Threads ---- */
   useEffect(() => {
     if (!currentUserId) {
       setLoading(false);
@@ -110,11 +119,14 @@ export default function MessagesPage() {
       try {
         const res = await fetch("/api/messages");
         const data: ThreadDB[] = await res.json();
-        const threadsUI = data.map(mapThreadDBtoUI);
 
-        const sorted = threadsUI.sort((a, b) => {
-          const aLast = a.messages?.[a.messages.length - 1]?.timestamp || a.updatedAt;
-          const bLast = b.messages?.[b.messages.length - 1]?.timestamp || b.updatedAt;
+        const uiThreads = data.map(mapThreadDBtoUI);
+
+        const sorted = uiThreads.sort((a, b) => {
+          const aLast =
+            a.messages?.[a.messages.length - 1]?.timestamp || a.updatedAt;
+          const bLast =
+            b.messages?.[b.messages.length - 1]?.timestamp || b.updatedAt;
           return new Date(bLast).getTime() - new Date(aLast).getTime();
         });
 
@@ -127,13 +139,11 @@ export default function MessagesPage() {
     };
 
     fetchThreads();
-
-    const handleFocus = () => fetchThreads();
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
+    window.addEventListener("focus", fetchThreads);
+    return () => window.removeEventListener("focus", fetchThreads);
   }, [currentUserId]);
 
-  // --- UI Logic ---
+  /* ---- AUTH / LOADING STATES ---- */
   if (status === "loading") {
     return (
       <p className="p-6 text-center text-[var(--foreground)]/70 animate-pulse">
@@ -166,7 +176,9 @@ export default function MessagesPage() {
     );
   }
 
-  // --- UI ---
+  /* -------------------------------------------------------
+     THREAD LIST UI
+  -------------------------------------------------------- */
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6 text-[var(--foreground)]">
       <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] drop-shadow-sm">
@@ -175,11 +187,19 @@ export default function MessagesPage() {
 
       <ul className="space-y-3">
         {threads.map((thread) => {
-          const otherUser = thread.participants.find((p) => p._id !== currentUserId);
+          const otherUser = thread.participants.find(
+            (p) => p._id !== currentUserId
+          );
           const lastMessage = thread.messages?.[thread.messages.length - 1];
           const hasUnread = thread.messages.some(
             (m) => !m.readBy.includes(currentUserId)
           );
+
+          const label = thread.listingId
+            ? `Listing: ${thread.listingId.title}`
+            : thread.requestId
+            ? `Request: ${thread.requestId.title}`
+            : "No attached item";
 
           return (
             <li
@@ -198,6 +218,7 @@ export default function MessagesPage() {
                 className="flex justify-between items-start gap-3 p-4 sm:p-5 rounded-xl"
               >
                 <div className="flex-1 min-w-0">
+                  {/* ---- OTHER USER ---- */}
                   <p className="font-semibold flex items-center gap-2 text-[var(--foreground)]">
                     {otherUser?.name || "Unknown User"}
 
@@ -208,15 +229,18 @@ export default function MessagesPage() {
                     )}
                   </p>
 
+                  {/* ---- LISTING OR REQUEST ---- */}
                   <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
-                    {thread.listingId?.title || "No listing"}
+                    {label}
                   </p>
 
+                  {/* ---- LAST MESSAGE ---- */}
                   <p className="text-sm text-[var(--foreground)]/80 truncate mt-1">
                     {lastMessage?.content || "No messages yet"}
                   </p>
                 </div>
 
+                {/* ---- TIMESTAMP ---- */}
                 <div className="text-xs text-[var(--foreground)]/50 whitespace-nowrap">
                   {new Date(
                     lastMessage?.timestamp || thread.updatedAt

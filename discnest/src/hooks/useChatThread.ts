@@ -74,49 +74,72 @@ export default function useChatThread(
 
 
   function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
-    return {
-      _id: t._id.toString(),
-      messages: t.messages.map(mapMessageDBtoUI),
-      participants: t.participants.map((p) => {
-        if (typeof p === 'string') return { _id: p, name: 'Unknown' };
-        if ('_id' in p)
-          return { _id: p._id.toString(), name: (p as any).name || 'Unknown' };
-        return { _id: p.toString(), name: 'Unknown' };
-      }),
-      listingId: (() => {
-        const l = t.listingId;
+  return {
+    _id: t._id.toString(),
 
-        // 🔥 Listing deleted or missing
-        if (!l) {
-          return {
-            _id: "unknown",
-            title: "Listing Unavailable",
-            imageUrls: [],
-          };
-        }
+    messages: t.messages.map(mapMessageDBtoUI),
 
-        // 🔥 Populated listing object
-        if (typeof l === "object" && "_id" in l) {
-          return {
-            _id: l._id.toString(),
-            title: (l as any).title || "Listing",
-            imageUrls: (l as any).imageUrls || [],
-          };
-        }
+    participants: t.participants.map((p) => {
+      if (typeof p === "string") return { _id: p, name: "Unknown" };
+      if ("_id" in p)
+        return { _id: p._id.toString(), name: (p as any).name || "Unknown" };
+      return { _id: p.toString(), name: "Unknown" };
+    }),
 
-        // 🔥 Raw ObjectId string
+    // ----------------------------------------
+    // LISTING (same as before)
+    // ----------------------------------------
+    listingId: (() => {
+      const l = t.listingId;
+
+      if (!l) {
         return {
-          _id: l.toString(),
-          title: "",
+          _id: "unknown",
+          title: "Listing Unavailable",
           imageUrls: [],
         };
-      })(),
-      updatedAt:
-        t.updatedAt instanceof Date
-          ? t.updatedAt.toISOString()
-          : new Date(t.updatedAt).toISOString(),
-    };
-  }
+      }
+
+      if (typeof l === "object" && "_id" in l) {
+        return {
+          _id: l._id.toString(),
+          title: (l as any).title || "Listing",
+          imageUrls: (l as any).imageUrls || [],
+        };
+      }
+
+      return {
+        _id: l.toString(),
+        title: "",
+        imageUrls: [],
+      };
+    })(),
+
+    // ----------------------------------------
+    // REQUEST (🆕 THIS WAS MISSING)
+    // ----------------------------------------
+    requestId: (() => {
+      const r = t.requestId;
+
+      if (!r) return null;
+
+      if (typeof r === "object" && "_id" in r) {
+        return {
+          _id: r._id.toString(),
+          title: (r as any).title || "Disc Request",
+        };
+      }
+
+      return { _id: r.toString(), title: "Disc Request" };
+    })(),
+
+    updatedAt:
+      t.updatedAt instanceof Date
+        ? t.updatedAt.toISOString()
+        : new Date(t.updatedAt).toISOString(),
+  };
+}
+
 
   async function fetchThread() {
     if (!threadId) return;
