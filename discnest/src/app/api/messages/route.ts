@@ -31,8 +31,8 @@ const getThreadsHandler = async (req: Request) => {
 
 export const GET = withErrorHandling(getThreadsHandler, "/api/messages");
 
-// ----------------------
-// POST: create a new thread
+ // ----------------------
+// POST: create a new thread (listing OR request)
 // ----------------------
 const createThreadHandler = async (req: Request) => {
   await connectToDatabase();
@@ -42,22 +42,30 @@ const createThreadHandler = async (req: Request) => {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const senderId = session.user.id;
-  const { recipientId, listingId, content } = await req.json();
+  const { recipientId, listingId, requestId, content } = await req.json();
 
-  if (!recipientId || !listingId)
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  if (!recipientId)
+    return NextResponse.json({ error: "Missing recipientId" }, { status: 400 });
 
-  // Check for existing thread
+  if (!listingId && !requestId)
+    return NextResponse.json(
+      { error: "Missing listingId or requestId" },
+      { status: 400 }
+    );
+
+  // Check if a thread already exists for this interaction
   let existing = await MessageThread.findOne({
     participants: { $all: [senderId, recipientId] },
-    listingId,
+    ...(listingId && { listingId }),
+    ...(requestId && { requestId }),
   });
 
   if (existing) {
-    const populatedExisting = (await MessageThread.findById(existing._id)
+    const populatedExisting = await MessageThread.findById(existing._id)
       .populate("participants", "_id name")
       .populate("listingId", "title imageUrls")
-      .populate("messages.sender", "_id name")) as unknown as Thread;
+      .populate("requestId", "title") // ⭐ NEW
+      .populate("messages.sender", "_id name");
 
     return NextResponse.json(populatedExisting);
   }
@@ -80,21 +88,21 @@ const createThreadHandler = async (req: Request) => {
       new Types.ObjectId(senderId),
       new Types.ObjectId(recipientId),
     ],
-    listingId: new Types.ObjectId(listingId),
+    listingId: listingId ? new Types.ObjectId(listingId) : undefined,
+    requestId: requestId ? new Types.ObjectId(requestId) : undefined, // ⭐ NEW
     messages,
     updatedAt: new Date(),
   });
 
   // Populate before returning
-  thread = (await MessageThread.findById(thread._id)
+  thread = await MessageThread.findById(thread._id)
     .populate("participants", "_id name")
     .populate("listingId", "_id title imageUrls")
-    .populate("messages.sender", "_id name")) as unknown as Thread;
+    .populate("requestId", "_id title") // ⭐ NEW
+    .populate("messages.sender", "_id name");
 
   return NextResponse.json(thread);
 };
 
-export const POST = withErrorHandling(
-  createThreadHandler,
-  "/api/messages"
-);
+export const POST = withErrorHandling(createThreadHandler, "/api/messages");
+

@@ -4,21 +4,29 @@ import { useEffect, useState } from 'react';
 import type { Listing } from '@/types/listing';
 import { useSession } from 'next-auth/react';
 
+// NEW — include 'requests' as a valid tab
+export type MarketplaceTab = 'market' | 'myListings' | 'requests';
+
 export function useMarketplaceData() {
   const { data: session, status } = useSession();
   const userId = session?.user?.id;
 
   const [marketListings, setMarketListings] = useState<Listing[]>([]);
   const [myListings, setMyListings] = useState<Listing[]>([]);
-  const [activeTab, setActiveTab] = useState<'market' | 'myListings'>('market');
+
+  // ⭐ UPDATED: allow "requests"
+  const [activeTab, setActiveTab] = useState<MarketplaceTab>('market');
+
   const [myListingsTab, setMyListingsTab] = useState<'active' | 'sold'>('active');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [conditionFilter, setConditionFilter] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
   const [marketPage, setMarketPage] = useState(1);
   const [marketTotalPages, setMarketTotalPages] = useState(1);
+
   const [myPage, setMyPage] = useState(1);
   const [myTotalPages, setMyTotalPages] = useState(1);
 
@@ -52,7 +60,9 @@ export function useMarketplaceData() {
       const valid = (data.listings || []).filter(
         (l) => l && l._id && l.title && l.location?.coordinates?.length === 2
       );
-      const totalPages = Math.ceil((data.totalCount || valid.length) / (mode === 'marketplace' ? 20 : 100));
+      const totalPages = Math.ceil(
+        (data.totalCount || valid.length) / (mode === 'marketplace' ? 20 : 100)
+      );
 
       return { listings: valid, totalPages };
     } catch {
@@ -62,38 +72,61 @@ export function useMarketplaceData() {
     }
   };
 
-  // Load marketplace
+  // Load marketplace (ONLY when activeTab === 'market')
   useEffect(() => {
     if (activeTab !== 'market' || status === 'loading') return;
+
     const load = async () => {
       const { listings, totalPages } = await fetchListings('marketplace', marketPage);
       const filtered = userId
         ? listings.filter((l) => {
-            const ownerId = typeof l.userId === 'string' ? l.userId : String((l.userId as any)?._id || '');
+            const ownerId =
+              typeof l.userId === 'string'
+                ? l.userId
+                : String((l.userId as any)?._id || '');
             return ownerId !== userId;
           })
         : listings;
+
       setMarketListings(filtered);
       setMarketTotalPages(totalPages);
     };
-    load();
-  }, [activeTab, userLocation, searchQuery, brandFilter, conditionFilter, marketPage, userId, status]);
 
-  // Load my listings
+    load();
+  }, [
+    activeTab,
+    userLocation,
+    searchQuery,
+    brandFilter,
+    conditionFilter,
+    marketPage,
+    userId,
+    status,
+  ]);
+
+  // Load my listings (ONLY when activeTab === 'myListings')
   useEffect(() => {
     if (activeTab !== 'myListings' || !userId) return;
+
     const load = async () => {
       const { listings, totalPages } = await fetchListings('myListings', myPage);
       setMyListings(listings);
       setMyTotalPages(totalPages);
     };
+
     load();
   }, [activeTab, userId, myListingsTab, myPage]);
 
   // Reset and scroll
-  useEffect(() => setMarketPage(1), [searchQuery, brandFilter, conditionFilter]);
-  useEffect(() => window.scrollTo({ top: 0, behavior: 'smooth' }), [marketPage, myPage]);
+  useEffect(() => {
+    if (activeTab === 'market') setMarketPage(1);
+  }, [searchQuery, brandFilter, conditionFilter]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [marketPage, myPage]);
+
+  // Listings to show (Requests tab bypasses this)
   const listingsToShow =
     activeTab === 'market'
       ? marketListings
