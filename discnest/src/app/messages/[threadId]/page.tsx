@@ -8,7 +8,7 @@ import ChatHeader from '@/components/chat/ChatHeader';
 import MessageList from '@/components/chat/MessageList';
 import MessageInput from '@/components/chat/MessageInput';
 import ReportModal from '@/components/modals/ReportModal';
-import useChatThread from '@/components/chat/useChatThread';
+import useChatThread from '@/hooks/useChatThread';
 import type { ThreadUI } from '@/types/thread';
 
 export default function ChatPage() {

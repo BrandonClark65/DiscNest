@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import { useMarketplaceData } from '@/components/marketplace/useMarketplaceData';
+import { useMarketplaceData } from '@/hooks/useMarketplaceData';
 import MarketplaceHeader from '@/components/marketplace/MarketplaceHeader';
 import MarketplaceTabs from '@/components/marketplace/MarketplaceTabs';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';

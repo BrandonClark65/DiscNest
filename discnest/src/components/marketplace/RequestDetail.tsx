@@ -1,0 +1,160 @@
+"use client";
+
+import Image from "next/image";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import GradientButton from "@/components/ui/GradientButton";
+import { MessageCircle, MapPin, User2 } from "lucide-react";
+import { useState, useEffect } from "react";
+
+export default function RequestDetail({ request }: { request: any }) {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const requester = request.userId;
+  const [distance, setDistance] = useState<string | null>(null);
+  const [messaging, setMessaging] = useState(false);
+
+  // Compute distance dynamically using geolocation
+  useEffect(() => {
+    if (!navigator.geolocation || !request.location?.coordinates) return;
+
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const [lng, lat] = request.location.coordinates;
+
+      const R = 6371; // km
+      const dLat = ((pos.coords.latitude - lat) * Math.PI) / 180;
+      const dLon = ((pos.coords.longitude - lng) * Math.PI) / 180;
+
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat * (Math.PI / 180)) *
+          Math.cos(pos.coords.latitude * (Math.PI / 180)) *
+          Math.sin(dLon / 2) ** 2;
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const miles = (R * c) / 1.609;
+
+      setDistance(miles.toFixed(1));
+    });
+  }, [request.location]);
+
+  async function handleMessage() {
+    if (!session?.user) return router.push("/login");
+
+    setMessaging(true);
+
+    const res = await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipientId: requester._id,
+        requestId: request._id,
+        content: "Hi! I saw your disc request.",
+      }),
+    });
+
+    const thread = await res.json();
+    if (res.ok && thread._id) {
+      router.push(`/messages?thread=${thread._id}`);
+    }
+
+    setMessaging(false);
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto py-10 px-4">
+
+      {/* Title */}
+      <h1 className="text-3xl font-extrabold mb-6 text-[var(--foreground)]">
+        {request.title}
+      </h1>
+
+      {/* Card Wrapper */}
+      <div className="bg-[var(--surface)] border border-[var(--muted)]/30 rounded-xl shadow p-6 space-y-6">
+
+        {/* Requester row */}
+        <div className="flex items-center gap-4">
+          {requester?.image ? (
+            <Image
+              src={requester.image}
+              alt="avatar"
+              width={56}
+              height={56}
+              className="rounded-full border border-[var(--muted)]/40"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-[var(--muted)]/30" />
+          )}
+
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">
+              {requester?.name || "User"}
+            </h2>
+
+            {distance && (
+              <p className="flex items-center gap-1 text-sm text-foreground/60">
+                <MapPin className="w-4 h-4" />
+                {distance} miles away
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Badge section */}
+        <div className="flex flex-wrap gap-2 pt-2">
+          {request.brand && (
+            <span className="px-3 py-1 text-xs rounded bg-[var(--primary)]/10 text-[var(--primary)] font-medium">
+              Brand: {request.brand}
+            </span>
+          )}
+          {request.plastic && (
+            <span className="px-3 py-1 text-xs rounded bg-[var(--accent)]/10 text-[var(--accent)] font-medium">
+              Plastic: {request.plastic}
+            </span>
+          )}
+          {request.weight && (
+            <span className="px-3 py-1 text-xs rounded bg-[var(--muted)]/20 text-[var(--foreground)] font-medium">
+              {request.weight}g
+            </span>
+          )}
+          {request.color && (
+            <span className="px-3 py-1 text-xs rounded bg-[var(--muted)]/20 text-[var(--foreground)] font-medium">
+              Color: {request.color}
+            </span>
+          )}
+          {request.condition && (
+            <span className="px-3 py-1 text-xs rounded border border-[var(--muted)]/40 text-[var(--foreground)] font-medium">
+              Condition: {request.condition}
+            </span>
+          )}
+        </div>
+
+        {/* Description */}
+        {request.description && (
+          <div className="pt-4 border-t border-[var(--muted)]/20 text-[var(--foreground)]">
+            <h3 className="font-semibold text-lg mb-2">Description</h3>
+            <p className="text-foreground/80 leading-relaxed">{request.description}</p>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-4 border-t border-[var(--muted)]/20">
+          <GradientButton
+            label={messaging ? "Sending..." : "Message Requester"}
+            onClick={handleMessage}
+            icon={<MessageCircle className="w-5 h-5" />}
+            variant="blueGradient"
+          />
+
+          {/* <GradientButton
+            label="View Profile"
+            variant="muted"
+            icon={<User2 className="w-5 h-5" />}
+            onClick={() => router.push(`/profile/${requester._id}`)}
+          /> */}
+        </div>
+      </div>
+    </div>
+  );
+}

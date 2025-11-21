@@ -18,7 +18,7 @@ import DiscBagDisplay from '@/components/DiscbagDisplay';
 import PersonalizedRecommendations from '@/components/gear/PersonalizedRecommendations';
 
 import GearSection from '@/components/gear/GearSection';
-import useIsMobile from '@/components/gear/useIsMobile';
+import useIsMobile from '@/hooks/useIsMobile';
 
 export default function GearPage() {
   const { data: session } = useSession();

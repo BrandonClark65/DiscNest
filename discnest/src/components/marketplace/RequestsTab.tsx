@@ -2,10 +2,11 @@
 
 import useDiscRequests from "@/hooks/useDiscRequests";
 import DiscRequestCard from "./DiscRequestCard";
+import MarketplacePagination from "@/components/marketplace/MarketplacePagination";
 import { Loader2 } from "lucide-react";
 
 export default function RequestsTab({ currentUserId }: { currentUserId?: string }) {
-  const { requests, loading } = useDiscRequests();
+  const { requests, loading, page, setPage, totalPages } = useDiscRequests();
 
   if (loading) {
     return (
@@ -20,14 +21,27 @@ export default function RequestsTab({ currentUserId }: { currentUserId?: string 
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {requests.map((req) => (
-        <DiscRequestCard
-          key={req._id}
-          request={req}
-          currentUserId={currentUserId}
-        />
-      ))}
+    <div>
+      {/* GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+        {requests.map((req) => (
+          <DiscRequestCard
+            key={req._id}
+            request={req}
+            currentUserId={currentUserId}
+          />
+        ))}
+      </div>
+
+      {/* PAGINATION */}
+      <MarketplacePagination
+        totalPages={totalPages}
+        currentPage={page}
+        onPageChange={(newPage) => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          setPage(newPage);
+        }}
+      />
     </div>
   );
 }
