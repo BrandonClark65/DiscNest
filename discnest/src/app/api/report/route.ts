@@ -10,7 +10,7 @@ import User from "@/models/User";
 const reportHandler = async (req: Request, session: any) => {
   await connectToDatabase();
 
-  const { reportedUserId, threadId, messageId, listingId, reason } =
+  const { reportedUserId, threadId, messageId, listingId, requestId, reason } =
     await req.json();
 
   if (!reportedUserId) {
@@ -41,6 +41,7 @@ const reportHandler = async (req: Request, session: any) => {
     threadId: threadId || undefined,
     messageId: messageId || undefined,
     listingId: listingId || undefined,
+    requestId: requestId || undefined,
     reason: reason || "",
   });
 

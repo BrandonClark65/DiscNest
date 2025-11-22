@@ -4,8 +4,9 @@ import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import GradientButton from "@/components/ui/GradientButton";
-import { MessageCircle, MapPin, User2 } from "lucide-react";
+import { MessageCircle, MapPin, MoreVertical } from "lucide-react";
 import { useState, useEffect } from "react";
+import ReportModal from "@/components/modals/ReportModal"; // ← NEW
 
 export default function RequestDetail({ request }: { request: any }) {
   const { data: session } = useSession();
@@ -15,7 +16,13 @@ export default function RequestDetail({ request }: { request: any }) {
   const [distance, setDistance] = useState<string | null>(null);
   const [messaging, setMessaging] = useState(false);
 
-  // Compute distance dynamically using geolocation
+  // NEW — report dropdown state
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+
+  /** --------------------------
+   *  Distance Calculation
+   * -------------------------- */
   useEffect(() => {
     if (!navigator.geolocation || !request.location?.coordinates) return;
 
@@ -39,6 +46,9 @@ export default function RequestDetail({ request }: { request: any }) {
     });
   }, [request.location]);
 
+  /** --------------------------
+   *  Message Handler
+   * -------------------------- */
   async function handleMessage() {
     if (!session?.user) return router.push("/login");
 
@@ -62,99 +72,129 @@ export default function RequestDetail({ request }: { request: any }) {
     setMessaging(false);
   }
 
+  /** --------------------------
+   *  Render
+   * -------------------------- */
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4">
+    <>
+      <div className="max-w-4xl mx-auto py-10 px-4">
+        {/* Title Row */}
+        <div className="flex justify-between items-start mb-6 relative">
+          <h1 className="text-3xl font-extrabold text-[var(--foreground)]">
+            {request.title}
+          </h1>
 
-      {/* Title */}
-      <h1 className="text-3xl font-extrabold mb-6 text-[var(--foreground)]">
-        {request.title}
-      </h1>
+          {/* Three-dot menu */}
+          <button
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className="p-2 rounded-full hover:bg-[var(--muted)]/20 transition"
+          >
+            <MoreVertical className="w-5 h-5 text-[var(--foreground)]/70" />
+          </button>
 
-      {/* Card Wrapper */}
-      <div className="bg-[var(--surface)] border border-[var(--muted)]/30 rounded-xl shadow p-6 space-y-6">
-
-        {/* Requester row */}
-        <div className="flex items-center gap-4">
-          {requester?.image ? (
-            <Image
-              src={requester.image}
-              alt="avatar"
-              width={56}
-              height={56}
-              className="rounded-full border border-[var(--muted)]/40"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-full bg-[var(--muted)]/30" />
+          {menuOpen && (
+            <div className="absolute right-0 top-10 w-40 bg-[var(--surface)] border border-[var(--muted)]/40 shadow-lg rounded-xl p-1 z-20">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setReportOpen(true);
+                }}
+                className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-500/10 text-red-600"
+              >
+                Report User
+              </button>
+            </div>
           )}
+        </div>
 
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--foreground)]">
-              {requester?.name || "User"}
-            </h2>
+        {/* Card Wrapper */}
+        <div className="bg-[var(--surface)] border border-[var(--muted)]/30 rounded-xl shadow p-6 space-y-6">
+          {/* Requester Row */}
+          <div className="flex items-center gap-4">
+            {requester?.image ? (
+              <Image
+                src={requester.image}
+                alt="avatar"
+                width={56}
+                height={56}
+                className="rounded-full border border-[var(--muted)]/40"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-[var(--muted)]/30" />
+            )}
 
-            {distance && (
-              <p className="flex items-center gap-1 text-sm text-foreground/60">
-                <MapPin className="w-4 h-4" />
-                {distance} miles away
-              </p>
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--foreground)]">
+                {requester?.name || "User"}
+              </h2>
+
+              {distance && (
+                <p className="flex items-center gap-1 text-sm text-foreground/60">
+                  <MapPin className="w-4 h-4" />
+                  {distance} miles away
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Badge Section */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            {request.brand && (
+              <span className="px-3 py-1 text-xs rounded bg-[var(--primary)]/10 text-[var(--primary)] font-medium">
+                Brand: {request.brand}
+              </span>
+            )}
+            {request.plastic && (
+              <span className="px-3 py-1 text-xs rounded bg-[var(--accent)]/10 text-[var(--accent)] font-medium">
+                Plastic: {request.plastic}
+              </span>
+            )}
+            {request.weight && (
+              <span className="px-3 py-1 text-xs rounded bg-[var(--muted)]/20 text-[var(--foreground)] font-medium">
+                {request.weight}g
+              </span>
+            )}
+            {request.color && (
+              <span className="px-3 py-1 text-xs rounded bg-[var(--muted)]/20 text-[var(--foreground)] font-medium">
+                Color: {request.color}
+              </span>
+            )}
+            {request.condition && (
+              <span className="px-3 py-1 text-xs rounded border border-[var(--muted)]/40 text-[var(--foreground)] font-medium">
+                Condition: {request.condition}
+              </span>
             )}
           </div>
-        </div>
 
-        {/* Badge section */}
-        <div className="flex flex-wrap gap-2 pt-2">
-          {request.brand && (
-            <span className="px-3 py-1 text-xs rounded bg-[var(--primary)]/10 text-[var(--primary)] font-medium">
-              Brand: {request.brand}
-            </span>
+          {/* Description */}
+          {request.description && (
+            <div className="pt-4 border-t border-[var(--muted)]/20 text-[var(--foreground)]">
+              <h3 className="font-semibold text-lg mb-2">Description</h3>
+              <p className="text-foreground/80 leading-relaxed">
+                {request.description}
+              </p>
+            </div>
           )}
-          {request.plastic && (
-            <span className="px-3 py-1 text-xs rounded bg-[var(--accent)]/10 text-[var(--accent)] font-medium">
-              Plastic: {request.plastic}
-            </span>
-          )}
-          {request.weight && (
-            <span className="px-3 py-1 text-xs rounded bg-[var(--muted)]/20 text-[var(--foreground)] font-medium">
-              {request.weight}g
-            </span>
-          )}
-          {request.color && (
-            <span className="px-3 py-1 text-xs rounded bg-[var(--muted)]/20 text-[var(--foreground)] font-medium">
-              Color: {request.color}
-            </span>
-          )}
-          {request.condition && (
-            <span className="px-3 py-1 text-xs rounded border border-[var(--muted)]/40 text-[var(--foreground)] font-medium">
-              Condition: {request.condition}
-            </span>
-          )}
-        </div>
 
-        {/* Description */}
-        {request.description && (
-          <div className="pt-4 border-t border-[var(--muted)]/20 text-[var(--foreground)]">
-            <h3 className="font-semibold text-lg mb-2">Description</h3>
-            <p className="text-foreground/80 leading-relaxed">{request.description}</p>
+          {/* Actions */}
+          <div className="flex gap-3 pt-4 border-t border-[var(--muted)]/20">
+            <GradientButton
+              label={messaging ? "Sending..." : "Message Requester"}
+              onClick={handleMessage}
+              icon={<MessageCircle className="w-5 h-5" />}
+              variant="blueGradient"
+            />
           </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t border-[var(--muted)]/20">
-          <GradientButton
-            label={messaging ? "Sending..." : "Message Requester"}
-            onClick={handleMessage}
-            icon={<MessageCircle className="w-5 h-5" />}
-            variant="blueGradient"
-          />
-
-          {/* <GradientButton
-            label="View Profile"
-            variant="muted"
-            icon={<User2 className="w-5 h-5" />}
-            onClick={() => router.push(`/profile/${requester._id}`)}
-          /> */}
         </div>
       </div>
-    </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        reportedUserId={request.userId?._id}
+        requestId={request._id}      // ← IMPORTANT
+      />
+    </>
   );
 }

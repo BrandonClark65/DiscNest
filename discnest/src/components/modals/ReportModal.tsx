@@ -13,6 +13,7 @@ type ReportModalProps = {
   reportedUserId: string;
   listingId?: string;
   threadId?: string;
+  requestId?: string;
   messageId?: string;
 
   title?: string;
@@ -25,6 +26,7 @@ export default function ReportModal({
   reportedUserId,
   listingId,
   threadId,
+  requestId,
   messageId,
   title = "Report User",
   subtitle = "Your report will be reviewed by the moderation team.",
@@ -47,6 +49,7 @@ export default function ReportModal({
           reportedUserId,
           listingId,
           threadId,
+          requestId,
           messageId,
           reason: reason.trim(),
         }),
