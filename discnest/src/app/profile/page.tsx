@@ -79,6 +79,7 @@ export default function ProfilePage() {
       <ProfileHeader
         name={profile.name || profile.username || session.user.name || 'User'}
         discCount={discCount}
+        avatarUrl={profile.avatarUrl}
       />
 
       <ProfileProgress percent={completionPercent} />

@@ -195,6 +195,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
 
       const formData = new FormData();
       formData.append('file', compressedFile);
+      formData.append("folder", "disc-listings");
       formData.append('userId', user.id);
 
       const res = await fetch('/api/upload', { method: 'POST', body: formData });

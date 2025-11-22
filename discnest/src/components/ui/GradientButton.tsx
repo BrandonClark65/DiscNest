@@ -11,6 +11,7 @@ type GradientButtonProps = {
   onClick?: () => void;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
   variant?:
     | 'primary'
     | 'accent'
@@ -37,6 +38,7 @@ export default function GradientButton({
   onClick,
   className = '',
   type = 'button',
+  disabled = false,
   variant = 'primary',
 }: GradientButtonProps) {
   const variantClasses: Record<string, string> = {
@@ -86,7 +88,12 @@ export default function GradientButton({
   }
 
   return (
-    <button type={type} onClick={onClick} className={combined}>
+    <button 
+      type={type} 
+      onClick={onClick} 
+      className={combined} 
+      disabled={disabled}
+    >
       {content}
     </button>
   );

@@ -18,6 +18,7 @@ cloudinary.config({
 const uploadImageHandler = async (req: Request, session: any) => {
   const formData = await req.formData();
   const file = formData.get("file") as File;
+  const folder = formData.get("folder")?.toString() || "misc";   // ⭐ NEW
 
   if (!file)
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -28,7 +29,7 @@ const uploadImageHandler = async (req: Request, session: any) => {
   if (!type?.mime.startsWith("image/"))
     return NextResponse.json({ error: "Not an image" }, { status: 400 });
 
-  // 🖼️ Draw to canvas
+  // 🖼️ Canvas resizing for NSFW detection
   const img = await loadImage(buffer);
   const canvas = createCanvas(224, 224);
   const ctx = canvas.getContext("2d");
@@ -55,10 +56,10 @@ const uploadImageHandler = async (req: Request, session: any) => {
     (p) => flaggedClasses.includes(p.className) && p.probability > 0.6
   );
 
-  // ☁️ Upload to Cloudinary
+  // ☁️ Cloudinary Upload 
   const uploadResult: any = await new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder: "disc-listings" },
+      { folder }, 
       (err, result) => (err ? reject(err) : resolve(result))
     );
     stream.end(buffer);

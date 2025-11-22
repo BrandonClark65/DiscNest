@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, unique: true, sparse: true },
 
     avatarUrl: String,
+    avatarPublicId: String,
     bio: String,
 
     // 🔥 Credentials users ONLY (OAuth users won't have this)
