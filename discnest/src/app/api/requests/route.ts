@@ -64,7 +64,7 @@ const GET_handler = async (req: Request) => {
           userId: {
             _id: "$user._id",
             name: "$user.name",
-            image: "$user.image",
+            avatarUrl: "$user.avatarUrl",
             username: "$user.username",
           },
         },
@@ -87,7 +87,7 @@ const GET_handler = async (req: Request) => {
 
   // Fallback to latest
   const requests = await DiscRequest.find({})
-    .populate("userId", "name image username")
+    .populate("userId", "name avatarUrl username")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)

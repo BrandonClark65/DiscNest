@@ -13,6 +13,7 @@ export default function RequestDetail({ request }: { request: any }) {
   const router = useRouter();
 
   const requester = request.userId;
+  console.log("Requester:", requester);
   const [distance, setDistance] = useState<string | null>(null);
   const [messaging, setMessaging] = useState(false);
 
@@ -119,9 +120,9 @@ export default function RequestDetail({ request }: { request: any }) {
         <div className="bg-[var(--surface)] border border-[var(--muted)]/30 rounded-xl shadow p-6 space-y-6">
           {/* Requester Row */}
           <div className="flex items-center gap-4">
-            {requester?.image ? (
+            {requester?.avatarUrl ? (
               <Image
-                src={requester.image}
+                src={requester.avatarUrl}
                 alt="avatar"
                 width={56}
                 height={56}
@@ -133,7 +134,7 @@ export default function RequestDetail({ request }: { request: any }) {
 
             <div>
               <h2 className="text-lg font-semibold text-[var(--foreground)]">
-                {requester?.name || "User"}
+                {requester?.username ||requester?.name || "User"}
               </h2>
 
               {distance && (

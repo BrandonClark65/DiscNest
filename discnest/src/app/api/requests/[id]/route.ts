@@ -9,7 +9,10 @@ const GET_handler = async (req: Request, { params }: { params: { id: string } })
   const { id } = await params;
 
   const doc = await DiscRequest.findById(id)
-    .populate("userId", "_id name")
+    .populate({
+      path: "userId",
+      select: "name avatarUrl username"
+    })
     .lean();
 
   if (!doc) {

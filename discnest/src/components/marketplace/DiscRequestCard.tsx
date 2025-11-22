@@ -14,7 +14,6 @@ export default function DiscRequestCard({ request, currentUserId }: Props) {
   const router = useRouter();
 
   const requester = request.userId;
-  console.log('Requester:', requester);
   const distance =
     request.distanceMeters != null
       ? (request.distanceMeters / 1609).toFixed(1)
@@ -55,9 +54,9 @@ export default function DiscRequestCard({ request, currentUserId }: Props) {
     >
       {/* HEADER: User + Distance */}
       <div className="flex items-center gap-3 mb-4">
-        {requester?.image ? (
+        {requester?.avatarUrl ? (
           <Image
-            src={requester.image}
+            src={requester.avatarUrl}
             alt="avatar"
             width={44}
             height={44}
@@ -69,7 +68,7 @@ export default function DiscRequestCard({ request, currentUserId }: Props) {
 
         <div className="flex flex-col">
           <p className="font-semibold text-[var(--foreground)] leading-tight">
-            {requester?.name || "User"}
+            {requester?.username ||requester?.name || "User"}
           </p>
           {distance && (
             <p className="flex items-center gap-1 text-xs text-foreground/60">

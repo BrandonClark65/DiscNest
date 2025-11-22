@@ -32,25 +32,19 @@ const handler = async (req: Request, session: any) => {
 
   const userId = session.user.id;
   const user = await User.findById(userId);
-    console.log("User found for avatar upload:", user);
-    console.log("New avatar URL:", uploadData.publicId);
-    console.log("User's current avatar public_id:", user?.avatarPublicId);
   // Delete previous avatar if exists
   if (user.avatarPublicId) {
     try {
-        console.log("Deleting Cloudinary public_id:", user.avatarPublicId);
       await cloudinary.v2.uploader.destroy(user.avatarPublicId);
     } catch (err) {
       console.error("Error deleting old avatar:", err);
     }
   }
-    console.log("New avatar URL:", uploadData.publicId);
   // Save new avatar
   user.avatarUrl = uploadData.imageUrl;
   user.avatarPublicId = uploadData.publicId;
   await user.save();
   const userAfterSave = await User.findById(userId);
-  console.log("User updated with new avatar:", userAfterSave?.avatarPublicId);
 
   return NextResponse.json({
     success: true,
