@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import GradientButton from "@/components/ui/GradientButton";
-import { MessageCircle, MapPin, MoreVertical } from "lucide-react";
+import { MessageCircle, MapPin, MoreVertical, ArrowBigLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import ReportModal from "@/components/modals/ReportModal"; // ← NEW
 
@@ -78,6 +78,14 @@ export default function RequestDetail({ request }: { request: any }) {
   return (
     <>
       <div className="max-w-4xl mx-auto py-10 px-4">
+        {/* Back Button */}
+          <GradientButton
+            label="Back to Marketplace"
+            href="/marketplace"
+            variant="muted"
+            icon={<ArrowBigLeft className="w-5 h-5" />}
+            className="mb-4"
+          />
         {/* Title Row */}
         <div className="flex justify-between items-start mb-6 relative">
           <h1 className="text-3xl font-extrabold text-[var(--foreground)]">
