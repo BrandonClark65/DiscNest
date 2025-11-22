@@ -14,6 +14,7 @@ export default function DiscRequestCard({ request, currentUserId }: Props) {
   const router = useRouter();
 
   const requester = request.userId;
+  console.log('Requester:', requester);
   const distance =
     request.distanceMeters != null
       ? (request.distanceMeters / 1609).toFixed(1)

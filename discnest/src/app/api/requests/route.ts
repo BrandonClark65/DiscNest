@@ -26,23 +26,55 @@ const GET_handler = async (req: Request) => {
     const latitude = Number(lat);
     const longitude = Number(lng);
 
-    // ⭐ FIX: Type the pipeline as PipelineStage[]
     const pipeline: PipelineStage[] = [
       {
         $geoNear: {
-          near: {
-            type: "Point",
-            coordinates: [longitude, latitude],
-          },
+          near: { type: "Point", coordinates: [longitude, latitude] },
           distanceField: "distanceMeters",
           maxDistance: radiusKm * 1000,
           spherical: true,
         },
       },
+
+      // 🔍 Populate userId manually
+      {
+        $lookup: {
+          from: "users",              // collection name
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      // Flatten array → object
+      { $unwind: "$user" },
+
+      // Optional: pick only needed fields
+      {
+        $project: {
+          title: 1,
+          description: 1,
+          brand: 1,
+          plastic: 1,
+          weight: 1,
+          condition: 1,
+          location: 1,
+          distanceMeters: 1,
+          createdAt: 1,
+          // Attach populated user fields
+          userId: {
+            _id: "$user._id",
+            name: "$user.name",
+            image: "$user.image",
+            username: "$user.username",
+          },
+        },
+      },
+
       { $sort: { distanceMeters: 1, createdAt: -1 } },
       { $skip: skip },
       { $limit: limit },
     ];
+
 
     const results = await DiscRequest.aggregate(pipeline);
 
@@ -55,10 +87,12 @@ const GET_handler = async (req: Request) => {
 
   // Fallback to latest
   const requests = await DiscRequest.find({})
+    .populate("userId", "name image username")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
     .lean();
+
 
   return NextResponse.json({ requests, page, limit });
 };
