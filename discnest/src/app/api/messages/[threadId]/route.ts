@@ -10,6 +10,9 @@ import OpenAI from "openai";
 import { Filter } from "bad-words";
 import User from "@/models/User";
 import FlaggedMessage from "@/models/FlaggedMessage";
+import Listing from "@/models/Listing";
+import DiscRequest from "@/models/DiscRequest";
+
 
 
 

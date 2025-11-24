@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { User, Disc } from "@/models";
+import User from "@/models/User";
+import Disc from "@/models/Disc";
 import { connectToDatabase } from "@/lib/mongodb";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";

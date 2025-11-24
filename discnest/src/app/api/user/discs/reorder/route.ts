@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
-import { User } from "@/models";
+import User from "@/models/User";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 

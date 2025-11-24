@@ -1,9 +1,11 @@
-// src/models/index.ts
-import mongoose from "mongoose";
-import User from "./User";
-import Disc from "./Disc";
-import Listing from "./Listing";
-import MessageThread from "./MessageThread";
+// Force-load all models so Mongoose registers them before use anywhere
+import "./User";
+import "./Listing";
+import "./Disc";
+import "./DiscRequest";
+import "./MessageThread";
+import "./FlaggedMessage";
+import "./UserReport";
+import "./ErrorLog";
 
-export { User, Disc, Listing, MessageThread };
-
+export {};
