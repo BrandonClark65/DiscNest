@@ -1,7 +1,57 @@
 // src/lib/messageMapping.ts
 
+import { Types } from "mongoose";
 import type { MessageDB, MessageUI } from "@/types/message";
 import type { ThreadDB, ThreadUI } from "@/types/thread";
+
+/* -------------------------------------------------------
+   TYPE GUARDS
+-------------------------------------------------------- */
+
+// Raw ObjectId value
+function isObjectId(value: any): value is Types.ObjectId {
+  return value instanceof Types.ObjectId;
+}
+
+// Populated user: { _id: ObjectId, name: string, ... }
+function isPopulatedUser(
+  value: any
+): value is { _id: Types.ObjectId; name: string } {
+  return (
+    value &&
+    typeof value === "object" &&
+    value._id instanceof Types.ObjectId &&
+    typeof value.name === "string"
+  );
+}
+
+// Populated Listing: { _id: ObjectId, title: string }
+function isPopulatedListing(
+  value: any
+): value is { _id: Types.ObjectId; title: string; imageUrls?: string[] } {
+  return (
+    value &&
+    typeof value === "object" &&
+    value._id instanceof Types.ObjectId &&
+    "title" in value
+  );
+}
+
+// Populated Request: { _id: ObjectId, title: string }
+function isPopulatedRequest(
+  value: any
+): value is { _id: Types.ObjectId; title: string } {
+  return (
+    value &&
+    typeof value === "object" &&
+    value._id instanceof Types.ObjectId &&
+    "title" in value
+  );
+}
+
+/* -------------------------------------------------------
+   MESSAGE MAPPING
+-------------------------------------------------------- */
 
 export function mapMessageDBtoUI(msg: MessageDB): MessageUI {
   const SYSTEM_IDS = [
@@ -13,7 +63,7 @@ export function mapMessageDBtoUI(msg: MessageDB): MessageUI {
     "000000000000000000000000",
   ];
 
-  // Extract raw sender ID as a string
+  // Extract sender as simple string ID
   const rawSender =
     msg.sender === null
       ? null
@@ -21,7 +71,6 @@ export function mapMessageDBtoUI(msg: MessageDB): MessageUI {
       ? msg.sender
       : msg.sender._id?.toString() ?? null;
 
-  // Identify system message
   const isSystem = SYSTEM_IDS.includes(rawSender as any);
 
   if (isSystem) {
@@ -35,10 +84,12 @@ export function mapMessageDBtoUI(msg: MessageDB): MessageUI {
     };
   }
 
-  // Normal user message
   const senderName =
-    typeof msg.sender === "object" && msg.sender && "_id" in msg.sender
-      ? (msg.sender as any).name || "Unknown"
+    typeof msg.sender === "object" &&
+    msg.sender &&
+    "_id" in msg.sender &&
+    (msg.sender as any).name
+      ? (msg.sender as any).name
       : "Unknown";
 
   return {
@@ -51,20 +102,42 @@ export function mapMessageDBtoUI(msg: MessageDB): MessageUI {
   };
 }
 
+/* -------------------------------------------------------
+   THREAD MAPPING
+-------------------------------------------------------- */
 
 export function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
   return {
     _id: t._id.toString(),
 
-    messages: t.messages.map(mapMessageDBtoUI),
-
+    /* -------------------------------
+          PARTICIPANTS
+    -------------------------------- */
     participants: t.participants.map((p) => {
-      if (typeof p === "string") return { _id: p, name: "Unknown" };
-      if ("_id" in p)
-        return { _id: p._id.toString(), name: (p as any).name || "Unknown" };
-      return { _id: p.toString(), name: "Unknown" };
+      if (isPopulatedUser(p)) {
+        return {
+          _id: p._id.toString(),
+          name: p.name || "Unknown",
+        };
+      }
+
+      if (isObjectId(p)) {
+        return {
+          _id: p.toString(),
+          name: "Unknown",
+        };
+      }
+
+      // Fallback (string or unknown)
+      return {
+        _id: String(p),
+        name: "Unknown",
+      };
     }),
 
+    /* -------------------------------
+          LISTING REF
+    -------------------------------- */
     listingId: (() => {
       const l = t.listingId;
 
@@ -76,36 +149,65 @@ export function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
         };
       }
 
-      if (typeof l === "object" && "_id" in l) {
+      if (isPopulatedListing(l)) {
         return {
           _id: l._id.toString(),
-          title: (l as any).title || "Listing",
-          imageUrls: (l as any).imageUrls || [],
+          title: l.title || "Listing",
+          imageUrls: l.imageUrls || [],
+        };
+      }
+
+      if (isObjectId(l)) {
+        return {
+          _id: l.toString(),
+          title: "",
+          imageUrls: [],
         };
       }
 
       return {
-        _id: l.toString(),
+        _id: String(l),
         title: "",
         imageUrls: [],
       };
     })(),
 
+    /* -------------------------------
+          REQUEST REF
+    -------------------------------- */
     requestId: (() => {
       const r = t.requestId;
 
       if (!r) return null;
 
-      if (typeof r === "object" && "_id" in r) {
+      if (isPopulatedRequest(r)) {
         return {
           _id: r._id.toString(),
-          title: (r as any).title || "Disc Request",
+          title: r.title || "Disc Request",
         };
       }
 
-      return { _id: r.toString(), title: "Disc Request" };
+      if (isObjectId(r)) {
+        return {
+          _id: r.toString(),
+          title: "Disc Request",
+        };
+      }
+
+      return {
+        _id: String(r),
+        title: "Disc Request",
+      };
     })(),
 
+    /* -------------------------------
+          MESSAGES
+    -------------------------------- */
+    messages: t.messages.map(mapMessageDBtoUI),
+
+    /* -------------------------------
+          UPDATED AT
+    -------------------------------- */
     updatedAt:
       t.updatedAt instanceof Date
         ? t.updatedAt.toISOString()

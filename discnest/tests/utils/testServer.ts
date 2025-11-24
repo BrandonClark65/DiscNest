@@ -3,6 +3,8 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import { pathToFileURL } from "url";
+
 
 // Express app for Supertest
 const app = express();
@@ -49,7 +51,7 @@ async function sendWebResponse(webRes: Response, res: any) {
 }
 
 // Automatically load ANY API route in app/api/**/route.ts
-app.all("/api/*", async (req, res) => {
+app.use("/api", async (req, res) => {
   try {
     const routePath = req.path.replace("/api", "");
     const parts = routePath.split("/").filter(Boolean);
@@ -66,10 +68,11 @@ app.all("/api/*", async (req, res) => {
 
     let routeModule;
     try {
-      routeModule = await import(routeFile);
+        const fileUrl = pathToFileURL(routeFile).href;
+        routeModule = await import(fileUrl);
     } catch (e) {
-      console.error("Dynamic route load failed:", routeFile);
-      return res.status(404).json({ error: "Route not found" });
+        console.error("Dynamic route load failed:", routeFile, e);
+        return res.status(404).json({ error: "Route not found" });
     }
 
     const method = req.method.toUpperCase();

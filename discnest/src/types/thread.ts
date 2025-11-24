@@ -2,7 +2,7 @@ import { DiscNestUser as User } from "./user";
 import { Listing } from "./listing";
 import { DiscRequest } from "./DiscRequest";
 import { Message, MessageDB, MessageUI } from "./message";
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 
 /* -------------------------------------------------------
    PARTICIPANTS (UI)
@@ -34,7 +34,6 @@ export type ThreadUI = {
 
   participants: Participant[];
 
-  // Only ONE of these will exist
   listingId: ListingRef | null;
   requestId: RequestRef | null;
 
@@ -46,20 +45,20 @@ export type ThreadUI = {
    THREAD (DB — stored in Mongo)
 -------------------------------------------------------- */
 export type ThreadDB = {
-  _id: ObjectId;
+  _id: Types.ObjectId;
 
-  participants: ObjectId[] | (User & { _id: ObjectId })[];
+  // Either raw ObjectIds or populated users
+  participants: Types.ObjectId[] | (User & { _id: Types.ObjectId })[];
 
-  // Optional and nullable — only one is populated per thread
-  listingId: ObjectId | Listing | null;
-  requestId: ObjectId | DiscRequest | null;
+  listingId: Types.ObjectId | Listing | null;
+  requestId: Types.ObjectId | DiscRequest | null;
 
   messages: MessageDB[];
   updatedAt: Date;
 };
 
 /* -------------------------------------------------------
-   LEGACY TYPE (for older code — safe to keep)
+   LEGACY TYPE
 -------------------------------------------------------- */
 export type Thread = {
   _id: string;
