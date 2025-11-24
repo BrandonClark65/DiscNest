@@ -14,6 +14,10 @@ const UserSchema = new mongoose.Schema(
     // 🔥 Credentials users ONLY (OAuth users won't have this)
     password: { type: String, required: false },
 
+    // 🔑 Password reset fields
+    passwordResetToken: { type: String, default: null },
+    passwordResetExpires: { type: Date, default: null },
+
     // 🔥 OAuth Support
     provider: { type: String, enum: ["google", "facebook", "credentials"], default: "credentials" },
     providerId: { type: String, default: null }, // Google/Facebook user ID

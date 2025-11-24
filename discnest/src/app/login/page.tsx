@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import GradientButton from '@/components/ui/GradientButton';
-import { Disc, LogIn } from 'lucide-react';
+import { Disc, LogIn, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -70,22 +71,48 @@ export default function LoginPage() {
             required
           />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="
-              w-full px-4 py-3 
-              rounded-xl 
-              bg-background 
-              border border-gray-300/80 
-              focus:ring-2 focus:ring-primary outline-none
-              text-foreground
-              placeholder:text-gray-400
-            "
-            required
-          />
+          {/* Password Input With Toggle */}
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="
+                w-full px-4 py-3 
+                rounded-xl 
+                bg-background 
+                border border-gray-300/80 
+                focus:ring-2 focus:ring-primary outline-none
+                text-foreground
+                placeholder:text-gray-400
+              "
+              required
+            />
+
+            {/* Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+
+          {/* Forgot Password */}
+          <div className="text-right">
+            <a
+              href="/forgot-password"
+              className="text-primary text-sm hover:underline"
+            >
+              Forgot your password?
+            </a>
+          </div>
 
           {error && (
             <p className="text-red-500 text-sm text-center">{error}</p>
@@ -118,17 +145,6 @@ export default function LoginPage() {
           >
             Continue with Google
           </button>
-
-          {/* <button
-            onClick={() => signIn('facebook')}
-            className="
-              w-full py-3 rounded-xl 
-              bg-[#1877F2] text-white font-medium
-              hover:bg-[#1665d8] transition
-            "
-          >
-            Continue with Facebook
-          </button> */}
         </div>
 
         {/* Footer */}
