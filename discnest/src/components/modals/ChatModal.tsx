@@ -44,11 +44,19 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
           _id: p._id,
           name: p.name,
         })),
-        listingId: {
-          _id: data.listingId._id,
-          title: data.listingId.title,
-          imageUrls: data.listingId.imageUrls || [],
-        },
+        listingId: data.listingId
+          ? {
+              _id: data.listingId._id,
+              title: data.listingId.title,
+              imageUrls: data.listingId.imageUrls || [],
+            }
+          : null,
+        requestId: data.requestId
+          ? {
+              _id: data.requestId._id,
+              title: data.requestId.title,
+            }
+          : null,
         messages: data.messages.map((msg: any) => ({
           sender: { _id: msg.sender._id, name: msg.sender.name },
           content: msg.content,
