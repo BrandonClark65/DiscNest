@@ -1,4 +1,4 @@
-import { User } from '@/models';
+import User from '@/models/User';
 
 export const recalcDiscCount = async (userId: string) => {
   const user = await User.findById(userId);
