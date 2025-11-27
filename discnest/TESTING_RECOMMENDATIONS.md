@@ -163,10 +163,27 @@
 
 ### 🟢 LOWER PRIORITY
 
-#### 7. User Utility Routes
-- `GET /api/user/discs/share` - Share bag functionality
-- `GET /api/user/onboarded` - Check onboarding status
-- `POST /api/user/onboarded` - Update onboarding status
+#### 7. User Utility Routes ✅
+- ✅`POST /api/user/discs/share` - Share bag functionality
+  - ✅Requires authentication
+  - ✅Returns 404 if user not found
+  - ✅Creates shareableBagId if user doesn't have one
+  - ✅Returns existing shareableBagId if user already has one
+  - ✅Generates valid UUID format
+  - ✅Uses origin header for base URL if provided
+  - ✅Falls back to NEXT_PUBLIC_BASE_URL or localhost
+  - ✅Returns environment in response
+  
+- ✅`POST /api/user/onboarded` - Update onboarding status
+  - ✅Requires email in request body
+  - ✅Returns 400 for missing email
+  - ✅Updates hasOnboarded to true for user with matching email
+  - ✅Handles non-existent email gracefully
+  - ✅Handles empty email string
+
+**Note**: GET routes do not exist for these endpoints. Only POST routes are implemented.
+
+**File**: `tests/integration/api/user-utility-routes.test.ts` ✅ COMPLETE
 
 #### 8. Admin Routes
 - Admin endpoints (only if actively developing admin features)
