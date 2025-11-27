@@ -190,13 +190,211 @@
 
 ---
 
+## Next Steps: Additional Routes & Enhanced Testing
+
+### 🔴 HIGH PRIORITY - Remaining User-Facing Routes
+
+#### 9. Upload API (`/api/upload`) ✅ **COMPLETE**
+**Why**: Handles image uploads with NSFW detection, used by listings and avatars. Security-critical.
+
+**Tests needed**:
+- ✅`POST /api/upload`
+  - ✅Requires authentication
+  - ✅Validates file is an image
+  - ✅Rejects non-image files
+  - ✅Performs NSFW detection
+  - ✅Uploads to Cloudinary
+  - ✅Returns flagged status for inappropriate content
+  - ✅Handles Cloudinary upload failures
+  - ✅Handles missing file
+  - ✅Validates folder parameter
+  - ✅Returns publicId and imageUrl
+  - ✅Handles NSFW model classification errors
+  - ✅Handles canvas loadImage errors
+  - ✅Flags images with various NSFW classes above threshold
+  - ✅Does not flag images when probability is below threshold
+
+**File**: `tests/integration/api/upload.test.ts` ✅ COMPLETE
+
+**Mocking needed**: Cloudinary, NSFW model (TensorFlow.js) ✅ IMPLEMENTED
+
+---
+
+#### 10. Profile Avatar API (`/api/profile/avatar`) ⚠️ **IMPORTANT**
+**Why**: User-facing feature, integrates with upload API, handles Cloudinary cleanup
+
+**Tests needed**:
+- `POST /api/profile/avatar`
+  - Requires authentication
+  - Validates file upload
+  - Calls upload API internally
+  - Deletes old avatar from Cloudinary
+  - Updates user avatarUrl and avatarPublicId
+  - Handles upload API failures
+  - Handles Cloudinary deletion failures gracefully
+
+**File**: `tests/integration/api/profile-avatar.test.ts`
+
+**Mocking needed**: Cloudinary, internal `/api/upload` call
+
+---
+
+#### 11. Report API (`/api/report`) ⚠️ **IMPORTANT**
+**Why**: Critical for moderation, prevents self-reporting, increments moderation flags
+
+**Tests needed**:
+- `POST /api/report`
+  - Requires authentication
+  - Validates reportedUserId is required
+  - Prevents self-reporting (returns 400)
+  - Creates UserReport document
+  - Increments reported user's moderationFlags
+  - Updates lastFlaggedAt timestamp
+  - Handles optional fields (threadId, messageId, listingId, requestId, reason)
+  - Returns 400 for missing reportedUserId
+
+**File**: `tests/integration/api/report.test.ts`
+
+---
+
+#### 12. Contact API (`/api/contact`) 🟡 **MEDIUM**
+**Why**: User-facing contact form, sends emails via Resend
+
+**Tests needed**:
+- `POST /api/contact`
+  - Validates required fields (email, subject, message)
+  - Returns 400 for missing fields
+  - Returns 500 if ADMIN_EMAIL not configured
+  - Sends email via Resend
+  - Uses correct from email (prod vs dev)
+  - Handles Resend API failures
+  - Sets replyTo to user's email
+
+**File**: `tests/integration/api/contact.test.ts`
+
+**Mocking needed**: Resend API
+
+---
+
+#### 13. Discs Catalog API (`/api/discs`) 🟡 **MEDIUM**
+**Why**: Public catalog endpoint, used by frontend
+
+**Tests needed**:
+- `GET /api/discs`
+  - Returns only catalog discs (no userId)
+  - Excludes user-owned discs
+  - Returns correct fields (name, brand, type, addedAt, image, stability, flight)
+  - Sorted by addedAt descending
+  - Handles empty catalog gracefully
+
+**File**: `tests/integration/api/discs.test.ts`
+
+---
+
+#### 14. Reverse Geocode API (`/api/reverse-geocode`) 🟢 **LOW**
+**Why**: Utility endpoint for location services
+
+**Tests needed**:
+- `GET /api/reverse-geocode`
+  - Validates lat and lng query parameters
+  - Returns 400 for missing lat/lng
+  - Returns 500 if OPENCAGE_API_KEY not configured
+  - Calls OpenCage API
+  - Extracts city and state from response
+  - Handles OpenCage API failures
+  - Handles missing location data gracefully
+
+**File**: `tests/integration/api/reverse-geocode.test.ts`
+
+**Mocking needed**: OpenCage API (fetch)
+
+---
+
+### 🟡 MEDIUM PRIORITY - Enhanced Testing
+
+#### 15. Edge Cases & Error Scenarios
+**Why**: Improve robustness of existing tests
+
+**Areas to enhance**:
+- **Concurrent operations**: Test race conditions (e.g., multiple users updating same listing)
+- **Large payloads**: Test with very large request bodies
+- **Malformed data**: Test with deeply nested objects, circular references
+- **Database failures**: Test MongoDB connection failures mid-request
+- **Timeout scenarios**: Test slow external API responses
+- **Boundary values**: Test min/max values, empty strings, null vs undefined
+- **Unicode/special characters**: Test with emojis, special characters in user input
+
+---
+
+#### 16. External Service Integration Testing
+**Why**: Ensure proper error handling when external services fail
+
+**Services to mock and test failures**:
+- **Cloudinary**: Upload failures, deletion failures, network timeouts
+- **Resend**: Email sending failures, rate limiting
+- **OpenCage**: API failures, invalid responses
+- **NSFW Model**: Model loading failures, prediction errors
+
+**Pattern**: Create reusable mocks for external services that can simulate failures
+
+---
+
+#### 17. Performance & Load Testing
+**Why**: Identify bottlenecks before production
+
+**Tests to consider**:
+- Response time benchmarks for key endpoints
+- Database query performance (N+1 queries, missing indexes)
+- Concurrent request handling
+- Large dataset handling (1000+ listings, messages, etc.)
+
+**Tools**: Consider using `k6`, `artillery`, or simple concurrent request tests
+
+---
+
+### 🟢 LOWER PRIORITY - Test Quality Improvements
+
+#### 18. Test Coverage Metrics
+**Why**: Track coverage and identify gaps
+
+**Actions**:
+- Set up coverage reporting (vitest --coverage)
+- Set coverage thresholds (e.g., 80% minimum)
+- Track coverage over time
+- Identify untested code paths
+
+---
+
+#### 19. Test Organization & Documentation
+**Why**: Maintainability and onboarding
+
+**Actions**:
+- Document test patterns and conventions
+- Create test utilities for common scenarios
+- Add JSDoc comments to complex test cases
+- Consider test tags/categories for filtering
+
+---
+
 ## Recommended Implementation Order
 
-1. **Profile API** - Great starting point, user-facing, moderate complexity
-2. **Listings [id] routes** - Completes listings coverage, important security tests
-3. **Auth routes** - Security-critical, should be tested early
-4. **User disc routes (update/reorder)** - Completes disc management suite
-5. **Requests POST** - Completes requests coverage
+### Phase 1: Critical Routes (Do First)
+1. **Upload API** - Security-critical, used by multiple features
+2. **Profile Avatar API** - User-facing, depends on upload
+3. **Report API** - Moderation-critical
+
+### Phase 2: User-Facing Routes
+4. **Contact API** - User-facing feature
+5. **Discs Catalog API** - Public endpoint
+
+### Phase 3: Enhanced Testing
+6. **Edge Cases** - Improve existing test robustness
+7. **External Service Failures** - Error handling
+8. **Reverse Geocode** - Utility endpoint
+
+### Phase 4: Quality Improvements
+9. **Coverage Metrics** - Track and improve
+10. **Performance Testing** - Identify bottlenecks
 
 ---
 
@@ -213,6 +411,12 @@ Based on your existing tests, maintain consistency with:
 - Testing ownership checks (403 errors)
 - Testing 404 cases
 
+**New patterns for external services**:
+- Mock Cloudinary: `vi.mock("cloudinary")`
+- Mock Resend: `vi.mock("resend")`
+- Mock fetch for external APIs: `vi.spyOn(global, "fetch")`
+- Mock TensorFlow.js for NSFW model: `vi.mock("@/lib/nsfwModel")`
+
 ---
 
 ## Notes
@@ -221,4 +425,5 @@ Based on your existing tests, maintain consistency with:
 - Focus on integration tests for API routes (you're doing this well)
 - Component tests and unit tests already exist in other directories
 - Consider adding tests for edge cases (e.g., concurrent updates, large payloads)
+- **Priority**: Upload and Avatar APIs are most critical as they're user-facing and handle sensitive operations
 
