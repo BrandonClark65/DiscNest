@@ -12,6 +12,9 @@
 - ✅ `/api/messages` - GET, POST
 - ✅ `/api/messages/[threadId]` - GET, POST, PUT
 - ✅ `/api/requests` - GET (minimal)
+- ✅ `/api/auth/signup` - POST
+- ✅ `/api/auth/request-password-reset` - POST
+- ✅ `/api/auth/reset-password` - POST
 
 ---
 
@@ -87,29 +90,29 @@
 
 ---
 
-#### 4. Auth Routes (Security-Critical)
+#### 4. Auth Routes (Security-Critical) ✅
 **Why**: Critical for user security, has complex edge cases
 
 **Tests needed**:
-- `POST /api/auth/signup`
-  - Creates new user
-  - Hashes password
-  - Returns 400 if email exists
-  - Handles OAuth conflict (user exists with no password)
-  - Sets hasOnboarded to false
+- ✅ `POST /api/auth/signup`
+  - ✅ Creates new user
+  - ✅ Hashes password
+  - ✅ Returns 400 if email exists
+  - ✅ Handles OAuth conflict (user exists with no password)
+  - ✅ Sets hasOnboarded to false
   
-- `POST /api/auth/request-password-reset`
-  - Validates email exists
-  - Generates reset token
-  - Sends reset email (mock)
+- ✅ `POST /api/auth/request-password-reset`
+  - ✅ Validates email exists
+  - ✅ Generates reset token
+  - ✅ Sends reset email (mock)
   
-- `POST /api/auth/reset-password`
-  - Validates reset token
-  - Updates password
-  - Invalidates token after use
-  - Returns error for expired/invalid token
+- ✅ `POST /api/auth/reset-password`
+  - ✅ Validates reset token
+  - ✅ Updates password
+  - ✅ Invalidates token after use
+  - ✅ Returns error for expired/invalid token
 
-**File**: `tests/integration/api/auth.test.ts`
+**File**: `tests/integration/api/auth.test.ts` ✅ COMPLETE
 
 ---
 
