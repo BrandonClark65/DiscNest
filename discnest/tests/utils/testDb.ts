@@ -18,6 +18,12 @@ export async function closeTestDb() {
 export async function resetTestDb() {
   const collections = mongoose.connection.collections;
   for (const key in collections) {
-    await collections[key].deleteMany({});
+    try {
+      await collections[key].deleteMany({});
+    } catch (err) {
+      // Ignore errors during cleanup
+    }
   }
+  // Clear mongoose model cache to avoid schema issues
+  mongoose.models = {};
 }

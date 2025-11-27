@@ -9,7 +9,7 @@ const ListingSchema = new Schema({
 
   // ✅ Restrict to known brands & plastics from discData
   brand: { type: String, enum: DiscBrands, required: false },
-  plastic: { type: String, enum: DiscPlastics, required: false, default: "" },
+  plastic: { type: String, enum: DiscPlastics, required: false },
 
   condition: { 
     type: String, 
@@ -35,6 +35,14 @@ const ListingSchema = new Schema({
 });
 
 ListingSchema.index({ location: "2dsphere" }); // enable geo queries
+
+// Pre-save hook: remove location if it doesn't have valid coordinates
+ListingSchema.pre("save", function (next) {
+  if (this.location && (!this.location.coordinates || this.location.coordinates.length !== 2)) {
+    this.location = undefined;
+  }
+  next();
+});
 
 const Listing = models.Listing || model("Listing", ListingSchema);
 export default Listing;

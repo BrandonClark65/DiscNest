@@ -4,6 +4,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { pathToFileURL } from "url";
+import { existsSync } from "fs";
 
 
 // Express app for Supertest
@@ -56,8 +57,12 @@ app.use("/api", async (req, res) => {
     const routePath = req.path.replace("/api", "");
     const parts = routePath.split("/").filter(Boolean);
 
-    // Resolve path to actual route.ts file
-    const routeFile = path.join(
+    // Try to find route file, handling dynamic routes like [threadId]
+    let routeFile: string | null = null;
+    let params: Record<string, string> = {};
+
+    // First try exact path
+    const exactPath = path.join(
       process.cwd(),
       "src",
       "app",
@@ -66,13 +71,69 @@ app.use("/api", async (req, res) => {
       "route.ts"
     );
 
+    if (existsSync(exactPath)) {
+      routeFile = exactPath;
+    } else {
+      // If exact path doesn't exist, try dynamic route pattern
+      // e.g., /api/messages/abc123 -> messages/[threadId]/route.ts
+      const dynamicParts: string[] = [];
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        // Check if there's a [param] folder at this level
+        // Try common dynamic route names: [id], [threadId], [listingId], etc.
+        const possibleParamNames = ["id", "threadId", "listingId", "requestId", "token"];
+        let foundDynamic = false;
+        
+        for (const paramName of possibleParamNames) {
+          const dynamicPath = path.join(
+            process.cwd(),
+            "src",
+            "app",
+            "api",
+            ...dynamicParts,
+            `[${paramName}]`,
+            "route.ts"
+          );
+          // Check if file exists before trying to import
+          if (existsSync(dynamicPath)) {
+            // Found dynamic route, extract param
+            params[paramName] = part;
+            dynamicParts.push(`[${paramName}]`);
+            routeFile = dynamicPath;
+            foundDynamic = true;
+            break;
+          }
+        }
+        
+        if (!foundDynamic) {
+          // Not a dynamic route at this level, continue with exact path
+          dynamicParts.push(part);
+        }
+      }
+      
+      // If we still don't have a route file, try the constructed path
+      if (!routeFile) {
+        routeFile = path.join(
+          process.cwd(),
+          "src",
+          "app",
+          "api",
+          ...dynamicParts,
+          "route.ts"
+        );
+      }
+    }
+
     let routeModule;
     try {
-        const fileUrl = pathToFileURL(routeFile).href;
-        routeModule = await import(fileUrl);
-    } catch (e) {
-        console.error("Dynamic route load failed:", routeFile, e);
+      if (!routeFile || !existsSync(routeFile)) {
         return res.status(404).json({ error: "Route not found" });
+      }
+      const fileUrl = pathToFileURL(routeFile).href;
+      routeModule = await import(fileUrl);
+    } catch (e) {
+      console.error("Route load failed:", routeFile, e);
+      return res.status(404).json({ error: "Route not found" });
     }
 
     const method = req.method.toUpperCase();
@@ -82,7 +143,14 @@ app.use("/api", async (req, res) => {
     }
 
     const webReq = toWebRequest(req);
-    const webRes = await routeModule[method](webReq);
+    
+    // For dynamic routes, pass params in context
+    // Extract param from URL (e.g., /api/messages/abc123 -> threadId: "abc123")
+    const context = Object.keys(params).length > 0 
+      ? { params: Promise.resolve(params) }
+      : undefined;
+    
+    const webRes = await routeModule[method](webReq, context);
     return sendWebResponse(webRes, res);
   } catch (err) {
     console.error("Test server error:", err);

@@ -155,7 +155,7 @@ const createListingHandler = async (req: Request, session: any) => {
     }
   }
 
-  const listing = await Listing.create({
+  const listingData: any = {
     ...body,
     userId: session.user.id,
     weight:
@@ -166,7 +166,26 @@ const createListingHandler = async (req: Request, session: any) => {
     state,
     pendingReview,
     createdAt: new Date(),
-  });
+  };
+
+  // Remove plastic if it's an empty string (not a valid enum value)
+  if (listingData.plastic === "") {
+    delete listingData.plastic;
+  }
+
+  // Remove location if it doesn't have valid coordinates (geo index requires coordinates)
+  if (listingData.location) {
+    if (!listingData.location.coordinates || listingData.location.coordinates.length !== 2) {
+      delete listingData.location;
+    }
+  }
+  
+  // Explicitly set location to undefined if it was removed to prevent model defaults
+  if (!listingData.location) {
+    listingData.location = undefined;
+  }
+
+  const listing = await Listing.create(listingData);
 
   if (pendingReview) {
     const user = await User.findById(session.user.id);

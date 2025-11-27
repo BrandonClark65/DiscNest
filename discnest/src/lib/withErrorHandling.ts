@@ -54,6 +54,15 @@ export function withErrorHandling<
 
       // --- 💥 Respond gracefully ---
       console.error(`[API ERROR] ${routePath || req?.url || ""}\n`, message, err);
+      
+      // Check if it's an UnauthorizedError and return 401
+      if (err instanceof Error && err.name === "UnauthorizedError") {
+        return NextResponse.json(
+          { error: err.message || "Unauthorized" },
+          { status: 401 }
+        );
+      }
+      
       return NextResponse.json(
         { error: message || "Internal Server Error" },
         { status: 500 }

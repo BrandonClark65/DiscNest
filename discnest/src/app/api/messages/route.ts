@@ -3,10 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import MessageThread from "@/models/MessageThread";
 import "@/models/Listing";
+import User from "@/models/User";
 import { connectToDatabase } from "@/lib/mongodb";
 import type { Thread } from "@/types/thread";
 import type { Message } from "@/types/message";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 
 // ----------------------
@@ -88,13 +89,55 @@ const createThreadHandler = async (req: Request) => {
     messages,
   });
 
-  thread = await MessageThread.findById(thread._id)
-    .populate("participants", "_id name")
-    .populate("listingId", "title imageUrls")
-    .populate("requestId", "title")
-    .populate("messages.sender", "_id name");
+  // Use manual population to ensure both participants are returned even if populate filters them
+  // This prevents issues where Mongoose populate silently filters out missing documents
+  const populatedThread = await MessageThread.findById(thread._id).lean() as any;
+  
+  if (!populatedThread) {
+    return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+  }
 
-  return NextResponse.json(thread);
+  // Manually populate participants to ensure all are included
+  const participantIds = populatedThread.participants.map((p: any) => 
+    typeof p === 'string' ? p : p.toString()
+  );
+  const participants = await User.find({ _id: { $in: participantIds } }, "_id name").lean();
+  const participantMap = new Map(participants.map((p: any) => [p._id.toString(), p]));
+  
+  populatedThread.participants = populatedThread.participants.map((p: any) => {
+    const id = typeof p === 'string' ? p : p.toString();
+    return participantMap.get(id) || { _id: id, name: "Unknown" };
+  });
+
+  // Populate listingId if it exists
+  if (populatedThread.listingId) {
+    const Listing = (await import("@/models/Listing")).default;
+    const listing = await Listing.findById(populatedThread.listingId, "title imageUrls").lean();
+    if (listing) populatedThread.listingId = listing;
+  }
+
+  // Populate requestId if it exists
+  if (populatedThread.requestId) {
+    const DiscRequest = (await import("@/models/DiscRequest")).default;
+    const request = await DiscRequest.findById(populatedThread.requestId, "title").lean();
+    if (request) populatedThread.requestId = request;
+  }
+
+  // Populate message senders
+  if (populatedThread.messages?.length > 0) {
+    const senderIds = populatedThread.messages.map((m: any) => 
+      typeof m.sender === 'string' ? m.sender : m.sender.toString()
+    );
+    const senders = await User.find({ _id: { $in: senderIds } }, "_id name").lean();
+    const senderMap = new Map(senders.map((s: any) => [s._id.toString(), s]));
+    
+    populatedThread.messages = populatedThread.messages.map((m: any) => ({
+      ...m,
+      sender: senderMap.get(typeof m.sender === 'string' ? m.sender : m.sender.toString()) || { _id: m.sender, name: "Unknown" }
+    }));
+  }
+
+  return NextResponse.json(populatedThread);
 };
 
 
