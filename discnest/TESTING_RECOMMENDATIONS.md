@@ -22,69 +22,69 @@
 
 ### 🔴 HIGH PRIORITY
 
-#### 1. Profile API (`/api/profile`)
+#### 1. Profile API (`/api/profile`)✅
 **Why**: Core user functionality, validates complex Zod schemas
 
 **Tests needed**:
-- `GET /api/profile` 
-  - Requires authentication
-  - Returns current user profile
-  - Returns 404 if user not found
+- ✅`GET /api/profile` 
+  - ✅Requires authentication
+  - ✅Returns current user profile
+  - ✅Returns 404 if user not found
   
-- `POST /api/profile`
-  - Requires authentication
-  - Validates input with Zod schema
-  - Updates user profile fields
-  - Handles partial updates
-  - Returns validation errors for invalid data
+- ✅`POST /api/profile`
+  - ✅Requires authentication
+  - ✅Validates input with Zod schema
+  - ✅Updates user profile fields
+  - ✅Handles partial updates
+  - ✅Returns validation errors for invalid data
 
 **File**: `tests/integration/api/profile.test.ts`
 
 ---
 
-#### 2. Listings Individual Routes (`/api/listings/[id]`)
+#### 2. Listings Individual Routes (`/api/listings/[id]`)✅
 **Why**: Completes listings coverage, includes ownership checks (security-critical)
 
 **Tests needed**:
-- `GET /api/listings/[id]`
-  - Returns listing by ID
-  - Returns 404 for non-existent listing
+- ✅`GET /api/listings/[id]`
+  - ✅Returns listing by ID
+  - ✅Returns 404 for non-existent listing
   
-- `PATCH /api/listings/[id]` (mark as sold)
-  - Requires authentication
-  - Only owner can mark as sold
-  - Returns 403 for non-owner
-  - Updates listing.sold flag
-  - Sends system message to threads
+- ✅`PATCH /api/listings/[id]` (mark as sold)
+  - ✅Requires authentication
+  - ✅Only owner can mark as sold
+  - ✅Returns 403 for non-owner
+  - ✅Updates listing.sold flag
+  - ✅Sends system message to threads
   
-- `DELETE /api/listings/[id]`
-  - Requires authentication
-  - Only owner can delete
-  - Returns 403 for non-owner
-  - Deletes Cloudinary images
-  - Sends system message to threads
+-✅ `DELETE /api/listings/[id]`
+  - ✅Requires authentication
+  - ✅Only owner can delete
+  - ✅Returns 403 for non-owner
+  - ✅Deletes Cloudinary images
+  - ✅Sends system message to threads
 
 **File**: `tests/integration/api/listings-id.test.ts`
 
 ---
 
-#### 3. User Disc Routes (Complete Disc Management)
+#### 3. User Disc Routes (Complete Disc Management)✅
 **Why**: Completes the disc management suite you've already started
 
 **Tests needed**:
-- `POST /api/user/discs/update`
-  - Requires authentication
-  - Validates disc ownership
-  - Updates plastic, wearLevel, notes, color, weight
-  - Validates wearLevel range (0-100)
-  - Validates weight range (100-200)
+- ✅`POST /api/user/discs/update`
+  - ✅Requires authentication
+  - ✅Validates disc ownership
+  - ✅Updates plastic, wearLevel, notes, color, weight
+  - ✅Validates wearLevel range (0-100)
+  - ✅Validates weight range (100-200)
   
-- `POST /api/user/discs/reorder`
-  - Requires authentication
-  - Reorders discs in bag
-  - Reorders discs in shelf
-  - Validates zone ("bag" or "shelf")
-  - Validates orderedIds array
+- ✅`POST /api/user/discs/reorder`
+  - ✅Requires authentication
+  - ✅Reorders discs in bag
+  - ✅Reorders discs in shelf
+  - ✅Validates zone ("bag" or "shelf")
+  - ✅Validates orderedIds array
 
 **File**: Extend `tests/integration/api/userDiscs.test.ts`
 
@@ -118,22 +118,27 @@
 
 ### 🟡 MEDIUM PRIORITY
 
-#### 5. Requests Routes (Complete Coverage)
+#### 5. Requests Routes (Complete Coverage)✅
 **Why**: Currently only has minimal GET test
 
 **Tests needed**:
-- `POST /api/requests`
-  - Requires authentication
-  - Validates required fields (title, location)
-  - Creates disc request with location
-  - Returns 400 for missing title
-  - Returns 400 for missing location
+- ✅`POST /api/requests`
+  - ✅Requires authentication
+  - ✅Validates required fields (title, location)
+  - ✅Creates disc request with location
+  - ✅Returns 400 for missing title
+  - ✅Returns 400 for missing location
+  - ✅Returns 400 for null latitude
+  - ✅Returns 400 for null longitude
+  - ✅Creates request with minimal required fields
+  - ✅Creates request with all optional fields
   
-- `GET /api/requests/[id]` (if route exists)
-  - Returns single request
-  - Returns 404 for non-existent request
+- ✅`GET /api/requests/[id]`
+  - ✅Returns single request
+  - ✅Returns 404 for non-existent request
+  - ✅Returns 500 for invalid ID format
 
-**File**: Extend `tests/integration/api/requests.test.ts`
+**File**: `tests/integration/api/requests.test.ts` ✅ COMPLETE
 
 ---
 
