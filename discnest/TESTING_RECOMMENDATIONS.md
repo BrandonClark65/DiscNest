@@ -301,22 +301,29 @@
 
 ---
 
-#### 14. Reverse Geocode API (`/api/reverse-geocode`) 🟢 **LOW**
+#### 14. Reverse Geocode API (`/api/reverse-geocode`) ✅ **COMPLETE**
 **Why**: Utility endpoint for location services
 
 **Tests needed**:
-- `GET /api/reverse-geocode`
-  - Validates lat and lng query parameters
-  - Returns 400 for missing lat/lng
-  - Returns 500 if OPENCAGE_API_KEY not configured
-  - Calls OpenCage API
-  - Extracts city and state from response
-  - Handles OpenCage API failures
-  - Handles missing location data gracefully
+- ✅`GET /api/reverse-geocode`
+  - ✅Validates lat and lng query parameters
+  - ✅Returns 400 for missing lat/lng
+  - ✅Returns 500 if OPENCAGE_API_KEY not configured
+  - ✅Calls OpenCage API
+  - ✅Extracts city and state from response
+  - ✅Handles OpenCage API failures
+  - ✅Handles missing location data gracefully
+  - ✅Handles missing results property gracefully
+  - ✅Handles missing components property gracefully
+  - ✅Extracts city from town when city is missing
+  - ✅Extracts city from village when city and town are missing
+  - ✅Returns empty city when city, town, and village are missing
+  - ✅Handles missing state property gracefully
+  - ✅Handles OpenCage API non-ok response
 
-**File**: `tests/integration/api/reverse-geocode.test.ts`
+**File**: `tests/integration/api/reverse-geocode.test.ts` ✅ COMPLETE
 
-**Mocking needed**: OpenCage API (fetch)
+**Mocking needed**: OpenCage API (fetch) ✅ IMPLEMENTED
 
 ---
 
