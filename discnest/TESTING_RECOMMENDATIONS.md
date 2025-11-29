@@ -283,18 +283,21 @@
 
 ---
 
-#### 13. Discs Catalog API (`/api/discs`) 🟡 **MEDIUM**
+#### 13. Discs Catalog API (`/api/discs`) ✅ **COMPLETE**
 **Why**: Public catalog endpoint, used by frontend
 
 **Tests needed**:
-- `GET /api/discs`
-  - Returns only catalog discs (no userId)
-  - Excludes user-owned discs
-  - Returns correct fields (name, brand, type, addedAt, image, stability, flight)
-  - Sorted by addedAt descending
-  - Handles empty catalog gracefully
+- ✅`GET /api/discs`
+  - ✅Returns only catalog discs (no userId)
+  - ✅Excludes user-owned discs
+  - ✅Returns correct fields (name, brand, type, addedAt, image, stability, flight)
+  - ✅Sorted by addedAt descending
+  - ✅Handles empty catalog gracefully
+  - ✅Handles discs with missing optional fields
+  - ✅Returns multiple catalog discs correctly
+  - ✅Handles flight object with partial data
 
-**File**: `tests/integration/api/discs.test.ts`
+**File**: `tests/integration/api/discs.test.ts` ✅ COMPLETE
 
 ---
 
