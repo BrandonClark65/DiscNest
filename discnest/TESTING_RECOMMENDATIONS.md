@@ -241,21 +241,23 @@
 
 ---
 
-#### 11. Report API (`/api/report`) ⚠️ **IMPORTANT**
+#### 11. Report API (`/api/report`) ✅ **COMPLETE**
 **Why**: Critical for moderation, prevents self-reporting, increments moderation flags
 
 **Tests needed**:
-- `POST /api/report`
-  - Requires authentication
-  - Validates reportedUserId is required
-  - Prevents self-reporting (returns 400)
-  - Creates UserReport document
-  - Increments reported user's moderationFlags
-  - Updates lastFlaggedAt timestamp
-  - Handles optional fields (threadId, messageId, listingId, requestId, reason)
-  - Returns 400 for missing reportedUserId
+- ✅`POST /api/report`
+  - ✅Requires authentication
+  - ✅Validates reportedUserId is required
+  - ✅Prevents self-reporting (returns 400)
+  - ✅Creates UserReport document
+  - ✅Increments reported user's moderationFlags
+  - ✅Updates lastFlaggedAt timestamp
+  - ✅Handles optional fields (threadId, listingId, requestId, reason)
+  - ✅Returns 400 for missing reportedUserId
 
-**File**: `tests/integration/api/report.test.ts`
+**File**: `tests/integration/api/report.test.ts` ✅ COMPLETE
+
+**Note**: `messageId` is not in the UserReport schema, so it's not tested. The route handler accepts it but it's not persisted.
 
 ---
 
