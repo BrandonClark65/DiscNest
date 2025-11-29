@@ -220,22 +220,24 @@
 
 ---
 
-#### 10. Profile Avatar API (`/api/profile/avatar`) ⚠️ **IMPORTANT**
+#### 10. Profile Avatar API (`/api/profile/avatar`) ✅ **COMPLETE**
 **Why**: User-facing feature, integrates with upload API, handles Cloudinary cleanup
 
 **Tests needed**:
-- `POST /api/profile/avatar`
-  - Requires authentication
-  - Validates file upload
-  - Calls upload API internally
-  - Deletes old avatar from Cloudinary
-  - Updates user avatarUrl and avatarPublicId
-  - Handles upload API failures
-  - Handles Cloudinary deletion failures gracefully
+- ✅`POST /api/profile/avatar`
+  - ✅Requires authentication
+  - ✅Validates file upload
+  - ✅Calls upload API internally
+  - ✅Deletes old avatar from Cloudinary
+  - ✅Updates user avatarUrl and avatarPublicId
+  - ✅Handles upload API failures
+  - ✅Handles Cloudinary deletion failures gracefully
+  - ✅Handles flagged images from upload API
+  - ✅Passes cookie header to upload API
 
-**File**: `tests/integration/api/profile-avatar.test.ts`
+**File**: `tests/integration/api/profile-avatar.test.ts` ✅ COMPLETE
 
-**Mocking needed**: Cloudinary, internal `/api/upload` call
+**Mocking needed**: Cloudinary, internal `/api/upload` call ✅ IMPLEMENTED
 
 ---
 
