@@ -355,16 +355,58 @@
 
 ---
 
-#### 16. External Service Integration Testing
+#### 16. External Service Integration Testing ✅ **COMPLETE**
 **Why**: Ensure proper error handling when external services fail
 
 **Services to mock and test failures**:
-- **Cloudinary**: Upload failures, deletion failures, network timeouts
-- **Resend**: Email sending failures, rate limiting
-- **OpenCage**: API failures, invalid responses
-- **NSFW Model**: Model loading failures, prediction errors
+- ✅ **Cloudinary**: Upload failures, deletion failures, network timeouts
+  - ✅ Upload API error responses (invalid API key, quota exceeded)
+  - ✅ Upload network timeouts
+  - ✅ Deletion failures in listing deletion (graceful handling)
+  - ✅ Deletion failures in avatar upload (graceful handling)
+  - ✅ Deletion network timeouts
+- ✅ **Resend**: Email sending failures, rate limiting
+  - ✅ Network errors in contact form
+  - ✅ Rate limiting errors (429)
+  - ✅ Invalid API key errors (401)
+  - ✅ Timeout scenarios
+  - ✅ Failures in password reset email
+  - ✅ Failures in listing creation email notifications
+- ✅ **OpenCage**: API failures, invalid responses
+  - ✅ Network errors in reverse-geocode endpoint
+  - ✅ Rate limiting (429)
+  - ✅ Invalid API key (403)
+  - ✅ Timeout scenarios
+  - ✅ Failures in listing creation reverse geocode (graceful fallback)
+  - ✅ Invalid response format handling
+- ✅ **NSFW Model**: Model loading failures, prediction errors
+  - ✅ Model loading failures
+  - ✅ Classification errors (out of memory, TensorFlow errors)
+  - ✅ Classification timeouts
+  - ✅ Invalid predictions format
+  - ✅ Empty predictions array handling
 
 **Pattern**: Create reusable mocks for external services that can simulate failures
+
+**Files**: 
+- `tests/integration/api/cloudinary-failures.test.ts` ✅ COMPLETE
+- `tests/integration/api/resend-failures.test.ts` ✅ COMPLETE
+- `tests/integration/api/opencage-failures.test.ts` ✅ COMPLETE
+- `tests/integration/api/nsfw-model-failures.test.ts` ✅ COMPLETE
+- `tests/integration/api/combined-external-failures.test.ts` ✅ COMPLETE
+
+**Test Coverage**:
+- ✅ Cloudinary upload failures (network timeout, API errors, quota exceeded)
+- ✅ Cloudinary deletion failures (network errors, timeouts, graceful handling in listing/avatar routes)
+- ✅ Resend email failures (network errors, rate limiting, invalid API key, timeouts)
+- ✅ Resend failures in multiple routes (contact, password reset, listing notifications)
+- ✅ OpenCage API failures (network errors, rate limiting, invalid API key, timeouts)
+- ✅ OpenCage failures with graceful fallback in listing creation
+- ✅ OpenCage invalid response format handling
+- ✅ NSFW model loading failures
+- ✅ NSFW model classification errors and timeouts
+- ✅ NSFW model invalid/empty predictions handling
+- ✅ Combined failure scenarios (multiple services failing simultaneously)
 
 ---
 

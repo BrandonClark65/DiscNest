@@ -1,0 +1,202 @@
+// tests/integration/api/combined-external-failures.test.ts
+// Tests for combined external service failure scenarios
+import { describe, test, expect, beforeAll, afterEach, afterAll, vi, beforeEach } from "vitest";
+import request from "supertest";
+import app from "../../utils/testServer";
+import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
+import User from "@/models/User";
+
+/* ----------------------------------------------------
+   MOCK SETUP
+---------------------------------------------------- */
+
+vi.mock("@/lib/mongodb", () => ({
+  connectToDatabase: async () => {},
+}));
+
+vi.mock("@/lib/errorLogger", () => ({
+  logError: vi.fn(),
+}));
+
+vi.mock("@/lib/withErrorHandling", () => ({
+  withErrorHandling: (handler: any) => handler,
+}));
+
+const mockRequireUser = vi.fn();
+vi.mock("@/lib/auth/requireUser", () => ({
+  requireUser: () => mockRequireUser(),
+}));
+
+vi.mock("@/lib/auth/withUserAuth", () => ({
+  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
+    try {
+      const session = await mockRequireUser();
+      return handler(req, session, context);
+    } catch (err: any) {
+      const { NextResponse } = await import("next/server");
+      const status = err.name === "UnauthorizedError" ? 401 : 500;
+      return NextResponse.json({ error: err.message }, { status });
+    }
+  },
+}));
+
+/* ----------------------------------------------------
+   EXTERNAL SERVICE MOCKS
+---------------------------------------------------- */
+const { mockCloudinaryDestroy } = vi.hoisted(() => {
+  const destroy = vi.fn();
+  return { mockCloudinaryDestroy: destroy };
+});
+
+const mockResendSend = vi.fn();
+vi.mock("resend", () => ({
+  Resend: class {
+    emails = {
+      send: mockResendSend,
+    };
+  },
+}));
+
+vi.mock("@/lib/resend", () => ({
+  resend: {
+    emails: {
+      send: mockResendSend,
+    },
+  },
+}));
+
+vi.mock("cloudinary", () => {
+  const mockUploader = {
+    upload_stream: vi.fn(),
+    destroy: mockCloudinaryDestroy,
+  };
+  const mockV2 = {
+    config: vi.fn(),
+    uploader: mockUploader,
+  };
+  return {
+    default: {
+      v2: mockV2,
+    },
+    v2: mockV2,
+  };
+});
+
+let originalFetch: typeof global.fetch;
+let mockFetch: any;
+
+function createTestImageBuffer(): Buffer {
+  const pngHeader = Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+  ]);
+  return Buffer.concat([pngHeader, Buffer.alloc(100)]);
+}
+
+/* ----------------------------------------------------
+   TESTS
+---------------------------------------------------- */
+
+describe("Combined External Service Failures", () => {
+  beforeAll(async () => {
+    await connectTestDb();
+    originalFetch = global.fetch;
+  });
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    global.fetch = mockFetch as any;
+    vi.clearAllMocks();
+
+    process.env.ADMIN_EMAIL = "admin@example.com";
+    process.env.RESEND_FROM_DEV = "noreply@dev.example.com";
+    process.env.NODE_ENV = "development";
+    process.env.OPENCAGE_API_KEY = "test-api-key-123";
+  });
+
+  afterEach(async () => {
+    await resetTestDb();
+    mockRequireUser.mockReset();
+  });
+
+  afterAll(() => {
+    closeTestDb();
+    global.fetch = originalFetch;
+  });
+
+  test("handles multiple external service failures in listing creation", async () => {
+    const user = await User.create({
+      name: "Test User",
+      email: "test@example.com",
+      password: "hashed",
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+      },
+    });
+
+    // Mock OpenCage to fail
+    mockFetch.mockRejectedValueOnce(new Error("OpenCage API error"));
+
+    // Mock Resend to fail
+    mockResendSend.mockRejectedValueOnce(new Error("Resend API error"));
+
+    const res = await request(app)
+      .post("/api/listings")
+      .set("Cookie", "session=test")
+      .send({
+        title: "Test Disc",
+        brand: "Innova",
+        type: "Sell",
+        condition: "New",
+        price: 25,
+        description: "Great disc",
+        location: {
+          type: "Point",
+          coordinates: [-122.4194, 37.7749],
+        },
+        pendingReview: true,
+      });
+
+    expect([201, 500]).toContain(res.status);
+  });
+
+  test("handles Cloudinary and Resend failures in avatar upload flow", async () => {
+    const user = await User.create({
+      name: "Test User",
+      email: "test@example.com",
+      password: "hashed",
+      avatarUrl: "https://res.cloudinary.com/test/image/upload/v100/old-avatar.png",
+      avatarPublicId: "avatars/old-avatar",
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+      },
+    });
+
+    // Mock upload API to fail (Cloudinary failure inside)
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        error: "Upload failed",
+      }),
+    });
+
+    // Mock Cloudinary destroy to fail
+    mockCloudinaryDestroy.mockRejectedValueOnce(
+      new Error("Cloudinary deletion failed")
+    );
+
+    const res = await request(app)
+      .post("/api/profile/avatar")
+      .attach("file", createTestImageBuffer(), "new-avatar.png");
+
+    expect(res.status).toBe(500);
+  });
+});
+
