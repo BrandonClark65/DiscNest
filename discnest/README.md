@@ -48,6 +48,8 @@ disc-nest/
 │ └── styles/ # Tailwind setup and global styles
 │
 ├── public/ # Static assets (images, icons)
+├── docs/ # Project documentation
+│   └── testing/ # Testing documentation
 ├── .env.local # Local environment variables
 ├── next.config.js # Next.js config
 ├── package.json
@@ -124,6 +126,15 @@ Once running, open:
 | `npm run start` | Serve built app                          |
 | `npm run lint`  | Run ESLint checks                        |
 | `npm run seed`  | Run data seeding script (if implemented) |
+
+## 📚 Documentation
+
+Additional documentation is available in the [`docs/`](./docs/) directory:
+
+- **[Testing Documentation](./docs/testing/)** - Coverage, testing recommendations, and performance reports
+  - [Coverage Guide](./docs/testing/COVERAGE.md) - Test coverage setup and tracking
+  - [Testing Recommendations](./docs/testing/TESTING_RECOMMENDATIONS.md) - Testing roadmap
+  - [Performance Report](./docs/testing/PERFORMANCE_REPORT.md) - API performance benchmarks
 
 ## Internal Admin Utilities
 - Seeding Discs: Admin can seed a base set of discs for development or testing.

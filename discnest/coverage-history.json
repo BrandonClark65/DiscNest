@@ -1,0 +1,27 @@
+[
+  {
+    "timestamp": "2025-12-01T23:35:08.332Z",
+    "metrics": {
+      "lines": {
+        "total": 10808,
+        "covered": 7032,
+        "pct": 65.06291635825315
+      },
+      "statements": {
+        "total": 3004,
+        "covered": 1717,
+        "pct": 57.15712383488681
+      },
+      "functions": {
+        "total": 781,
+        "covered": 422,
+        "pct": 54.03329065300896
+      },
+      "branches": {
+        "total": 2362,
+        "covered": 1194,
+        "pct": 50.55038103302286
+      }
+    }
+  }
+]

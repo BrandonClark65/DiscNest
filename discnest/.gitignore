@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+# Keep coverage history for tracking trends
+!coverage-history.json
 
 # next.js
 /.next/
