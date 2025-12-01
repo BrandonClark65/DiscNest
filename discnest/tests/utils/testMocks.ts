@@ -22,7 +22,9 @@
 
 import { vi } from "vitest";
 import { UnauthorizedError } from "@/lib/errors/UnauthorizedError";
-import type { User as UserType } from "@/models/User";
+import User from "@/models/User";
+
+type UserType = InstanceType<typeof User>;
 
 /* ============================================================
    AUTHENTICATION MOCKS
