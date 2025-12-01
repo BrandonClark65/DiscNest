@@ -96,7 +96,12 @@ vi.mock("@/lib/nsfwModel", () => ({
   ]),
 }));
 
-// Performance measurement helper
+/**
+ * Performance measurement helper
+ * Measures the execution time of an async function
+ * @param fn - Async function to measure
+ * @returns Promise resolving to object with result and execution time in milliseconds
+ */
 function measureTime(fn: () => Promise<any>): Promise<{ result: any; time: number }> {
   return new Promise(async (resolve) => {
     const start = Date.now();
@@ -148,7 +153,15 @@ describe("Performance & Load Testing", () => {
   afterEach(resetTestDb);
   afterAll(closeTestDb);
 
+  /**
+   * Response time benchmarks for key API endpoints
+   * These tests ensure endpoints meet performance thresholds under various load conditions
+   */
   describe("Response Time Benchmarks", () => {
+    /**
+     * Tests marketplace listings endpoint with small dataset (10 listings)
+     * Verifies response time stays under 500ms for typical use case
+     */
     test("GET /api/listings (marketplace) should respond within 500ms for small dataset", async () => {
       const user = await createTestUser();
       
@@ -167,6 +180,11 @@ describe("Performance & Load Testing", () => {
       expect(time).toBeLessThan(500); // Should be fast for small dataset
     });
 
+    /**
+     * Tests marketplace listings endpoint with medium dataset (100 listings)
+     * Verifies response time stays under 2s for larger datasets
+     * This tests pagination and query efficiency
+     */
     test("GET /api/listings (marketplace) should respond within 2s for 100 listings", async () => {
       const user = await createTestUser();
       
@@ -206,6 +224,11 @@ describe("Performance & Load Testing", () => {
       expect(time).toBeLessThan(300);
     });
 
+    /**
+     * Tests messages endpoint with moderate number of threads (50)
+     * Verifies efficient population and sorting of message threads
+     * Tests database query optimization for user's message threads
+     */
     test("GET /api/messages should respond within 500ms for 50 threads", async () => {
       const user1 = await createTestUser({ email: "user1@test.com" });
       const user2 = await createTestUser({ email: "user2@test.com" });
@@ -280,7 +303,17 @@ describe("Performance & Load Testing", () => {
     });
   });
 
+  /**
+   * Concurrent request handling tests
+   * Verifies the API can handle multiple simultaneous requests without errors
+   * Tests for race conditions and database connection pooling
+   */
   describe("Concurrent Request Handling", () => {
+    /**
+     * Tests handling of 10 concurrent GET requests to listings endpoint
+     * Verifies no race conditions occur and all requests complete successfully
+     * Tests database connection pooling and query isolation
+     */
     test("should handle 10 concurrent GET /api/listings requests", async () => {
       const user = await createTestUser();
       

@@ -123,6 +123,16 @@ describe("Combined External Service Failures", () => {
     global.fetch = originalFetch;
   });
 
+  /**
+   * Tests listing creation when multiple external services fail simultaneously
+   * Simulates real-world scenario where OpenCage (reverse geocoding) and Resend (email) both fail
+   * Verifies graceful error handling and that partial failures don't corrupt data
+   * 
+   * Expected behavior:
+   * - Listing should still be created (core functionality works)
+   * - OpenCage failure should be handled gracefully (location may be missing)
+   * - Resend failure should be logged but not block listing creation
+   */
   test("handles multiple external service failures in listing creation", async () => {
     const user = await User.create({
       name: "Test User",
@@ -163,6 +173,16 @@ describe("Combined External Service Failures", () => {
     expect([201, 500]).toContain(res.status);
   });
 
+  /**
+   * Tests avatar upload when both Cloudinary (image storage) and Resend (email) fail
+   * Simulates failure scenario where image upload fails and cleanup also fails
+   * Verifies error handling prevents partial state and provides clear error messages
+   * 
+   * Expected behavior:
+   * - Upload failure should be caught and returned as 500 error
+   * - Old avatar should remain unchanged if new upload fails
+   * - Error should be logged but not crash the application
+   */
   test("handles Cloudinary and Resend failures in avatar upload flow", async () => {
     const user = await User.create({
       name: "Test User",
