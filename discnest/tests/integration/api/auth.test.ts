@@ -1,41 +1,21 @@
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { setupCommonMocks, setupResendMocks, mockSendEmail, resetAllMocks } from "../../utils/testMocks";
 
-// Mock database connection
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-// Mock error logger
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-// Mock withErrorHandling
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-// Mock Resend
-const mockSendEmail = vi.fn().mockResolvedValue({ id: "email-123" });
-vi.mock("@/lib/resend", () => ({
-  resend: {
-    emails: {
-      send: mockSendEmail,
-    },
-  },
-}));
+// Setup mocks
+setupCommonMocks();
+setupResendMocks();
 
 describe("POST /api/auth/signup", () => {
   beforeAll(connectTestDb);
   afterEach(async () => {
     await resetTestDb();
-    mockSendEmail.mockClear();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 
@@ -155,8 +135,7 @@ describe("POST /api/auth/request-password-reset", () => {
   beforeAll(connectTestDb);
   afterEach(async () => {
     await resetTestDb();
-    mockSendEmail.mockClear();
-    vi.clearAllMocks();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 
@@ -284,7 +263,7 @@ describe("POST /api/auth/reset-password", () => {
   beforeAll(connectTestDb);
   afterEach(async () => {
     await resetTestDb();
-    vi.clearAllMocks();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 

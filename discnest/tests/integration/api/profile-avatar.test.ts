@@ -1,57 +1,14 @@
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi, beforeEach } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll, beforeEach } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
 import { UnauthorizedError } from "@/lib/errors/UnauthorizedError";
+import { setupStandardMocks, setupCloudinaryMocks, mockRequireUser, mockCloudinaryDestroy, resetAllMocks } from "../../utils/testMocks";
 
-// Mock database connection
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-// Mock error logger
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-// Mock withErrorHandling
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-// Mock requireUser for authenticated routes
-const mockRequireUser = vi.fn();
-vi.mock("@/lib/auth/requireUser", () => ({
-  requireUser: () => mockRequireUser(),
-}));
-
-// Mock withUserAuth
-vi.mock("@/lib/auth/withUserAuth", () => ({
-  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
-    try {
-      const session = await mockRequireUser();
-      return handler(req, session, context);
-    } catch (err: any) {
-      const { NextResponse } = await import("next/server");
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
-    }
-  },
-}));
-
-// Mock Cloudinary
-const mockCloudinaryDestroy = vi.fn();
-vi.mock("cloudinary", () => ({
-  default: {
-    v2: {
-      config: vi.fn(),
-      uploader: {
-        destroy: mockCloudinaryDestroy,
-      },
-    },
-  },
-}));
+// Setup mocks
+setupStandardMocks();
+setupCloudinaryMocks();
 
 // Helper to create a test image buffer (minimal PNG)
 function createTestImageBuffer(): Buffer {
@@ -81,8 +38,7 @@ describe("POST /api/profile/avatar", () => {
 
   afterEach(async () => {
     await resetTestDb();
-    mockRequireUser.mockReset();
-    mockFetch.mockReset();
+    resetAllMocks();
     // Restore original fetch
     global.fetch = originalFetch;
   });

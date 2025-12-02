@@ -1,54 +1,16 @@
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import MessageThread from "@/models/MessageThread";
 import User from "@/models/User";
 import Listing from "@/models/Listing";
+import { setupCommonMocks, setupAuthMocks, setupModerationMocks, mockGetServerSession, mockIsProfane, resetAllMocks } from "../../utils/testMocks";
 
-// Mock external dependencies
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-vi.mock("openai", () => {
-  const mockModerationsCreate = vi.fn().mockResolvedValue({
-    results: [{ flagged: false, categories: {} }],
-  });
-
-  return {
-    __esModule: true,
-    default: class OpenAI {
-      moderations = {
-        create: mockModerationsCreate,
-      };
-    },
-  };
-});
-
-const mockIsProfane = vi.fn().mockReturnValue(false);
-vi.mock("bad-words", () => ({
-  Filter: class Filter {
-    isProfane = mockIsProfane;
-  },
-}));
-
-const mockGetServerSession = vi.fn();
-vi.mock("next-auth", () => ({
-  getServerSession: () => mockGetServerSession(),
-}));
-
-vi.mock("@/lib/auth", () => ({
-  authOptions: {},
-}));
+// Setup mocks
+setupCommonMocks();
+setupAuthMocks();
+setupModerationMocks();
 
 // Helper to create unique shareableBagId for tests
 let bagIdCounter = 0;

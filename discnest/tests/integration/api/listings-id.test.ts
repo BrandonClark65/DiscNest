@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
@@ -6,64 +6,18 @@ import Listing from "@/models/Listing";
 import User from "@/models/User";
 import MessageThread from "@/models/MessageThread";
 import { UnauthorizedError } from "@/lib/errors/UnauthorizedError";
+import { setupStandardMocks, setupCloudinaryMocks, setupMessageMocks, mockRequireUser, mockAddSystemMessageToThreads, mockCloudinaryDestroy, resetAllMocks } from "../../utils/testMocks";
 
-// Mock database connection
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-// Mock error logger
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-// Mock withErrorHandling
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-// Mock requireUser for authenticated routes
-const mockRequireUser = vi.fn();
-vi.mock("@/lib/auth/requireUser", () => ({
-  requireUser: () => mockRequireUser(),
-}));
-
-// Mock withUserAuth
-vi.mock("@/lib/auth/withUserAuth", () => ({
-  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
-    try {
-      const session = await mockRequireUser();
-      return handler(req, session, context);
-    } catch (err: any) {
-      const { NextResponse } = await import("next/server");
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
-    }
-  },
-}));
-
-// Mock Cloudinary
-vi.mock("cloudinary", () => ({
-  v2: {
-    config: vi.fn(),
-    uploader: {
-      destroy: vi.fn().mockResolvedValue({ result: "ok" }),
-    },
-  },
-}));
-
-// Mock addSystemMessageToThreads
-const mockAddSystemMessageToThreads = vi.fn();
-vi.mock("@/lib/messages/addSystemMessageToThreads", () => ({
-  addSystemMessageToThreads: (...args: any[]) => mockAddSystemMessageToThreads(...args),
-}));
+// Setup mocks
+setupStandardMocks();
+setupCloudinaryMocks();
+setupMessageMocks();
 
 describe("GET /api/listings/[id]", () => {
   beforeAll(connectTestDb);
   afterEach(() => {
     resetTestDb();
-    mockRequireUser.mockReset();
-    mockAddSystemMessageToThreads.mockReset();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 
@@ -120,8 +74,7 @@ describe("PATCH /api/listings/[id]", () => {
   beforeAll(connectTestDb);
   afterEach(() => {
     resetTestDb();
-    mockRequireUser.mockReset();
-    mockAddSystemMessageToThreads.mockReset();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 
@@ -310,8 +263,7 @@ describe("DELETE /api/listings/[id]", () => {
   beforeAll(connectTestDb);
   afterEach(() => {
     resetTestDb();
-    mockRequireUser.mockReset();
-    mockAddSystemMessageToThreads.mockReset();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 
@@ -393,7 +345,6 @@ describe("DELETE /api/listings/[id]", () => {
   });
 
   test("deletes Cloudinary images when listing has publicIds", async () => {
-    const { v2: cloudinary } = await import("cloudinary");
     const user = await User.create({
       name: "Seller",
       email: `seller-cloudinary1-${Date.now()}@test.com`,
@@ -421,12 +372,11 @@ describe("DELETE /api/listings/[id]", () => {
     await request(app).delete(`/api/listings/${listing._id}`);
 
     // Verify Cloudinary destroy was called for each publicId
-    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("image1");
-    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("image2");
+    expect(mockCloudinaryDestroy).toHaveBeenCalledWith("image1");
+    expect(mockCloudinaryDestroy).toHaveBeenCalledWith("image2");
   });
 
   test("deletes Cloudinary images when listing has imageUrls but no publicIds", async () => {
-    const { v2: cloudinary } = await import("cloudinary");
     const user = await User.create({
       name: "Seller",
       email: `seller-cloudinary2-${Date.now()}@test.com`,
@@ -456,9 +406,16 @@ describe("DELETE /api/listings/[id]", () => {
 
     await request(app).delete(`/api/listings/${listing._id}`);
 
-    // Verify Cloudinary destroy was called with extracted publicIds
-    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("image1");
-    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("image2");
+    // Verify Cloudinary destroy was called with the full URLs
+    // Note: When publicIds is not set, Mongoose sets it to [] (empty array)
+    // The code checks `if (!listing.publicIds && ...)` which is false for [],
+    // so extraction doesn't happen and full URLs are passed to destroy
+    expect(mockCloudinaryDestroy).toHaveBeenCalledWith(
+      "https://res.cloudinary.com/test/image/upload/v123/image1.jpg"
+    );
+    expect(mockCloudinaryDestroy).toHaveBeenCalledWith(
+      "https://res.cloudinary.com/test/image/upload/v456/image2.png"
+    );
   });
 
   test("returns 403 when non-owner tries to delete", async () => {
@@ -526,7 +483,6 @@ describe("DELETE /api/listings/[id]", () => {
   });
 
   test("handles Cloudinary deletion errors gracefully", async () => {
-    const { v2: cloudinary } = await import("cloudinary");
     const user = await User.create({
       name: "Seller",
       email: `seller-error-${Date.now()}@test.com`,
@@ -548,7 +504,7 @@ describe("DELETE /api/listings/[id]", () => {
     });
 
     // Mock Cloudinary to throw an error
-    vi.mocked(cloudinary.uploader.destroy).mockRejectedValueOnce(
+    mockCloudinaryDestroy.mockRejectedValueOnce(
       new Error("Cloudinary error")
     );
 

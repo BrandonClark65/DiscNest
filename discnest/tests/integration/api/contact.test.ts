@@ -1,40 +1,12 @@
 // tests/integration/api/contact.test.ts
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi, beforeEach } from "vitest";
+import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
+import { setupCommonMocks, setupResendMocks, mockSendEmail, resetAllMocks } from "../../utils/testMocks";
 
-/* ----------------------------------------------------
-   MOCK DATABASE (use in-memory DB instead of Mongo)
----------------------------------------------------- */
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {}, // no-op
-}));
-
-/* ----------------------------------------------------
-   MOCK ERROR LOGGER
----------------------------------------------------- */
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(), // disable email sending
-}));
-
-/* ----------------------------------------------------
-   MOCK withErrorHandling (so it doesn't wrap errors)
----------------------------------------------------- */
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler, // passthrough
-}));
-
-/* ----------------------------------------------------
-   MOCK RESEND
----------------------------------------------------- */
-const mockSendEmail = vi.fn().mockResolvedValue({ id: "email-123" });
-vi.mock("resend", () => ({
-  Resend: class {
-    emails = {
-      send: mockSendEmail,
-    };
-  },
-}));
+// Setup mocks
+setupCommonMocks();
+setupResendMocks();
 
 /* ----------------------------------------------------
    TESTS
@@ -44,7 +16,7 @@ describe("POST /api/contact", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetAllMocks();
     // Reset environment variables
     process.env = {
       ...originalEnv,
@@ -301,4 +273,3 @@ describe("POST /api/contact", () => {
     );
   });
 });
-

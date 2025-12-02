@@ -1,32 +1,15 @@
 // tests/integration/api/discs.test.ts
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import Disc from "@/models/Disc";
 import User from "@/models/User";
 import mongoose from "mongoose";
+import { setupCommonMocks } from "../../utils/testMocks";
 
-/* ----------------------------------------------------
-   MOCK DATABASE (use in-memory DB instead of Mongo)
----------------------------------------------------- */
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {}, // no-op
-}));
-
-/* ----------------------------------------------------
-   MOCK ERROR LOGGER
----------------------------------------------------- */
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(), // disable email sending
-}));
-
-/* ----------------------------------------------------
-   MOCK withErrorHandling (so it doesn't wrap errors)
----------------------------------------------------- */
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler, // passthrough
-}));
+// Setup mocks
+setupCommonMocks();
 
 /* ----------------------------------------------------
    TESTS

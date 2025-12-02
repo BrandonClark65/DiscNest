@@ -1,62 +1,15 @@
 // tests/integration/api/opencage-failures.test.ts
 // Tests for OpenCage API failure handling
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi, beforeEach } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll, beforeEach } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
 import Listing from "@/models/Listing";
+import { setupStandardMocks, mockRequireUser, mockFetch, resetAllMocks } from "../../utils/testMocks";
 
-/* ----------------------------------------------------
-   MOCK SETUP
----------------------------------------------------- */
-
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-const mockRequireUser = vi.fn();
-vi.mock("@/lib/auth/requireUser", () => ({
-  requireUser: () => mockRequireUser(),
-}));
-
-vi.mock("@/lib/auth/withUserAuth", () => ({
-  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
-    try {
-      const session = await mockRequireUser();
-      return handler(req, session, context);
-    } catch (err: any) {
-      const { NextResponse } = await import("next/server");
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
-    }
-  },
-}));
-
-/* ----------------------------------------------------
-   RESEND MOCKS (needed for listings route)
----------------------------------------------------- */
-vi.mock("resend", () => ({
-  Resend: class {
-    emails = {
-      send: vi.fn().mockResolvedValue({ id: "email-123" }),
-    };
-  },
-}));
-
-/* ----------------------------------------------------
-   OPENCAGE MOCKS (via fetch)
----------------------------------------------------- */
-let originalFetch: typeof global.fetch;
-let mockFetch: any;
+// Setup mocks
+setupStandardMocks();
 
 /* ----------------------------------------------------
    TESTS
@@ -65,24 +18,22 @@ let mockFetch: any;
 describe("OpenCage API Failures", () => {
   beforeAll(async () => {
     await connectTestDb();
-    originalFetch = global.fetch;
   });
 
   beforeEach(() => {
-    mockFetch = vi.fn();
+    resetAllMocks();
+    // Ensure global.fetch uses our mock
     global.fetch = mockFetch as any;
-    vi.clearAllMocks();
     process.env.OPENCAGE_API_KEY = "test-api-key-123";
   });
 
   afterEach(async () => {
     await resetTestDb();
-    mockRequireUser.mockReset();
+    resetAllMocks();
   });
 
   afterAll(() => {
     closeTestDb();
-    global.fetch = originalFetch;
   });
 
   describe("OpenCage API Failures", () => {

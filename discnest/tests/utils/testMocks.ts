@@ -149,6 +149,15 @@ export function setupResendMocks() {
       };
     },
   }));
+
+  // Also mock @/lib/resend which exports a resend instance
+  vi.mock("@/lib/resend", () => ({
+    resend: {
+      emails: {
+        send: mockSendEmail,
+      },
+    },
+  }));
 }
 
 /* ============================================================
@@ -178,6 +187,12 @@ export const mockCloudinaryUploader = {
  */
 export function setupCloudinaryMocks() {
   vi.mock("cloudinary", () => ({
+    default: {
+      v2: {
+        config: vi.fn(),
+        uploader: mockCloudinaryUploader,
+      },
+    },
     v2: {
       config: vi.fn(),
       uploader: mockCloudinaryUploader,
@@ -229,6 +244,23 @@ export const mockNSFWModel = {
 };
 
 /**
+ * Mock canvas object (must be at top level for vi.mock hoisting)
+ */
+const mockCanvas = {
+  getContext: vi.fn(() => ({
+    drawImage: vi.fn(),
+    getImageData: vi.fn(() => ({
+      data: new Uint8Array(224 * 224 * 4).fill(128),
+    })),
+  })),
+};
+
+/**
+ * Mock loadImage function (must be at top level for vi.mock hoisting)
+ */
+export const mockLoadImage = vi.fn().mockResolvedValue({} as any);
+
+/**
  * Sets up NSFW model mocks (TensorFlow.js)
  */
 export function setupNSFWModelMocks() {
@@ -244,21 +276,15 @@ export function setupNSFWModelMocks() {
   }));
 
   vi.mock("file-type", () => ({
-    fileTypeFromBuffer: vi.fn(),
+    fileTypeFromBuffer: vi.fn().mockResolvedValue({
+      mime: "image/png",
+      ext: "png",
+    }),
   }));
-
-  const mockCanvas = {
-    getContext: vi.fn(() => ({
-      drawImage: vi.fn(),
-      getImageData: vi.fn(() => ({
-        data: new Uint8Array(224 * 224 * 4).fill(128),
-      })),
-    })),
-  };
 
   vi.mock("canvas", () => ({
     createCanvas: vi.fn(() => mockCanvas),
-    loadImage: vi.fn(),
+    loadImage: mockLoadImage,
   }));
 }
 
@@ -352,6 +378,7 @@ export function setupFullMocks() {
 /**
  * Resets all mock functions to their initial state
  * Call this in afterEach hooks
+ * Note: mockFetch is not reset to preserve OpenCage mock setup
  */
 export function resetAllMocks() {
   mockRequireUser.mockReset();
@@ -359,8 +386,24 @@ export function resetAllMocks() {
   mockSendEmail.mockClear();
   mockUploadStream.mockReset();
   mockCloudinaryDestroy.mockReset();
-  mockFetch.mockReset();
+  // Don't reset mockFetch - it's set up by setupOpenCageMocks and should persist
+  // Re-setup the default return value to ensure it persists after other resets
+  mockFetch.mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      results: [
+        {
+          components: {
+            city: "Test City",
+            state: "Test State",
+          },
+        },
+      ],
+    }),
+  });
   mockNSFWModel.classify.mockReset();
+  mockLoadImage.mockReset();
+  mockLoadImage.mockResolvedValue({} as any);
   mockAddSystemMessageToThreads.mockReset();
   mockIsProfane.mockReset();
   mockModerationsCreate.mockReset();

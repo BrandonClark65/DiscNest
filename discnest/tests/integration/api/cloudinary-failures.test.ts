@@ -1,76 +1,21 @@
 // tests/integration/api/cloudinary-failures.test.ts
 // Tests for Cloudinary external service failure handling
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi, beforeEach } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll, beforeEach, vi } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
 import Listing from "@/models/Listing";
+import { setupStandardMocks, setupCloudinaryMocks, setupMessageMocks, mockRequireUser, mockCloudinaryDestroy, mockUploadStream, mockAddSystemMessageToThreads, resetAllMocks } from "../../utils/testMocks";
 
-/* ----------------------------------------------------
-   MOCK SETUP
----------------------------------------------------- */
+// Setup mocks
+setupStandardMocks();
+setupCloudinaryMocks();
+setupMessageMocks();
 
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-const mockRequireUser = vi.fn();
-vi.mock("@/lib/auth/requireUser", () => ({
-  requireUser: () => mockRequireUser(),
-}));
-
-vi.mock("@/lib/auth/withUserAuth", () => ({
-  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
-    try {
-      const session = await mockRequireUser();
-      return handler(req, session, context);
-    } catch (err: any) {
-      const { NextResponse } = await import("next/server");
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
-    }
-  },
-}));
-
-const mockAddSystemMessageToThreads = vi.fn();
-vi.mock("@/lib/messages/addSystemMessageToThreads", () => ({
-  addSystemMessageToThreads: (...args: any[]) => mockAddSystemMessageToThreads(...args),
-}));
-
-/* ----------------------------------------------------
-   CLOUDINARY MOCKS
----------------------------------------------------- */
-const { mockCloudinaryDestroy, mockUploadStream } = vi.hoisted(() => {
-  const destroy = vi.fn();
-  const stream = vi.fn();
-  return { mockCloudinaryDestroy: destroy, mockUploadStream: stream };
-});
-
-vi.mock("cloudinary", () => {
-  const mockUploader = {
-    upload_stream: mockUploadStream,
-    destroy: mockCloudinaryDestroy,
-  };
-  const mockV2 = {
-    config: vi.fn(),
-    uploader: mockUploader,
-  };
-  return {
-    default: {
-      v2: mockV2,
-    },
-    v2: mockV2,
-  };
-});
+// Cloudinary mocks are set up by setupCloudinaryMocks()
+// Import mockUploadStream for custom test behavior
+import { mockUploadStream } from "../../utils/testMocks";
 
 /* ----------------------------------------------------
    NSFW MODEL MOCKS (needed for upload route)
@@ -165,16 +110,15 @@ describe("Cloudinary Service Failures", () => {
   beforeEach(() => {
     mockFetch = vi.fn();
     global.fetch = mockFetch as any;
-    vi.clearAllMocks();
+    resetAllMocks();
   });
 
   afterEach(async () => {
     await resetTestDb();
-    mockRequireUser.mockReset();
-    mockCloudinaryDestroy.mockReset();
+    resetAllMocks();
     mockUploadStream.mockReset();
     mockNSFWModel.classify.mockReset();
-    mockAddSystemMessageToThreads.mockReset();
+    // Already reset by resetAllMocks()
   });
 
   afterAll(() => {

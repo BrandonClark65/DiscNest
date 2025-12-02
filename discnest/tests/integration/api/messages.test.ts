@@ -1,37 +1,21 @@
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import MessageThread from "@/models/MessageThread";
 import User from "@/models/User";
 import Listing from "@/models/Listing";
+import { setupCommonMocks, setupAuthMocks, mockGetServerSession, resetAllMocks } from "../../utils/testMocks";
 
-// Mock database connection
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-// Mock error logger
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-// Mock withErrorHandling
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-// Mock getServerSession
-const mockGetServerSession = vi.fn();
-vi.mock("next-auth", () => ({
-  getServerSession: () => mockGetServerSession(),
-}));
+// Setup mocks
+setupCommonMocks();
+setupAuthMocks();
 
 describe("GET /api/messages", () => {
   beforeAll(connectTestDb);
   afterEach(async () => {
     await resetTestDb();
-    mockGetServerSession.mockReset();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 
@@ -112,7 +96,7 @@ describe("POST /api/messages", () => {
   beforeAll(connectTestDb);
   afterEach(async () => {
     await resetTestDb();
-    mockGetServerSession.mockReset();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 

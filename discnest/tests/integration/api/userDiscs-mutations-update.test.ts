@@ -1,51 +1,20 @@
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
 import Disc from "@/models/Disc";
 import { UnauthorizedError } from "@/lib/errors/UnauthorizedError";
+import { setupStandardMocks, mockRequireUser, resetAllMocks } from "../../utils/testMocks";
 
-// Mock database connection
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-// Mock error logger
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-// Mock withErrorHandling
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-// Mock requireUser for authenticated routes
-const mockRequireUser = vi.fn();
-vi.mock("@/lib/auth/requireUser", () => ({
-  requireUser: () => mockRequireUser(),
-}));
-
-// Mock withUserAuth
-vi.mock("@/lib/auth/withUserAuth", () => ({
-  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
-    try {
-      const session = await mockRequireUser();
-      return handler(req, session, context);
-    } catch (err: any) {
-      const { NextResponse } = await import("next/server");
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
-    }
-  },
-}));
+// Setup mocks
+setupStandardMocks();
 
 describe("POST /api/user/discs/update", () => {
   beforeAll(connectTestDb);
   afterEach(async () => {
     await resetTestDb();
-    mockRequireUser.mockReset();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 

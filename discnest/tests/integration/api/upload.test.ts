@@ -1,94 +1,13 @@
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi, beforeEach } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll, beforeEach, vi } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
 import { UnauthorizedError } from "@/lib/errors/UnauthorizedError";
+import { setupFullMocks, mockRequireUser, mockUploadStream, mockNSFWModel, resetAllMocks } from "../../utils/testMocks";
 
-// Mock database connection
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-// Mock error logger
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-// Mock withErrorHandling
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-// Mock requireUser for authenticated routes
-const mockRequireUser = vi.fn();
-vi.mock("@/lib/auth/requireUser", () => ({
-  requireUser: () => mockRequireUser(),
-}));
-
-// Mock withUserAuth
-vi.mock("@/lib/auth/withUserAuth", () => ({
-  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
-    try {
-      const session = await mockRequireUser();
-      return handler(req, session, context);
-    } catch (err: any) {
-      const { NextResponse } = await import("next/server");
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
-    }
-  },
-}));
-
-// Mock Cloudinary
-const mockUploadStream = vi.fn();
-const mockCloudinaryUploader = {
-  upload_stream: mockUploadStream,
-  destroy: vi.fn().mockResolvedValue({ result: "ok" }),
-};
-
-vi.mock("cloudinary", () => ({
-  v2: {
-    config: vi.fn(),
-    uploader: mockCloudinaryUploader,
-  },
-}));
-
-// Mock NSFW model
-const mockNSFWModel = {
-  classify: vi.fn(),
-};
-
-vi.mock("@/lib/nsfwModel", () => ({
-  getNSFWModel: vi.fn().mockResolvedValue(mockNSFWModel),
-  tf: {
-    tidy: vi.fn((fn) => fn()),
-    tensor3d: vi.fn(),
-    slice: vi.fn(() => ({
-      dispose: vi.fn(),
-    })),
-  },
-}));
-
-// Mock file-type
-vi.mock("file-type", () => ({
-  fileTypeFromBuffer: vi.fn(),
-}));
-
-// Mock canvas
-const mockCanvas = {
-  getContext: vi.fn(() => ({
-    drawImage: vi.fn(),
-    getImageData: vi.fn(() => ({
-      data: new Uint8Array(224 * 224 * 4).fill(128),
-    })),
-  })),
-};
-
-vi.mock("canvas", () => ({
-  createCanvas: vi.fn(() => mockCanvas),
-  loadImage: vi.fn(),
-}));
+// Setup mocks
+setupFullMocks();
 
 // Helper to create a test image buffer (minimal PNG)
 function createTestImageBuffer(): Buffer {
@@ -105,11 +24,7 @@ describe("POST /api/upload", () => {
   beforeAll(connectTestDb);
   afterEach(async () => {
     await resetTestDb();
-    mockRequireUser.mockReset();
-    mockUploadStream.mockReset();
-    mockNSFWModel.classify.mockReset();
-    vi.mocked(await import("file-type")).fileTypeFromBuffer.mockReset();
-    vi.mocked(await import("canvas")).loadImage.mockReset();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 

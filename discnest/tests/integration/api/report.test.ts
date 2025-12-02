@@ -1,55 +1,15 @@
 // tests/integration/api/report.test.ts
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
 import UserReport from "@/models/UserReport";
 import { UnauthorizedError } from "@/lib/errors/UnauthorizedError";
+import { setupStandardMocks, mockRequireUser, resetAllMocks } from "../../utils/testMocks";
 
-/* ----------------------------------------------------
-   MOCK DATABASE (use in-memory DB instead of Mongo)
----------------------------------------------------- */
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {}, // no-op
-}));
-
-/* ----------------------------------------------------
-   MOCK ERROR LOGGER
----------------------------------------------------- */
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(), // disable email sending
-}));
-
-/* ----------------------------------------------------
-   MOCK withErrorHandling (so it doesn't wrap errors)
----------------------------------------------------- */
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler, // passthrough
-}));
-
-/* ----------------------------------------------------
-   MOCK AUTHENTICATION
----------------------------------------------------- */
-// Mock requireUser for authenticated routes
-const mockRequireUser = vi.fn();
-vi.mock("@/lib/auth/requireUser", () => ({
-  requireUser: () => mockRequireUser(),
-}));
-
-// Mock withUserAuth
-vi.mock("@/lib/auth/withUserAuth", () => ({
-  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
-    try {
-      const session = await mockRequireUser();
-      return handler(req, session, context);
-    } catch (err: any) {
-      const { NextResponse } = await import("next/server");
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
-    }
-  },
-}));
+// Setup mocks
+setupStandardMocks();
 
 /* ----------------------------------------------------
    TESTS
@@ -59,7 +19,7 @@ describe("POST /api/report", () => {
   beforeAll(connectTestDb);
   afterEach(async () => {
     await resetTestDb();
-    mockRequireUser.mockReset();
+    resetAllMocks();
   });
   afterAll(closeTestDb);
 

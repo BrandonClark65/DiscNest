@@ -1,64 +1,14 @@
 // tests/integration/api/resend-failures.test.ts
 // Tests for Resend email service failure handling
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi, beforeEach } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll, beforeEach } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
+import { setupStandardMocks, mockRequireUser, mockSendEmail, resetAllMocks } from "../../utils/testMocks";
 
-/* ----------------------------------------------------
-   MOCK SETUP
----------------------------------------------------- */
-
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-const mockRequireUser = vi.fn();
-vi.mock("@/lib/auth/requireUser", () => ({
-  requireUser: () => mockRequireUser(),
-}));
-
-vi.mock("@/lib/auth/withUserAuth", () => ({
-  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
-    try {
-      const session = await mockRequireUser();
-      return handler(req, session, context);
-    } catch (err: any) {
-      const { NextResponse } = await import("next/server");
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
-    }
-  },
-}));
-
-/* ----------------------------------------------------
-   RESEND MOCKS
----------------------------------------------------- */
-const mockResendSend = vi.fn();
-vi.mock("resend", () => ({
-  Resend: class {
-    emails = {
-      send: mockResendSend,
-    };
-  },
-}));
-
-vi.mock("@/lib/resend", () => ({
-  resend: {
-    emails: {
-      send: mockResendSend,
-    },
-  },
-}));
+// Setup mocks
+setupStandardMocks();
 
 /* ----------------------------------------------------
    TESTS
@@ -70,7 +20,7 @@ describe("Resend Email Service Failures", () => {
   });
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetAllMocks();
     process.env.ADMIN_EMAIL = "admin@example.com";
     process.env.RESEND_FROM_PROD = "noreply@prod.example.com";
     process.env.RESEND_FROM_DEV = "noreply@dev.example.com";
@@ -80,8 +30,7 @@ describe("Resend Email Service Failures", () => {
 
   afterEach(async () => {
     await resetTestDb();
-    mockRequireUser.mockReset();
-    mockResendSend.mockReset();
+    resetAllMocks();
   });
 
   afterAll(() => {
@@ -90,7 +39,7 @@ describe("Resend Email Service Failures", () => {
 
   describe("Resend Email Failures", () => {
     test("handles Resend API network error in contact form", async () => {
-      mockResendSend.mockRejectedValueOnce(new Error("Network error"));
+      mockSendEmail.mockRejectedValueOnce(new Error("Network error"));
 
       const res = await request(app)
         .post("/api/contact")
@@ -101,13 +50,13 @@ describe("Resend Email Service Failures", () => {
         });
 
       expect(res.status).toBe(500);
-      expect(mockResendSend).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
     });
 
     test("handles Resend API rate limiting error", async () => {
       const rateLimitError: any = new Error("Rate limit exceeded");
       rateLimitError.statusCode = 429;
-      mockResendSend.mockRejectedValueOnce(rateLimitError);
+      mockSendEmail.mockRejectedValueOnce(rateLimitError);
 
       const res = await request(app)
         .post("/api/contact")
@@ -118,13 +67,13 @@ describe("Resend Email Service Failures", () => {
         });
 
       expect(res.status).toBe(500);
-      expect(mockResendSend).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
     });
 
     test("handles Resend API invalid API key error", async () => {
       const apiError: any = new Error("Invalid API key");
       apiError.statusCode = 401;
-      mockResendSend.mockRejectedValueOnce(apiError);
+      mockSendEmail.mockRejectedValueOnce(apiError);
 
       const res = await request(app)
         .post("/api/contact")
@@ -135,7 +84,7 @@ describe("Resend Email Service Failures", () => {
         });
 
       expect(res.status).toBe(500);
-      expect(mockResendSend).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
     });
 
     test("handles Resend API failure in password reset", async () => {
@@ -145,7 +94,7 @@ describe("Resend Email Service Failures", () => {
         password: "hashed",
       });
 
-      mockResendSend.mockRejectedValueOnce(new Error("Email service unavailable"));
+      mockSendEmail.mockRejectedValueOnce(new Error("Email service unavailable"));
 
       const res = await request(app)
         .post("/api/auth/request-password-reset")
@@ -154,7 +103,7 @@ describe("Resend Email Service Failures", () => {
         });
 
       expect(res.status).toBe(500);
-      expect(mockResendSend).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
     });
 
     test("handles Resend API failure in listing creation with pendingReview", async () => {
@@ -171,7 +120,7 @@ describe("Resend Email Service Failures", () => {
         },
       });
 
-      mockResendSend.mockRejectedValueOnce(new Error("Email service unavailable"));
+      mockSendEmail.mockRejectedValueOnce(new Error("Email service unavailable"));
 
       const res = await request(app)
         .post("/api/listings")
@@ -187,11 +136,11 @@ describe("Resend Email Service Failures", () => {
         });
 
       expect(res.status).toBe(500);
-      expect(mockResendSend).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
     });
 
     test("handles Resend API timeout", async () => {
-      mockResendSend.mockImplementation(
+      mockSendEmail.mockImplementation(
         () =>
           new Promise((_, reject) => {
             setTimeout(() => reject(new Error("Timeout")), 30000);

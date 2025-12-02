@@ -1,89 +1,15 @@
 // tests/integration/api/combined-external-failures.test.ts
 // Tests for combined external service failure scenarios
-import { describe, test, expect, beforeAll, afterEach, afterAll, vi, beforeEach } from "vitest";
+import { describe, test, expect, beforeAll, afterEach, afterAll, beforeEach } from "vitest";
 import request from "supertest";
 import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
+import { setupStandardMocks, setupCloudinaryMocks, mockRequireUser, mockSendEmail, mockCloudinaryDestroy, mockFetch, resetAllMocks } from "../../utils/testMocks";
 
-/* ----------------------------------------------------
-   MOCK SETUP
----------------------------------------------------- */
-
-vi.mock("@/lib/mongodb", () => ({
-  connectToDatabase: async () => {},
-}));
-
-vi.mock("@/lib/errorLogger", () => ({
-  logError: vi.fn(),
-}));
-
-vi.mock("@/lib/withErrorHandling", () => ({
-  withErrorHandling: (handler: any) => handler,
-}));
-
-const mockRequireUser = vi.fn();
-vi.mock("@/lib/auth/requireUser", () => ({
-  requireUser: () => mockRequireUser(),
-}));
-
-vi.mock("@/lib/auth/withUserAuth", () => ({
-  withUserAuth: (handler: any) => async (req: Request, context?: any) => {
-    try {
-      const session = await mockRequireUser();
-      return handler(req, session, context);
-    } catch (err: any) {
-      const { NextResponse } = await import("next/server");
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
-    }
-  },
-}));
-
-/* ----------------------------------------------------
-   EXTERNAL SERVICE MOCKS
----------------------------------------------------- */
-const { mockCloudinaryDestroy } = vi.hoisted(() => {
-  const destroy = vi.fn();
-  return { mockCloudinaryDestroy: destroy };
-});
-
-const mockResendSend = vi.fn();
-vi.mock("resend", () => ({
-  Resend: class {
-    emails = {
-      send: mockResendSend,
-    };
-  },
-}));
-
-vi.mock("@/lib/resend", () => ({
-  resend: {
-    emails: {
-      send: mockResendSend,
-    },
-  },
-}));
-
-vi.mock("cloudinary", () => {
-  const mockUploader = {
-    upload_stream: vi.fn(),
-    destroy: mockCloudinaryDestroy,
-  };
-  const mockV2 = {
-    config: vi.fn(),
-    uploader: mockUploader,
-  };
-  return {
-    default: {
-      v2: mockV2,
-    },
-    v2: mockV2,
-  };
-});
-
-let originalFetch: typeof global.fetch;
-let mockFetch: any;
+// Setup mocks
+setupStandardMocks();
+setupCloudinaryMocks();
 
 function createTestImageBuffer(): Buffer {
   const pngHeader = Buffer.from([
@@ -99,13 +25,12 @@ function createTestImageBuffer(): Buffer {
 describe("Combined External Service Failures", () => {
   beforeAll(async () => {
     await connectTestDb();
-    originalFetch = global.fetch;
   });
 
   beforeEach(() => {
-    mockFetch = vi.fn();
+    resetAllMocks();
+    // Ensure global.fetch uses our mock
     global.fetch = mockFetch as any;
-    vi.clearAllMocks();
 
     process.env.ADMIN_EMAIL = "admin@example.com";
     process.env.RESEND_FROM_DEV = "noreply@dev.example.com";
@@ -115,12 +40,11 @@ describe("Combined External Service Failures", () => {
 
   afterEach(async () => {
     await resetTestDb();
-    mockRequireUser.mockReset();
+    resetAllMocks();
   });
 
   afterAll(() => {
     closeTestDb();
-    global.fetch = originalFetch;
   });
 
   /**
@@ -151,7 +75,7 @@ describe("Combined External Service Failures", () => {
     mockFetch.mockRejectedValueOnce(new Error("OpenCage API error"));
 
     // Mock Resend to fail
-    mockResendSend.mockRejectedValueOnce(new Error("Resend API error"));
+    mockSendEmail.mockRejectedValueOnce(new Error("Resend API error"));
 
     const res = await request(app)
       .post("/api/listings")
@@ -219,4 +143,3 @@ describe("Combined External Service Failures", () => {
     expect(res.status).toBe(500);
   });
 });
-
