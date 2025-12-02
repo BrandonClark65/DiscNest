@@ -1,11 +1,31 @@
-name: Playwright Tests
+name: Test Suite
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
 jobs:
-  test:
+  vitest:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Run Vitest tests
+      run: npm test -- --run
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: vitest-coverage
+        path: coverage/
+        retention-days: 30
+
+  playwright:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
@@ -18,7 +38,7 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
-      run: npx playwright test
+      run: npm run test:e2e
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
