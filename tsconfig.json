@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "types": ["vitest"],
     "typeRoots": ["./src/types", "./node_modules/@types"],
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
