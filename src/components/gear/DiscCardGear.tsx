@@ -38,6 +38,11 @@ export default function DiscCardGear({
 
   const textColor = getContrastColor(baseColor);
 
+  // Create a radial gradient overlay that fades from center to edges (disc-like effect)
+  const radialOverlay = isDefaultWhite
+    ? 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0.3) 100%)'
+    : 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.2) 65%, rgba(0,0,0,0.4) 100%)';
+
   const handleActionClick = () => {
     if (!isLoggedIn) {
       toast('Log in to manage your discs');
@@ -48,19 +53,32 @@ export default function DiscCardGear({
 
   return (
     <div
-      onMouseEnter={() => onHover?.(disc)}
-      onMouseLeave={() => onHover?.(null)}
-      className="relative rounded-full border shadow-md flex flex-col items-center justify-center overflow-hidden cursor-pointer transition hover:ring-2 hover:ring-[var(--primary)]"
+      className="relative rounded-full border flex flex-col items-center justify-center overflow-hidden cursor-pointer transition hover:ring-2 hover:ring-[var(--primary)]"
       style={{
-        background: gradientBackground,
+        background: `${radialOverlay}, ${gradientBackground}`,
         color: textColor,
         width: compact ? '100%' : 'clamp(260px, 28vw, 320px)',
         height: compact ? 'auto' : 'clamp(260px, 28vw, 320px)',
         aspectRatio: compact ? '1 / 1' : undefined,
-        filter: compact
-          ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.15))'
-          : 'drop-shadow(0 6px 10px rgba(0,0,0,0.25))',
-
+        boxShadow: compact
+          ? '0 8px 16px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.1)'
+          : '0 12px 24px rgba(0,0,0,0.25), 0 6px 12px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.15)',
+        transform: 'translateY(0)',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+      }}
+      onMouseEnter={(e) => {
+        onHover?.(disc);
+        if (!compact) {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 16px 32px rgba(0,0,0,0.3), 0 8px 16px rgba(0,0,0,0.25), inset 0 1px 3px rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.15)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        onHover?.(null);
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = compact
+          ? '0 8px 16px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.1)'
+          : '0 12px 24px rgba(0,0,0,0.25), 0 6px 12px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.15)';
       }}
 
     >
