@@ -9,6 +9,7 @@ import type { Thread } from "@/types/thread";
 import type { Message } from "@/types/message";
 import mongoose, { Types } from "mongoose";
 import { withErrorHandling } from "@/lib/withErrorHandling";
+import { sendMessageNotification } from "@/lib/messages/sendMessageNotification";
 
 // ----------------------
 // GET: all message threads for current user
@@ -135,6 +136,13 @@ const createThreadHandler = async (req: Request) => {
       ...m,
       sender: senderMap.get(typeof m.sender === 'string' ? m.sender : m.sender.toString()) || { _id: m.sender, name: "Unknown" }
     }));
+  }
+
+  // Send email notification if initial message was created (non-blocking)
+  if (content && messages.length > 0) {
+    sendMessageNotification(thread._id.toString(), senderId, content).catch((err) => {
+      console.error("[createThreadHandler] Email notification error:", err);
+    });
   }
 
   return NextResponse.json(populatedThread);

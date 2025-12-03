@@ -23,6 +23,11 @@ vi.mock("@/lib/withErrorHandling", () => ({
   withErrorHandling: (handler: any) => handler,
 }));
 
+// Mock sendMessageNotification to prevent actual emails during tests
+vi.mock("@/lib/messages/sendMessageNotification", () => ({
+  sendMessageNotification: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Mock requireUser for authenticated routes
 const mockRequireUser = vi.fn();
 vi.mock("@/lib/auth/requireUser", () => ({

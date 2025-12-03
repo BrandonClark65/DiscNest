@@ -5,12 +5,13 @@ import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import MessageThread from "@/models/MessageThread";
 import User from "@/models/User";
 import Listing from "@/models/Listing";
-import { setupCommonMocks, setupAuthMocks, setupModerationMocks, mockGetServerSession, mockIsProfane, resetAllMocks } from "../../utils/testMocks";
+import { setupCommonMocks, setupAuthMocks, setupModerationMocks, setupMessageMocks, mockGetServerSession, mockIsProfane, resetAllMocks } from "../../utils/testMocks";
 
 // Setup mocks
 setupCommonMocks();
 setupAuthMocks();
 setupModerationMocks();
+setupMessageMocks();
 
 // Helper to create unique shareableBagId for tests
 let bagIdCounter = 0;

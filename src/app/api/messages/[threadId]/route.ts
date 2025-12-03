@@ -12,6 +12,7 @@ import User from "@/models/User";
 import FlaggedMessage from "@/models/FlaggedMessage";
 import Listing from "@/models/Listing";
 import DiscRequest from "@/models/DiscRequest";
+import { sendMessageNotification } from "@/lib/messages/sendMessageNotification";
 
 
 
@@ -184,6 +185,10 @@ const postMessageHandler = async (
     .populate("requestId", "_id title")     
     .populate("messages.sender", "_id name");
 
+  // Send email notification to recipients (non-blocking)
+  sendMessageNotification(threadId, senderId, content).catch((err) => {
+    console.error("[postMessageHandler] Email notification error:", err);
+  });
 
   return NextResponse.json(updatedThread);
 };

@@ -5,11 +5,12 @@ import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import MessageThread from "@/models/MessageThread";
 import User from "@/models/User";
 import Listing from "@/models/Listing";
-import { setupCommonMocks, setupAuthMocks, mockGetServerSession, resetAllMocks } from "../../utils/testMocks";
+import { setupCommonMocks, setupAuthMocks, setupMessageMocks, mockGetServerSession, resetAllMocks } from "../../utils/testMocks";
 
 // Setup mocks
 setupCommonMocks();
 setupAuthMocks();
+setupMessageMocks();
 
 describe("GET /api/messages", () => {
   beforeAll(connectTestDb);

@@ -298,11 +298,20 @@ export function setupNSFWModelMocks() {
 export const mockAddSystemMessageToThreads = vi.fn();
 
 /**
+ * Mock function for sendMessageNotification
+ */
+export const mockSendMessageNotification = vi.fn().mockResolvedValue(undefined);
+
+/**
  * Sets up message system mocks
  */
 export function setupMessageMocks() {
   vi.mock("@/lib/messages/addSystemMessageToThreads", () => ({
     addSystemMessageToThreads: (...args: any[]) => mockAddSystemMessageToThreads(...args),
+  }));
+
+  vi.mock("@/lib/messages/sendMessageNotification", () => ({
+    sendMessageNotification: (...args: any[]) => mockSendMessageNotification(...args),
   }));
 }
 
@@ -405,6 +414,8 @@ export function resetAllMocks() {
   mockLoadImage.mockReset();
   mockLoadImage.mockResolvedValue({} as any);
   mockAddSystemMessageToThreads.mockReset();
+  mockSendMessageNotification.mockReset();
+  mockSendMessageNotification.mockResolvedValue(undefined);
   mockIsProfane.mockReset();
   mockModerationsCreate.mockReset();
 }
