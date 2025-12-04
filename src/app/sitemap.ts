@@ -50,7 +50,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
   } catch (error) {
     console.error('Error generating listing sitemap:', error);
+    // Return static pages only if database connection fails
+    // This ensures sitemap is always generated even if DB is unavailable
   }
+
+  // Note: Shareable bag pages (/share/bag/[id]) are not included in sitemap
+  // as they are user-generated and may be numerous. They are discoverable
+  // via direct links and are allowed in robots.txt
 
   return [...staticPages, ...listingPages];
 }

@@ -23,7 +23,6 @@ This document outlines a comprehensive SEO strategy for DiscNest, a disc golf ma
 **Remaining Enhancements:**
 - ⚠️ No breadcrumb navigation (Phase 2.4 - Planned)
 - ⚠️ Limited semantic HTML structure improvements (Phase 2.2 - Planned)
-- ⚠️ OG image needs to be created (1200x630px)
 
 **Existing Strengths:**
 - ✅ Clean URL structure
@@ -243,12 +242,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 **Action Items:**
 - [x] Create sitemap.ts file ✅
+- [x] Add error handling and comments ✅
 - [ ] Test sitemap generation - *TODO: Verify at `/sitemap.xml` after deployment*
 - [ ] Submit to Google Search Console - *Ready: See `GOOGLE_SEARCH_CONSOLE_SETUP.md` for guide*
 - [x] Set up automatic sitemap updates ✅ (Automatic in Next.js)
 - [ ] Consider sitemap index for large sites (>50k URLs) - *TODO: When site grows*
 
-**Status:** ✅ **COMPLETED** (File created at `src/app/sitemap.ts`, automatically updates, ready for GSC submission)
+**Status:** ✅ **COMPLETED** (File created at `src/app/sitemap.ts` with error handling, automatically updates, ready for GSC submission)
 
 **Estimated Impact:** High - Ensures all pages are discoverable
 
@@ -314,10 +314,11 @@ export default function ListingPage() {
 - [x] Add Product schema to listing pages ✅
 - [x] Add CollectionPage schema to catalog ✅
 - [x] Add ItemList schema to marketplace ✅
+- [x] Clean up structured data (remove undefined fields, empty arrays) ✅
 - [ ] Test with Google Rich Results Test - *TODO: Test after deployment*
 - [ ] Add BreadcrumbList schema for navigation - *TODO: Future enhancement*
 
-**Status:** ✅ **COMPLETED** (All priority schemas implemented)
+**Status:** ✅ **COMPLETED** (All priority schemas implemented and optimized)
 
 **Estimated Impact:** High - Enables rich snippets in search results
 
@@ -344,10 +345,11 @@ export const metadata: Metadata = {
 **Action Items:**
 - [x] Add canonical URLs to all pages ✅
 - [x] Handle query parameters correctly ✅ (Base URLs set, filters handled)
+- [x] Add canonical URLs to share pages ✅
 - [ ] Set up canonical for paginated pages - *TODO: Review pagination URLs if needed*
 - [ ] Test for duplicate content issues - *TODO: After deployment*
 
-**Status:** ✅ **COMPLETED** (Canonical URLs added to all major pages)
+**Status:** ✅ **COMPLETED** (Canonical URLs added to all pages including share pages)
 
 **Estimated Impact:** Medium - Prevents duplicate content penalties
 
@@ -404,9 +406,16 @@ export const metadata: Metadata = {
 - [x] Add metadata to gear page ✅ (with noindex for privacy)
 - [x] Add metadata to profile page ✅ (with noindex for privacy)
 - [x] Add metadata to contact page ✅
+- [x] Add metadata to login page ✅ (with noindex)
+- [x] Add metadata to signup page ✅ (with noindex)
+- [x] Add metadata to messages page ✅ (with noindex)
+- [x] Add metadata to forgot-password page ✅ (with noindex)
+- [x] Add metadata to reset-password page ✅ (with noindex)
+- [x] Add metadata to admin page ✅ (with noindex)
+- [x] Add metadata to share/bag/[id] page ✅
 - [ ] Create dynamic metadata for filtered catalog views - *TODO: Future enhancement*
 
-**Status:** ✅ **COMPLETED** (All pages have metadata configured)
+**Status:** ✅ **COMPLETED** (All pages have metadata configured, including private pages with noindex)
 
 **Estimated Impact:** High - Improves click-through rates from search
 
@@ -947,20 +956,30 @@ export function Breadcrumbs({ items }: { items: { label: string; href: string }[
 **Completed Items (January 2025):**
 1. ✅ Root layout refactored - Server component with global metadata
 2. ✅ robots.txt created at `public/robots.txt`
-3. ✅ Dynamic sitemap at `src/app/sitemap.ts`
-4. ✅ Structured data implemented:
-   - Organization schema (homepage)
+3. ✅ Dynamic sitemap at `src/app/sitemap.ts` with error handling
+4. ✅ Structured data implemented and optimized:
+   - Organization schema (homepage) - cleaned up empty arrays
    - WebSite schema (homepage)
-   - Product schema (listing pages)
+   - Product schema (listing pages) - removed undefined fields
    - CollectionPage schema (catalog)
    - ItemList schema (marketplace)
-5. ✅ Page metadata added to all major pages with canonical URLs
+5. ✅ Page metadata added to all pages with canonical URLs:
+   - Public pages: homepage, catalog, marketplace, contact, share/bag/[id]
+   - Private pages with noindex: login, signup, messages, forgot-password, gear, profile
 6. ✅ Environment variable `NEXT_PUBLIC_BASE_URL` configured
+7. ✅ OG image created (1200x630px) at `/public/og-image.png`
 
-**Next Steps:**
-1. ✅ Create OG image (1200x630px) at `/public/og-image.png` - **COMPLETED**
-2. Set up Google Search Console and submit sitemap - *Ready: See `GOOGLE_SEARCH_CONSOLE_SETUP.md`*
-3. Test structured data with Google Rich Results Test - *After deployment*
+**Pre-Deployment Improvements (January 2025):**
+- ✅ Added metadata layouts for all private pages (login, signup, messages, forgot-password, reset-password, admin)
+- ✅ Added canonical URL to share/bag/[id] page
+- ✅ Optimized structured data schemas (removed undefined fields and empty arrays)
+- ✅ Enhanced sitemap with better error handling and documentation
+- ✅ All private/admin pages properly configured with noindex robots directive
+
+**Next Steps (Post-Deployment):**
+1. Set up Google Search Console and submit sitemap - *Ready: See `GOOGLE_SEARCH_CONSOLE_SETUP.md`*
+2. Test structured data with Google Rich Results Test
+3. Verify sitemap at `/sitemap.xml`
 4. Begin Phase 2: On-Page SEO Optimization
 
 ---

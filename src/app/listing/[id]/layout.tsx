@@ -68,16 +68,12 @@ export default async function ListingLayout({
       const data = await res.json();
       const listing = data.listing;
 
-      structuredData = {
+      const productData: any = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: listing.title,
         description: listing.description || 'Disc golf disc for sale on DiscNest',
         image: listing.imageUrls?.length ? listing.imageUrls : [`${baseUrl}/og-listing-preview.png`],
-        brand: listing.brand ? {
-          '@type': 'Brand',
-          name: listing.brand,
-        } : undefined,
         category: 'Disc Golf Equipment',
         offers: {
           '@type': 'Offer',
@@ -92,10 +88,22 @@ export default async function ListingLayout({
           },
           url: `${baseUrl}/listing/${id}`,
         },
-        ...(listing.condition && {
-          itemCondition: `https://schema.org/${listing.condition === 'New' ? 'NewCondition' : 'UsedCondition'}`,
-        }),
       };
+
+      // Only add brand if it exists (avoid undefined in JSON)
+      if (listing.brand) {
+        productData.brand = {
+          '@type': 'Brand',
+          name: listing.brand,
+        };
+      }
+
+      // Only add itemCondition if condition exists
+      if (listing.condition) {
+        productData.itemCondition = `https://schema.org/${listing.condition === 'New' ? 'NewCondition' : 'UsedCondition'}`;
+      }
+
+      structuredData = productData;
     }
   } catch (err) {
     console.error('[DiscNest] Structured data generation failed:', err);

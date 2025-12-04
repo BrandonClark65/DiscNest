@@ -29,6 +29,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       description: `View a disc golf bag shared via DiscNest.`,
       images: [`${baseUrl}/og-bag-preview.png`],
     },
+    alternates: {
+      canonical: `${baseUrl}/share/bag/${resolvedParams.id}`,
+    },
   };
 }
 
