@@ -10,6 +10,7 @@ import CatalogFilters from '@/components/catalog/CatalogFilters';
 import CatalogGrid from '@/components/catalog/CatalogGrid';
 import CatalogPagination from '@/components/catalog/CatalogPagination';
 import HoverPreview from '@/components/catalog/HoverPreview';
+import StructuredData from '@/components/StructuredData';
 import type { Disc } from '@/types/disc';
 
 export default function CatalogPage() {
@@ -62,8 +63,20 @@ export default function CatalogPage() {
     }
   };
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
+  
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Disc Golf Catalog',
+    description: 'Browse our comprehensive catalog of disc golf discs from top brands',
+    url: `${baseUrl}/catalog`,
+  };
+
   return (
-    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6 relative text-foreground">
+    <>
+      <StructuredData data={collectionSchema} id="catalog-schema" />
+      <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6 relative text-foreground">
       {/* Filters */}
       <CatalogFilters
         isMobile={isMobile}
@@ -140,5 +153,6 @@ export default function CatalogPage() {
         isMobile={isMobile}
       />
     </div>
+    </>
   );
 }

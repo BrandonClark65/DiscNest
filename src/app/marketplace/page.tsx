@@ -11,6 +11,7 @@ import MarketplacePagination from '@/components/marketplace/MarketplacePaginatio
 import CreateListingForm from '@/components/marketplace/CreateListingForm';
 import CreateDiscRequestForm from '@/components/marketplace/CreateDiscRequestForm';
 import RequestsTab from '@/components/marketplace/RequestsTab';
+import StructuredData from '@/components/StructuredData';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
@@ -71,8 +72,21 @@ export default function MarketplacePage() {
   const currentPage = activeTab === 'market' ? marketPage : myPage;
   const setPage = activeTab === 'market' ? setMarketPage : setMyPage;
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
+  
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Disc Golf Marketplace',
+    description: 'Buy and sell disc golf discs in our marketplace',
+    url: `${baseUrl}/marketplace`,
+    numberOfItems: listingsToShow?.length || 0,
+  };
+
   return (
-    <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 text-foreground">
+    <>
+      <StructuredData data={itemListSchema} id="marketplace-schema" />
+      <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 text-foreground">
       {/* HEADER */}
       <MarketplaceHeader
         onCreate={() =>
@@ -187,5 +201,6 @@ export default function MarketplacePage() {
         </button>
       )}
     </div>
+    </>
   );
 }

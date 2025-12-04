@@ -6,10 +6,12 @@ import { Package, BookOpen, User, Disc as DiscIcon } from 'lucide-react';
 import DiscbagDisplay from '@/components/DiscbagDisplay';
 import GradientButton from '@/components/ui/GradientButton';
 import SiteAnnouncement from '@/components/SiteAnnouncement';
+import HomePageLayout from './page-layout';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[var(--background)] via-[var(--surface)] to-[var(--background)] flex flex-col items-center justify-center px-4 py-16 space-y-12 text-foreground">
+    <HomePageLayout>
+      <main className="min-h-screen bg-gradient-to-b from-[var(--background)] via-[var(--surface)] to-[var(--background)] flex flex-col items-center justify-center px-4 py-16 space-y-12 text-foreground">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -72,6 +74,7 @@ export default function HomePage() {
         />
       </motion.div>
     </main>
+    </HomePageLayout>
   );
 }
 

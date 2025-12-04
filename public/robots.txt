@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /messages/
+Disallow: /profile/
+Disallow: /gear/
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# Allow important pages
+Allow: /catalog
+Allow: /marketplace
+Allow: /listing/
+Allow: /share/
+
+# Sitemap
+Sitemap: https://discnest.com/sitemap.xml
+

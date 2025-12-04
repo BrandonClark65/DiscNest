@@ -77,17 +77,29 @@ disc-nest/
 
 All secrets are managed locally in `.env.local` and **should not be committed**.  
 
+### Required Variables
 - **MONGODB_URI** = <your_mongodb_connection_string>
 - **NEXTAUTH_SECRET** = <your_nextauth_secret>
-- **NEXTAUTH_URL**= http://localhost:3000
+- **NEXTAUTH_URL** = http://localhost:3000 (or your production URL)
 - **CLOUDINARY_CLOUD_NAME** = <your_cloudinary_cloud_Name>
 - **CLOUDINARY_API_KEY** = <your_cloudinary_api_key>
 - **CLOUDINARY_API_SECRET** = <your-cloudinary_api_secret>
 - **ADMIN_ALERT_EMAIL** = <your_email_for_moderation_and_contact>
-- **GOOGLE_CLIENT_ID** = <optional>
-- **GOOGLE_CLIENT_SECRET** = <optional>
 - **RESEND_API_KEY** = <resend_api_key>
 - **OPENCAGE_API_KEY** = <for_reverse_geocoding>
+
+### SEO Variables
+- **NEXT_PUBLIC_BASE_URL** = http://localhost:3000 (for development) or https://discnest.com (for production)
+  - Used for SEO metadata, sitemap, and canonical URLs
+  - Falls back to `https://discnest.com` if not set
+  - **Note:** Must be prefixed with `NEXT_PUBLIC_` to be accessible in client components
+
+### Optional Variables
+- **GOOGLE_CLIENT_ID** = <optional>
+- **GOOGLE_CLIENT_SECRET** = <optional>
+
+### Automatic Variables (No setup needed)
+- **NODE_ENV** - Automatically set by Next.js ('development', 'production', or 'test')
 
 ---
 
