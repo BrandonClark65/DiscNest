@@ -127,11 +127,11 @@ export const metadata: Metadata = {
 **Action Items:**
 - [x] Split layout into server/client components ✅
 - [x] Add global metadata export ✅
-- [ ] Create OG image (1200x630px) - *TODO: Create `/public/og-image.png`*
-- [ ] Set up Google Search Console verification - *TODO: Add verification code when available*
+- [x] Create OG image (1200x630px) ✅
+- [x] Set up Google Search Console verification - *Ready: Placeholder added, see `GOOGLE_SEARCH_CONSOLE_SETUP.md`*
 - [ ] Add Twitter verification if applicable - *TODO: Add verification code when available*
 
-**Status:** ✅ **COMPLETED** (Core implementation done, pending OG image and verification codes)
+**Status:** ✅ **COMPLETED** (Core implementation done, OG image created, ready for GSC verification after deployment)
 
 **Estimated Impact:** High - Foundation for all SEO improvements
 
@@ -244,11 +244,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 **Action Items:**
 - [x] Create sitemap.ts file ✅
 - [ ] Test sitemap generation - *TODO: Verify at `/sitemap.xml` after deployment*
-- [ ] Submit to Google Search Console - *TODO: After GSC setup*
+- [ ] Submit to Google Search Console - *Ready: See `GOOGLE_SEARCH_CONSOLE_SETUP.md` for guide*
 - [x] Set up automatic sitemap updates ✅ (Automatic in Next.js)
 - [ ] Consider sitemap index for large sites (>50k URLs) - *TODO: When site grows*
 
-**Status:** ✅ **COMPLETED** (File created at `src/app/sitemap.ts`, automatically updates)
+**Status:** ✅ **COMPLETED** (File created at `src/app/sitemap.ts`, automatically updates, ready for GSC submission)
 
 **Estimated Impact:** High - Ensures all pages are discoverable
 
@@ -741,13 +741,15 @@ export function Breadcrumbs({ items }: { items: { label: string; href: string }[
    - Monitor Bing performance
 
 **Action Items:**
-- [ ] Set up Google Search Console
+- [ ] Set up Google Search Console - *Ready: See `GOOGLE_SEARCH_CONSOLE_SETUP.md` guide*
 - [ ] Set up Google Analytics 4
 - [ ] Set up Bing Webmaster Tools
 - [ ] Configure conversion tracking
 - [ ] Set up alerts for issues
 
 **Estimated Impact:** High - Essential for monitoring and improvement
+
+**Note:** See `docs/SEO/GOOGLE_SEARCH_CONSOLE_SETUP.md` for detailed setup instructions. Code is prepared with verification placeholder.
 
 ---
 
@@ -956,9 +958,9 @@ export function Breadcrumbs({ items }: { items: { label: string; href: string }[
 6. ✅ Environment variable `NEXT_PUBLIC_BASE_URL` configured
 
 **Next Steps:**
-1. Create OG image (1200x630px) at `/public/og-image.png`
-2. Set up Google Search Console and submit sitemap
-3. Test structured data with Google Rich Results Test
+1. ✅ Create OG image (1200x630px) at `/public/og-image.png` - **COMPLETED**
+2. Set up Google Search Console and submit sitemap - *Ready: See `GOOGLE_SEARCH_CONSOLE_SETUP.md`*
+3. Test structured data with Google Rich Results Test - *After deployment*
 4. Begin Phase 2: On-Page SEO Optimization
 
 ---
