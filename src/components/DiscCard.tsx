@@ -109,7 +109,7 @@ export default function DiscCard({
         {disc.image && (
           <img
             src={disc.image}
-            alt={disc.name}
+            alt={`${disc.name} ${disc.brand} ${disc.type} disc golf disc${disc.plastic ? ` in ${disc.plastic} plastic` : ''} - ${disc.stability || ''} stability`}
             onError={(e) => ((e.target as HTMLImageElement).src = '/fallback.jpg')}
             className={`object-contain ${
               circleView

@@ -123,7 +123,7 @@ export default function RequestDetail({ request }: { request: any }) {
             {requester?.avatarUrl ? (
               <Image
                 src={requester.avatarUrl}
-                alt="avatar"
+                alt={`${requester?.username || requester?.name || 'User'}'s profile picture`}
                 width={56}
                 height={56}
                 className="rounded-full border border-[var(--muted)]/40"

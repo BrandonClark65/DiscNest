@@ -31,7 +31,7 @@ export default function HoverPreview({ disc, onClose, isMobile }: Props) {
         <>
           <img
             src={disc.image}
-            alt={disc.name}
+            alt={`${disc.name} ${disc.brand} ${disc.type} disc golf disc${disc.plastic ? ` in ${disc.plastic} plastic` : ''}`}
             className="w-full h-64 object-contain mb-4 rounded-lg bg-background"
           />
           <h3 className="text-xl font-bold text-center text-primary">{disc.name}</h3>

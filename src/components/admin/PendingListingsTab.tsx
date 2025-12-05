@@ -56,7 +56,7 @@ export default function PendingListingsTab() {
                     >
                       <Image
                         src={url}
-                        alt={listing.title}
+                        alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'}${listing.condition ? ` in ${listing.condition} condition` : ''}`}
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 160px"
