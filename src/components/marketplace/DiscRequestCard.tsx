@@ -57,7 +57,7 @@ export default function DiscRequestCard({ request, currentUserId }: Props) {
         {requester?.avatarUrl ? (
           <Image
             src={requester.avatarUrl}
-            alt="avatar"
+            alt={`${requester?.username || requester?.name || 'User'}'s profile picture`}
             width={44}
             height={44}
             className="rounded-full border border-[var(--muted)]/40"

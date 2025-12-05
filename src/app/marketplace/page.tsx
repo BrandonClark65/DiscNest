@@ -12,6 +12,7 @@ import CreateListingForm from '@/components/marketplace/CreateListingForm';
 import CreateDiscRequestForm from '@/components/marketplace/CreateDiscRequestForm';
 import RequestsTab from '@/components/marketplace/RequestsTab';
 import StructuredData from '@/components/StructuredData';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
@@ -86,9 +87,13 @@ export default function MarketplacePage() {
   return (
     <>
       <StructuredData data={itemListSchema} id="marketplace-schema" />
-      <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 text-foreground">
+      <main className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 text-foreground">
+      {/* BREADCRUMBS */}
+      <Breadcrumbs items={[{ label: 'Marketplace', href: '/marketplace' }]} className="mb-4" />
+      
       {/* HEADER */}
-      <MarketplaceHeader
+      <header>
+        <MarketplaceHeader
         onCreate={() =>
           session?.user
             ? setIsCreatingListing(true)
@@ -99,28 +104,33 @@ export default function MarketplacePage() {
             ? setIsCreatingRequest(true)
             : handleLoginRequired('create a request')
         }
-      />
+        />
+      </header>
 
       {/* TABS */}
-      <MarketplaceTabs
+      <nav aria-label="Marketplace tabs">
+        <MarketplaceTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         myListingsTab={myListingsTab}
         setMyListingsTab={setMyListingsTab}
         userId={userId}
         includeRequestsTab
-      />
+        />
+      </nav>
 
       {/* FILTERS */}
       {activeTab === 'market' && (
-        <MarketplaceFilters
+        <aside aria-label="Marketplace filters">
+          <MarketplaceFilters
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           brandFilter={brandFilter}
           setBrandFilter={setBrandFilter}
           conditionFilter={conditionFilter}
           setConditionFilter={setConditionFilter}
-        />
+          />
+        </aside>
       )}
 
       {/* CREATE LISTING FORM */}
@@ -145,7 +155,7 @@ export default function MarketplacePage() {
 
       {/* MAP */}
       {activeTab === 'market' && (
-        <div className="mb-10">
+        <section className="mb-10" aria-label="Listings map">
           <div className="h-64 sm:h-80 md:h-96 rounded-lg overflow-hidden shadow-lg border border-[var(--muted)]/20">
             {!userLocation ? (
               <p className="flex items-center justify-center h-full text-foreground/60 italic">
@@ -155,19 +165,20 @@ export default function MarketplacePage() {
               <Map listings={listingsToShow} />
             )}
           </div>
-        </div>
+        </section>
       )}
 
       {/* REQUESTS TAB */}
       {activeTab === 'requests' && (
-        <div className="mt-6">
+        <section className="mt-6" aria-label="Disc requests">
           <RequestsTab currentUserId={userId} />
-        </div>
+        </section>
       )}
 
       {/* LISTINGS GRID */}
       {activeTab !== 'requests' && (
-        <MarketplaceGrid
+        <section aria-label="Disc listings">
+          <MarketplaceGrid
           listings={listingsToShow}
           loading={loading}
           activeTab={activeTab}
@@ -175,16 +186,19 @@ export default function MarketplacePage() {
           isOwner={isOwner}
           onDelete={handleDelete}
           onMarkSold={handleMarkSold}
-        />
+          />
+        </section>
       )}
 
       {/* PAGINATION */}
       {activeTab !== 'requests' && (
-        <MarketplacePagination
+        <nav aria-label="Listings pagination">
+          <MarketplacePagination
           totalPages={totalPages}
           currentPage={currentPage}
           onPageChange={(p) => setPage(p)}
-        />
+          />
+        </nav>
       )}
 
       {/* FLOATING CREATE LISTING BUTTON (mobile only) */}
@@ -196,11 +210,12 @@ export default function MarketplacePage() {
               : handleLoginRequired('create a listing')
           }
           className="fixed bottom-20 right-6 bg-[var(--primary)] text-[var(--background)] p-4 rounded-full shadow-lg hover:bg-[var(--primary)]/90 sm:hidden z-50"
+          aria-label="Create new listing"
         >
           +
         </button>
       )}
-    </div>
+    </main>
     </>
   );
 }

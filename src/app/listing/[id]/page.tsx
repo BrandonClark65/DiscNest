@@ -11,6 +11,7 @@ import { ArrowBigLeft, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ShareButton from '@/components/ui/ShareButton';
 import ReportModal from '@/components/modals/ReportModal';   // ← NEW
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
@@ -76,17 +77,17 @@ export default function ListingPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        {/* ---------- BACK BUTTON ---------- */}
-        <GradientButton
-          label="Back to Marketplace"
-          href="/marketplace"
-          variant="muted"
-          icon={<ArrowBigLeft className="w-5 h-5" />}
-          className="mb-2"
-        />
+        {/* ---------- BREADCRUMBS ---------- */}
+        <Breadcrumbs 
+          items={[
+            { label: 'Marketplace', href: '/marketplace' },
+            { label: listing.title, href: `/listing/${listing._id}` }
+          ]} 
+          className="mb-4" 
+        />   
 
         {/* ---------- MAIN CONTAINER ---------- */}
-        <div
+        <article
           className="flex flex-col lg:flex-row gap-10 border border-[var(--muted)]/30 
                      rounded-2xl p-6 shadow-md hover:shadow-lg transition-all
                      bg-[color-mix(in srgb, var(--surface) 85%, var(--foreground) 5%)]
@@ -111,7 +112,7 @@ export default function ListingPage() {
                   >
                     <Image
                       src={listing.imageUrls[activeImage]}
-                      alt={listing.title}
+                      alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'} for sale${listing.condition ? ` in ${listing.condition} condition` : ''}`}
                       fill
                       className="object-cover"
                       onLoad={() => setImageLoaded(true)}
@@ -140,7 +141,7 @@ export default function ListingPage() {
                   >
                     <Image
                       src={url}
-                      alt={`${listing.title} ${index + 1}`}
+                      alt={`${listing.title} thumbnail ${index + 1} - ${listing.brand || ''} disc golf disc`}
                       fill
                       className="object-cover"
                       sizes="80px"
@@ -284,13 +285,13 @@ export default function ListingPage() {
               </div>
             </div>
           </div>
-        </div>
+        </article>
 
         {/* ---------- MAP ---------- */}
         {listing.location?.coordinates && (
-          <div className="h-72 sm:h-80 lg:h-96 rounded-2xl overflow-hidden shadow-md border border-[var(--muted)]/30">
+          <section className="h-72 sm:h-80 lg:h-96 rounded-2xl overflow-hidden shadow-md border border-[var(--muted)]/30" aria-label="Listing location map">
             <Map singleListing={listing} zoom={15} />
-          </div>
+          </section>
         )}
       </motion.div>
 

@@ -11,6 +11,7 @@ import CatalogGrid from '@/components/catalog/CatalogGrid';
 import CatalogPagination from '@/components/catalog/CatalogPagination';
 import HoverPreview from '@/components/catalog/HoverPreview';
 import StructuredData from '@/components/StructuredData';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import type { Disc } from '@/types/disc';
 
 export default function CatalogPage() {
@@ -76,9 +77,10 @@ export default function CatalogPage() {
   return (
     <>
       <StructuredData data={collectionSchema} id="catalog-schema" />
-      <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6 relative text-foreground">
+      <main className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6 relative text-foreground">
       {/* Filters */}
-      <CatalogFilters
+      <aside aria-label="Catalog filters">
+        <CatalogFilters
         isMobile={isMobile}
         filtersOpen={filtersOpen}
         setFiltersOpen={setFiltersOpen}
@@ -92,10 +94,11 @@ export default function CatalogPage() {
         uniqueTypes={uniqueTypes}
         uniqueStabilities={uniqueStabilities}
         uniqueSpeeds={uniqueSpeeds}
-      />
+        />
+      </aside>
 
       {/* Main Catalog */}
-      <div className="md:col-span-3 space-y-4">
+      <section className="md:col-span-3 space-y-4" aria-label="Disc catalog">
         {isMobile && (
           <GradientButton
             label="Filters"
@@ -105,6 +108,8 @@ export default function CatalogPage() {
             className="mb-4 px-4 py-2"
           />
         )}
+
+        <Breadcrumbs items={[{ label: 'Disc Catalog', href: '/catalog' }]} className="mb-4" />
 
         <h1 className="h1 text-center">
           <span className="text-gradient-brand">Disc Catalog</span>
@@ -145,14 +150,14 @@ export default function CatalogPage() {
             onChange={handlePageChange}
           />
         )}
-      </div>
+      </section>
 
       <HoverPreview
         disc={hoveredDisc}
         onClose={() => setHoveredDisc(null)}
         isMobile={isMobile}
       />
-    </div>
+    </main>
     </>
   );
 }

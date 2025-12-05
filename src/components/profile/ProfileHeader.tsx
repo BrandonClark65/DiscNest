@@ -48,7 +48,7 @@ export default function ProfileHeader({
         <div className="relative w-20 h-20 rounded-full overflow-hidden border border-[var(--muted)] shadow-md flex-shrink-0">
           <Image
             src={localAvatar || "/default-avatar.png"}
-            alt="User avatar"
+            alt={`${name}'s profile picture`}
             fill
             className="object-cover"
           />

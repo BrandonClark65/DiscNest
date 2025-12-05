@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import GradientButton from '@/components/ui/GradientButton';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function ContactPage() {
   const [email, setEmail] = useState('');
@@ -35,20 +36,24 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 sm:p-10 space-y-6 text-[var(--foreground)]">
+    <main className="max-w-xl mx-auto p-6 sm:p-10 space-y-6 text-[var(--foreground)]">
+      {/* Breadcrumbs */}
+      <Breadcrumbs items={[{ label: 'Contact', href: '/contact' }]} className="mb-4" />
+      
       {/* Header */}
-      <div className="text-center space-y-2">
+      <header className="text-center space-y-2">
         <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] drop-shadow-sm">
           Contact Us
         </h1>
         <p className="text-[var(--foreground)]/70 text-sm sm:text-base">
           Have questions, feedback, or ideas? We’d love to hear from you.
         </p>
-      </div>
+      </header>
 
       {/* Form */}
-      <form
-        onSubmit={handleSubmit}
+      <section>
+        <form
+          onSubmit={handleSubmit}
         className="
           bg-[var(--surface)] border border-[var(--muted)]/30 rounded-2xl shadow-sm
           p-5 sm:p-8 space-y-5 transition-all
@@ -131,6 +136,7 @@ export default function ContactPage() {
           </p>
         )}
       </form>
-    </div>
+      </section>
+    </main>
   );
 }

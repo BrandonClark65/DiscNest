@@ -66,7 +66,7 @@ export default function DiscCardCatalog({
       {disc.image && (
         <img
           src={disc.image}
-          alt={disc.name}
+          alt={`${disc.name} ${disc.brand} ${disc.type} disc golf disc${disc.plastic ? ` in ${disc.plastic} plastic` : ''} - ${disc.stability || ''} stability`}
           className="object-contain w-32 h-32 mx-auto mb-4 rounded-md shadow-sm"
           onError={(e) => ((e.target as HTMLImageElement).src = '/fallback.jpg')}
         />

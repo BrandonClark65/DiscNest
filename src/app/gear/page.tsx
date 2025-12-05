@@ -19,6 +19,7 @@ import PersonalizedRecommendations from '@/components/gear/PersonalizedRecommend
 
 import GearSection from '@/components/gear/GearSection';
 import useIsMobile from '@/hooks/useIsMobile';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function GearPage() {
   const { data: session } = useSession();
@@ -160,6 +161,9 @@ export default function GearPage() {
       )}
 
       <div className="max-w-6xl mx-auto p-6 space-y-12">
+        {/* Breadcrumbs */}
+        <Breadcrumbs items={[{ label: 'Your Gear', href: '/gear' }]} className="mb-4" />
+        
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

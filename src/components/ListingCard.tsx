@@ -50,7 +50,7 @@ export default function ListingCard({
 
         <Image
           src={imageSrc}
-          alt={listing.title}
+          alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'}${listing.condition ? ` in ${listing.condition} condition` : ''}${listing.price !== undefined ? ` for $${listing.price.toFixed(2)}` : ''}`}
           fill
           priority={false}
           className={`object-cover transition-opacity duration-300 ${
