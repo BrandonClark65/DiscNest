@@ -37,10 +37,10 @@ export default function useCatalogData() {
   });
 
   const [openSections, setOpenSections] = useState<OpenSections>({
-    brand: true,
-    type: true,
-    stability: true,
-    speed: true,
+    brand: false,
+    type: false,
+    stability: false,
+    speed: false,
   });
 
   // --- Load & sort discs ---

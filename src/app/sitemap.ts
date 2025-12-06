@@ -54,10 +54,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // This ensures sitemap is always generated even if DB is unavailable
   }
 
+  // Brand landing pages
+  const majorBrands = [
+    'Discmania',
+    'Discraft',
+    'Dynamic Discs',
+    'Innova',
+    'Latitude 64',
+    'MVP',
+    'Prodigy',
+  ];
+
+  const brandPages: MetadataRoute.Sitemap = majorBrands.map((brand) => ({
+    url: `${baseUrl}/catalog/brand/${encodeURIComponent(brand)}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }));
+
   // Note: Shareable bag pages (/share/bag/[id]) are not included in sitemap
   // as they are user-generated and may be numerous. They are discoverable
   // via direct links and are allowed in robots.txt
 
-  return [...staticPages, ...listingPages];
+  return [...staticPages, ...brandPages, ...listingPages];
 }
 
