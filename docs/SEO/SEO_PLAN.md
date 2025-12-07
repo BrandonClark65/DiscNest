@@ -665,7 +665,7 @@ export function Breadcrumbs({ items }: { items: { label: string; href: string }[
 
 ---
 
-### 3.3 Blog/Content Hub (Future Enhancement)
+### 3.3 Blog/Content Hub (Future Enhancement)(I have added this to my backlog)
 
 **Recommendation:** Create a blog or content section
 
