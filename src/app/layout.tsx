@@ -5,16 +5,21 @@ import { Inter, Poppins } from 'next/font/google';
 import ClientLayout from '@/components/ClientLayout';
 
 // ✅ Include weight and subset options for Poppins and Inter
+// display: 'swap' ensures text remains visible during webfont load (FOUT)
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   weight: ['400', '500', '600', '700'],
+  display: 'swap', // Performance optimization: shows fallback font immediately
+  preload: true, // Preload fonts for faster initial load
 });
 
 const poppins = Poppins({
   subsets: ['latin'],
   variable: '--font-poppins',
   weight: ['400', '500', '600', '700'],
+  display: 'swap', // Performance optimization: shows fallback font immediately
+  preload: true, // Preload fonts for faster initial load
 });
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';

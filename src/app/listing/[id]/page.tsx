@@ -10,10 +10,13 @@ import GradientButton from '@/components/ui/GradientButton';
 import { ArrowBigLeft, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ShareButton from '@/components/ui/ShareButton';
-import ReportModal from '@/components/modals/ReportModal';   // ← NEW
 import Breadcrumbs from '@/components/Breadcrumbs';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
+// Lazy load ReportModal for better performance
+const ReportModal = dynamic(() => import('@/components/modals/ReportModal'), {
+  ssr: false,
+});
 
 export default function ListingPage() {
   const params = useParams();
@@ -114,6 +117,7 @@ export default function ListingPage() {
                       src={listing.imageUrls[activeImage]}
                       alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'} for sale${listing.condition ? ` in ${listing.condition} condition` : ''}`}
                       fill
+                      priority={activeImage === 0}
                       className="object-cover"
                       onLoad={() => setImageLoaded(true)}
                       onError={(e) =>

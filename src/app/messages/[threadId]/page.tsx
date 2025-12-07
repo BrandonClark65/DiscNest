@@ -3,13 +3,18 @@
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 
 import ChatHeader from '@/components/chat/ChatHeader';
 import MessageList from '@/components/chat/MessageList';
 import MessageInput from '@/components/chat/MessageInput';
-import ReportModal from '@/components/modals/ReportModal';
 import useChatThread from '@/hooks/useChatThread';
 import type { ThreadUI } from '@/types/thread';
+
+// Lazy load ReportModal for better performance
+const ReportModal = dynamic(() => import('@/components/modals/ReportModal'), {
+  ssr: false,
+});
 
 export default function ChatPage() {
   const { data: session } = useSession();

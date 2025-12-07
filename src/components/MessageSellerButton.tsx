@@ -2,9 +2,15 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import ChatModal from '@/components/modals/ChatModal';
+import dynamic from 'next/dynamic';
 import GradientButton from './ui/GradientButton';
 import { MessageCircle } from 'lucide-react';
+
+// Lazy load ChatModal for better performance
+const ChatModal = dynamic(() => import('@/components/modals/ChatModal'), {
+  loading: () => <div className="text-sm text-gray-600">Loading chat...</div>,
+  ssr: false,
+});
 
 type MessageSellerButtonProps = {
   sellerId: string;

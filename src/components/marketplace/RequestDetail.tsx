@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import GradientButton from "@/components/ui/GradientButton";
 import { MessageCircle, MapPin, MoreVertical, ArrowBigLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import ReportModal from "@/components/modals/ReportModal"; // ← NEW
+import dynamic from "next/dynamic";
+
+// Lazy load ReportModal for better performance
+const ReportModal = dynamic(() => import("@/components/modals/ReportModal"), {
+  ssr: false,
+});
 
 export default function RequestDetail({ request }: { request: any }) {
   const { data: session } = useSession();
