@@ -29,7 +29,6 @@ export async function getNSFWModel(): Promise<nsfwjs.NSFWJS> {
 
   disposeDevVariables();
 
-  console.log('Loading NSFW model...');
   global._NSFW_MODEL = await nsfwjs.load(); // default MobileNetV2
   return global._NSFW_MODEL;
 }

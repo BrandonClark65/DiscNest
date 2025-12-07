@@ -6,6 +6,20 @@ import User from '@/models/User';
 import { connectToDatabase } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
 
+// Validate environment variables on module load
+// This ensures auth configuration is valid before NextAuth initializes
+if (typeof window === 'undefined') {
+  // Only validate on server-side
+  try {
+    // Import validation (it will only run once due to module caching)
+    require('@/lib/env').validateEnv();
+  } catch (error) {
+    // Error already logged by validateEnv
+    // Re-throw to prevent app from starting with invalid config
+    throw error;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',

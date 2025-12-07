@@ -18,7 +18,6 @@ export default function RequestDetail({ request }: { request: any }) {
   const router = useRouter();
 
   const requester = request.userId;
-  console.log("Requester:", requester);
   const [distance, setDistance] = useState<string | null>(null);
   const [messaging, setMessaging] = useState(false);
 

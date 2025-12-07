@@ -135,7 +135,11 @@ describe("Resend Email Service Failures", () => {
           pendingReview: true,
         });
 
-      expect(res.status).toBe(500);
+      // Listing creation should succeed even if email fails (graceful degradation)
+      expect(res.status).toBe(201);
+      expect(res.body.title).toBe("Test Disc");
+      expect(res.body.pendingReview).toBe(true);
+      // Email was attempted but failed
       expect(mockSendEmail).toHaveBeenCalledTimes(1);
     });
 

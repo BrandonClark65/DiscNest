@@ -13,7 +13,7 @@ const seedHandler = async () => {
 
   // Log process exit
   seed.on("close", (code) => {
-    console.log(`Seed script exited with code ${code}`);
+    // Seed script completed
   });
 
   // Log spawn errors (optional safety)

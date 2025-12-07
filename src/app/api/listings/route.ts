@@ -188,23 +188,41 @@ const createListingHandler = async (req: Request, session: any) => {
   const listing = await Listing.create(listingData);
 
   if (pendingReview) {
-    const user = await User.findById(session.user.id);
-    const fromEmail = process.env.FROM_ALERT_EMAIL || "alerts@discnest.com";
-    await resend.emails.send({
-      from: fromEmail,
-      to: process.env.ADMIN_EMAIL!,
-      subject: `⚠️ Listing from ${user?.name || "Unknown"} requires review`,
-      html: `
-        <p><strong>User:</strong> ${user?.name} (${user?.email})</p>
-        <p><strong>Listing:</strong> ${listing.title}</p>
-        <p><strong>Images:</strong> ${
-          body.imageUrls
-            ?.map((url: string) => `<a href="${url}">${url}</a>`)
-            .join("<br>") || "None"
-        }</p>
-        <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
-      `,
-    });
+    try {
+      const user = await User.findById(session.user.id);
+      // Use FROM_ALERT_EMAIL if set, otherwise use RESEND_FROM_PROD/DEV based on environment
+      const fromEmail = process.env.FROM_ALERT_EMAIL || 
+        (process.env.NODE_ENV === "production"
+          ? process.env.RESEND_FROM_PROD
+          : process.env.RESEND_FROM_DEV);
+      
+      const adminEmail = process.env.ADMIN_EMAIL;
+      
+      // Only send email if both from and to emails are configured
+      if (fromEmail && adminEmail) {
+        await resend.emails.send({
+          from: fromEmail,
+          to: adminEmail,
+          subject: `⚠️ Listing from ${user?.name || "Unknown"} requires review`,
+          html: `
+            <p><strong>User:</strong> ${user?.name} (${user?.email})</p>
+            <p><strong>Listing:</strong> ${listing.title}</p>
+            <p><strong>Images:</strong> ${
+              body.imageUrls
+                ?.map((url: string) => `<a href="${url}">${url}</a>`)
+                .join("<br>") || "None"
+            }</p>
+            <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+          `,
+        });
+      } else {
+        // Log warning but don't fail listing creation
+        console.error('⚠️ Cannot send listing review alert: FROM_ALERT_EMAIL/RESEND_FROM_PROD/RESEND_FROM_DEV or ADMIN_EMAIL not configured');
+      }
+    } catch (emailError) {
+      // Log error but don't fail listing creation
+      console.error('⚠️ Failed to send listing review alert email:', emailError);
+    }
   }
 
   return NextResponse.json(listing, { status: 201 });

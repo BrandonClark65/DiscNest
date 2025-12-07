@@ -24,7 +24,6 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
     if (bag) {
       setBagDiscs(bag);
       setVisibleCount(0);
-      console.debug('[DiscBagDisplay] using controlled bag prop', bag.length);
     }
   }, [bag]);
 
@@ -37,12 +36,10 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
       const s = session ?? (await getSession());
       const email = s?.user?.email;
       if (!email) {
-        console.debug('[DiscBagDisplay] no email yet, skipping fetch');
         return;
       }
 
       try {
-        console.debug('[DiscBagDisplay] fetching bag for', email);
         const res = await fetch(`/api/user/discs/bag?email=${encodeURIComponent(email)}`);
         if (!res.ok) {
           console.error('[DiscBagDisplay] fetch returned not ok', res.status);
@@ -52,7 +49,6 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
         if (!cancelled) {
           setBagDiscs(data.bag || []);
           setVisibleCount(0);
-          console.debug('[DiscBagDisplay] fetched bag discs:', (data.bag || []).length);
         }
       } catch (err) {
         if (!cancelled) console.error('❌ Failed to fetch bag discs:', err);
@@ -267,7 +263,6 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
               className="absolute top-0 left-0 z-20 w-full h-full pointer-events-none"
               onLoad={() => {
                 setBagLoaded(true);
-                console.debug('[DiscBagDisplay] bag image loaded');
               }}
               style={{
                 filter: 'drop-shadow(0 8px 12px rgba(0, 0, 0, 0.4))',

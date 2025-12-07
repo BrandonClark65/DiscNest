@@ -19,7 +19,6 @@ export default function MessageBubble({
   onReportMessage,
 }: MessageBubbleProps) {
   const isSystem = msg.sender._id === "system";
-  console.log("SENDER: ", msg.sender, " msg: ", msg);
 
   // --- SYSTEM MESSAGE BUBBLE ---
   if (isSystem) {

@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
+// Environment validation is handled by env.ts (imported via mongodb.ts or auth.ts)
+// This ensures RESEND_API_KEY is validated before this module loads
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('Missing RESEND_API_KEY in environment variables');
-}
-
-export const resend = new Resend(process.env.RESEND_API_KEY);
+export const resend = new Resend(process.env.RESEND_API_KEY!);

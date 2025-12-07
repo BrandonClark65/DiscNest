@@ -84,9 +84,24 @@ All secrets are managed locally in `.env.local` and **should not be committed**.
 - **CLOUDINARY_CLOUD_NAME** = <your_cloudinary_cloud_Name>
 - **CLOUDINARY_API_KEY** = <your_cloudinary_api_key>
 - **CLOUDINARY_API_SECRET** = <your-cloudinary_api_secret>
-- **ADMIN_ALERT_EMAIL** = <your_email_for_moderation_and_contact>
+- **ADMIN_EMAIL** = <your_email_for_moderation_and_contact>
+  - **Required:** Email address where admin notifications are sent
+  - Used for: Contact form submissions, error alerts, listing review requests
 - **RESEND_API_KEY** = <resend_api_key>
+- **RESEND_FROM_PROD** = <production_sender_email> (e.g., noreply@discnest.com)
+  - **Required for production:** Must be from a verified domain in Resend
+  - Used when `NODE_ENV=production` for all outgoing emails
+  - See [Resend Domain Verification](#email-setup-resend) below
+- **RESEND_FROM_DEV** = <development_sender_email> (e.g., onboarding@resend.dev)
+  - **Required for development:** Can use Resend's sandbox domain for testing
+  - Used when `NODE_ENV=development` or `NODE_ENV=test`
+  - Default sandbox: `onboarding@resend.dev` (works without verification)
 - **OPENCAGE_API_KEY** = <for_reverse_geocoding>
+- **FROM_ALERT_EMAIL** = <alert_sender_email> (optional)
+  - **Optional:** From email address specifically for alert notifications
+  - Used for: Error alerts, listing review notifications, system alerts
+  - **Falls back to:** `RESEND_FROM_PROD` (production) or `RESEND_FROM_DEV` (development) if not set
+  - **Note:** If you want alerts to come from a different address than regular emails, set this variable
 
 ### SEO Variables
 - **NEXT_PUBLIC_BASE_URL** = http://localhost:3000 (for development) or https://discnest.com (for production)
@@ -103,10 +118,15 @@ All secrets are managed locally in `.env.local` and **should not be committed**.
 
 ### Optional Variables
 - **GOOGLE_CLIENT_ID** = <optional>
+  - Required only if using Google OAuth login
+  - Get from [Google Cloud Console](https://console.cloud.google.com/)
 - **GOOGLE_CLIENT_SECRET** = <optional>
+  - Required only if using Google OAuth login
+  - Get from [Google Cloud Console](https://console.cloud.google.com/)
 
 ### Automatic Variables (No setup needed)
 - **NODE_ENV** - Automatically set by Next.js ('development', 'production', or 'test')
+  - Determines which email sender to use (`RESEND_FROM_PROD` vs `RESEND_FROM_DEV`)
 
 ---
 
@@ -123,7 +143,15 @@ npm install
 ```
 
 ### 3. Add .env.local
-Create a .env.local file in the root directory and fill in the required keys above.
+Create a `.env.local` file in the root directory and fill in the required keys above.
+
+**Email Setup (Resend):**
+- For **development**, you can use Resend's sandbox domain: `RESEND_FROM_DEV=onboarding@resend.dev`
+- For **production**, you must:
+  1. Verify your domain in [Resend Dashboard](https://resend.com/domains)
+  2. Add DNS records (SPF, DKIM) as instructed by Resend
+  3. Wait for domain verification (usually minutes to hours)
+  4. Use a verified email: `RESEND_FROM_PROD=noreply@yourdomain.com`
 
 ### 4. Run MongoDB
 If using MongoDB Atlas, make sure your connection string is valid.
