@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Filter, Sparkles } from 'lucide-react';
@@ -15,10 +15,12 @@ import PopularBrands from '@/components/catalog/PopularBrands';
 import StructuredData from '@/components/StructuredData';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import type { Disc } from '@/types/disc';
+import { useAnalytics } from '@/lib/useAnalytics';
 
 export default function CatalogPage() {
   const { data: session } = useSession();
   const email = session?.user?.email;
+  const { trackEvent } = useAnalytics();
 
   const {
     discs,
@@ -46,6 +48,33 @@ export default function CatalogPage() {
   const [hoveredDisc, setHoveredDisc] = useState<Disc | null>(null);
   const [addedDiscId, setAddedDiscId] = useState<string | null>(null);
 
+  // Track search queries
+  useEffect(() => {
+    if (filter.search && filter.search.length > 0) {
+      trackEvent('catalog_search', {
+        search_query: filter.search,
+        results_count: filtered.length,
+      });
+    }
+  }, [filter.search, filtered.length, trackEvent]);
+
+  // Track filter changes
+  useEffect(() => {
+    const activeFilters = [
+      filter.brands.length > 0 && 'brand',
+      filter.types.length > 0 && 'type',
+      filter.stabilities.length > 0 && 'stability',
+      filter.speeds.length > 0 && 'speed',
+    ].filter(Boolean);
+
+    if (activeFilters.length > 0) {
+      trackEvent('catalog_filter', {
+        filter_type: activeFilters.join(','),
+        results_count: filtered.length,
+      });
+    }
+  }, [filter.brands, filter.types, filter.stabilities, filter.speeds, filtered.length, trackEvent]);
+
   const handleAdd = async (discId: string, target: 'shelf' | 'bag') => {
     if (!email) return;
     const disc = discs.find((d) => d._id === discId);
@@ -59,6 +88,16 @@ export default function CatalogPage() {
     if (res.ok) {
       setAddedDiscId(discId);
       toast.success(`${disc?.name || 'Disc'} added to ${target === 'shelf' ? 'Shelf' : 'Bag'}!`);
+      
+      // Track disc add to bag/shelf
+      trackEvent('disc_add_to_bag', {
+        disc_id: discId,
+        disc_name: disc?.name,
+        disc_brand: disc?.brand,
+        disc_type: disc?.type,
+        target: target, // 'bag' or 'shelf'
+      });
+      
       setTimeout(() => setAddedDiscId(null), 2000);
     } else {
       const error = await res.json();

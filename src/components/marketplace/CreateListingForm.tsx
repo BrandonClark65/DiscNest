@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import type { Disc } from '@/types/disc';
 import imageCompression from 'browser-image-compression';
 import { DiscBrands, DiscPlastics } from '@/app/constants/discData';
+import { useAnalytics } from '@/lib/useAnalytics';
 
 
 type CreateListingFormProps = {
@@ -17,6 +18,7 @@ type Location = {
 };
 
 export default function CreateListingForm({ user, onClose }: CreateListingFormProps) {
+  const { trackEvent, trackConversion } = useAnalytics();
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -165,6 +167,25 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       }
 
       const data = await res.json();
+
+      // Track listing creation event
+      trackEvent('listing_create', {
+        listing_id: data.listing?._id || data.listingId,
+        listing_title: form.title,
+        listing_brand: form.brand,
+        listing_type: form.type,
+        listing_price: form.price,
+        listing_condition: form.condition,
+        listing_location: form.city && form.state ? `${form.city}, ${form.state}` : undefined,
+      });
+
+      // Track as conversion if it's a sell listing with price
+      if (form.type === 'Sell' && form.price > 0) {
+        trackConversion('listing_create', form.price, 'USD', {
+          listing_id: data.listing?._id || data.listingId,
+          listing_title: form.title,
+        });
+      }
 
       if (form.pendingReview) {
         alert(

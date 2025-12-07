@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import GradientButton from '@/components/ui/GradientButton';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { useAnalytics } from '@/lib/useAnalytics';
 
 export default function ContactPage() {
+  const { trackEvent } = useAnalytics();
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -23,6 +25,12 @@ export default function ContactPage() {
 
       if (res.ok) {
         setStatus('✅ Message sent successfully!');
+        
+        // Track contact form submission
+        trackEvent('contact_form_submit', {
+          subject: subject,
+        });
+        
         setEmail('');
         setSubject('');
         setMessage('');

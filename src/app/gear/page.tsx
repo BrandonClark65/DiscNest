@@ -20,11 +20,13 @@ import PersonalizedRecommendations from '@/components/gear/PersonalizedRecommend
 import GearSection from '@/components/gear/GearSection';
 import useIsMobile from '@/hooks/useIsMobile';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { useAnalytics } from '@/lib/useAnalytics';
 
 export default function GearPage() {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
   const isMobile = useIsMobile();
+  const { trackEvent } = useAnalytics();
 
   const [shelf, setShelf] = useState<Disc[]>([]);
   const [bag, setBag] = useState<Disc[]>([]);
@@ -44,11 +46,17 @@ export default function GearPage() {
         const res = await fetch('/api/user/discs/share', { method: 'POST' });
         const data = await res.json();
         setShareUrl(data.shareUrl);
+        
+        // Track share bag event
+        trackEvent('share_bag', {
+          bag_disc_count: bag.length,
+          shelf_disc_count: shelf.length,
+        });
       } catch {
         toast.error('Could not create share link.');
       }
     })();
-  }, [isLoggedIn, shareUrl]);
+  }, [isLoggedIn, shareUrl, bag.length, shelf.length, trackEvent]);
 
   /* --------------------- Fetch Discs --------------------- */
   const fetchDiscs = async () => {

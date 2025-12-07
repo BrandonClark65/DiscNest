@@ -94,6 +94,13 @@ All secrets are managed locally in `.env.local` and **should not be committed**.
   - Falls back to `https://discnest.com` if not set
   - **Note:** Must be prefixed with `NEXT_PUBLIC_` to be accessible in client components
 
+### Analytics Variables
+- **NEXT_PUBLIC_GA_MEASUREMENT_ID** = <your_google_analytics_4_measurement_id> (optional)
+  - Google Analytics 4 measurement ID (format: G-XXXXXXXXXX)
+  - Analytics tracking is disabled if not set
+  - Get your measurement ID from [Google Analytics](https://analytics.google.com/)
+  - **Note:** Must be prefixed with `NEXT_PUBLIC_` to be accessible in client components
+
 ### Optional Variables
 - **GOOGLE_CLIENT_ID** = <optional>
 - **GOOGLE_CLIENT_SECRET** = <optional>

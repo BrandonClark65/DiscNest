@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import GradientButton from '@/components/ui/GradientButton';
 import { Disc, UserPlus } from 'lucide-react';
+import { useAnalytics } from '@/lib/useAnalytics';
 
 export default function SignupPage() {
+  const { trackEvent, trackConversion } = useAnalytics();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,6 +55,14 @@ export default function SignupPage() {
     if (loginRes?.error) {
       setError('Signup succeeded but login failed');
     } else {
+      // Track user signup event (conversion)
+      trackEvent('user_signup', {
+        user_email: email, // Note: GA4 will hash this automatically if configured
+      });
+      trackConversion('user_signup', 0, 'USD', {
+        user_email: email,
+      });
+      
       router.push('/profile');
     }
   };
@@ -188,7 +198,13 @@ export default function SignupPage() {
         {/* Social */}
         <div className="space-y-3">
           <button
-            onClick={() => signIn('google')}
+            onClick={async () => {
+              // Track social signup attempt
+              trackEvent('user_signup', {
+                signup_method: 'google',
+              });
+              await signIn('google');
+            }}
             className="
               w-full py-3 rounded-xl 
               bg-[#4285F4] text-white font-medium

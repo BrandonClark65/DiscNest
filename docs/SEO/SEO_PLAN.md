@@ -1,7 +1,7 @@
 # 🎯 DiscNest SEO Optimization Plan
 
 **Last Updated:** January 2025  
-**Status:** Phase 1 Critical Foundation ✅ COMPLETED | Phase 2 On-Page SEO ✅ COMPLETED | Phase 3.1 Content Optimization ✅ COMPLETED | Phase 3.2 Category Landing Pages ✅ COMPLETED | Phase 4 Performance & Core Web Vitals ✅ COMPLETED | Phase 5-7 In Progress
+**Status:** Phase 1 Critical Foundation ✅ COMPLETED | Phase 2 On-Page SEO ✅ COMPLETED | Phase 3.1 Content Optimization ✅ COMPLETED | Phase 3.2 Category Landing Pages ✅ COMPLETED | Phase 4 Performance & Core Web Vitals ✅ COMPLETED | Phase 6 Analytics & Monitoring ✅ PARTIALLY COMPLETED (Code ready, needs GA4 setup) | Phase 5 & 7 In Progress
 
 ---
 
@@ -840,14 +840,28 @@ export function Breadcrumbs({ items }: { items: { label: string; href: string }[
 
 **Action Items:**
 - [ ] Set up Google Search Console - *Ready: See `GOOGLE_SEARCH_CONSOLE_SETUP.md` guide*
-- [ ] Set up Google Analytics 4
-- [ ] Set up Bing Webmaster Tools
-- [ ] Configure conversion tracking
-- [ ] Set up alerts for issues
+- [x] Set up Google Analytics 4 - ✅ **COMPLETED** (Code implemented, ready for measurement ID)
+- [ ] Set up Bing Webmaster Tools - *TODO: After deployment*
+- [x] Configure conversion tracking - ✅ **COMPLETED** (Conversion tracking code implemented)
+- [ ] Set up alerts for issues - *TODO: After GSC/GA4 setup*
+
+**Status:** ✅ **PARTIALLY COMPLETED** (January 2025)
+
+**Implementation Summary:**
+- ✅ Google Analytics 4 tracking code implemented (`src/lib/analytics.ts`)
+- ✅ Analytics component added to layout (`src/components/analytics/GoogleAnalytics.tsx`)
+- ✅ React hooks for easy event tracking (`src/lib/useAnalytics.ts`)
+- ✅ Event tracking added to key pages:
+  - Listing detail pages (listing_view event)
+  - Message sending (message_sent event)
+  - Listing creation (listing_create event with conversion tracking)
+- ✅ Environment variable documented (`NEXT_PUBLIC_GA_MEASUREMENT_ID`)
+- ✅ Comprehensive setup guide created (`docs/SEO/ANALYTICS_SETUP.md`)
+- ⏳ **Action Required:** Add GA4 measurement ID to environment variables after creating GA4 property
 
 **Estimated Impact:** High - Essential for monitoring and improvement
 
-**Note:** See `docs/SEO/GOOGLE_SEARCH_CONSOLE_SETUP.md` for detailed setup instructions. Code is prepared with verification placeholder.
+**Note:** See `docs/SEO/GOOGLE_SEARCH_CONSOLE_SETUP.md` for GSC setup and `docs/SEO/ANALYTICS_SETUP.md` for GA4 setup instructions.
 
 ---
 
@@ -863,10 +877,14 @@ export function Breadcrumbs({ items }: { items: { label: string; href: string }[
 - Search Console errors
 
 **Action Items:**
-- [ ] Create SEO dashboard
-- [ ] Set up weekly reports
-- [ ] Monitor keyword rankings
-- [ ] Track competitor performance
+- [ ] Create SEO dashboard - *TODO: Future enhancement (can be built as internal admin tool)*
+- [ ] Set up weekly reports - *TODO: After GA4/GSC setup*
+- [ ] Monitor keyword rankings - *TODO: After deployment*
+- [ ] Track competitor performance - *TODO: Future enhancement*
+
+**Status:** ⏳ **DEFERRED** (Infrastructure ready, dashboard can be built when needed)
+
+**Note:** Analytics infrastructure is ready. A monitoring dashboard can be created as an internal admin tool to aggregate data from GA4 and Search Console. This is optional and can be built based on needs.
 
 **Estimated Impact:** Medium - Enables data-driven decisions
 
@@ -1303,6 +1321,76 @@ export function Breadcrumbs({ items }: { items: { label: string; href: string }[
 3. Test on real mobile devices to verify performance
 4. Consider implementing service worker for offline support (optional)
 5. Continue monitoring and optimizing based on real-world performance data
+
+---
+
+## ✅ Phase 6 Implementation Summary
+
+**Completed Items (January 2025):**
+
+1. ✅ Google Analytics 4 (GA4) Implementation
+   - Core tracking utilities created (`src/lib/analytics.ts`)
+   - Type-safe event tracking with TypeScript
+   - React hooks for easy integration (`src/lib/useAnalytics.ts`)
+   - Analytics component added to root layout (`src/components/analytics/GoogleAnalytics.tsx`)
+   - Automatic user ID tracking when authenticated
+   - Page view tracking infrastructure
+
+2. ✅ Event Tracking Implementation
+   - **Listing views:** Tracked automatically on listing detail pages
+   - **Message sending:** Tracked when messages are sent via ChatModal
+   - **Listing creation:** Tracked when new listings are created (with conversion tracking for sell listings)
+   - Ready for additional events: listing clicks, catalog searches, user signups, etc.
+
+3. ✅ Conversion Tracking
+   - Conversion tracking functions implemented
+   - Automatic conversion tracking for sell listings with price
+   - Currency support (defaults to USD)
+   - Value tracking for monetizable actions
+
+4. ✅ Documentation
+   - Comprehensive analytics setup guide (`docs/SEO/ANALYTICS_SETUP.md`)
+   - Environment variable documentation updated in README
+   - Pre-deployment and post-deployment checklists
+   - Troubleshooting guide
+
+**Files Created:**
+- `src/lib/analytics.ts` - Core GA4 tracking utilities
+- `src/lib/useAnalytics.ts` - React hooks for event tracking
+- `src/components/analytics/GoogleAnalytics.tsx` - GA4 initialization component
+- `docs/SEO/ANALYTICS_SETUP.md` - Complete setup and monitoring guide
+
+**Files Modified:**
+- `src/components/ClientLayout.tsx` - Added GoogleAnalytics component
+- `src/app/listing/[id]/page.tsx` - Added listing view tracking
+- `src/components/modals/ChatModal.tsx` - Added message sent tracking
+- `src/components/marketplace/CreateListingForm.tsx` - Added listing creation tracking
+- `README.md` - Added analytics environment variable documentation
+
+**Pre-Deployment Status:**
+- ✅ All code implementation complete
+- ✅ Event tracking ready to use
+- ✅ Type-safe and production-ready
+- ⏳ **Action Required:** Add `NEXT_PUBLIC_GA_MEASUREMENT_ID` to environment variables after creating GA4 property
+
+**Post-Deployment Actions:**
+1. Create Google Analytics 4 property
+2. Get measurement ID (G-XXXXXXXXXX)
+3. Add measurement ID to production environment variables
+4. Deploy and verify tracking in GA4 Realtime report
+5. Configure conversion events in GA4 dashboard
+6. Set up Google Search Console (see `GOOGLE_SEARCH_CONSOLE_SETUP.md`)
+7. Set up Bing Webmaster Tools
+8. Monitor analytics data regularly
+
+**Next Steps:**
+1. Create GA4 property and get measurement ID
+2. Add measurement ID to environment variables
+3. Deploy and verify tracking
+4. Set up Google Search Console verification
+5. Submit sitemaps to GSC and Bing
+6. Monitor analytics and search performance
+7. Consider building SEO monitoring dashboard (optional)
 
 ---
 

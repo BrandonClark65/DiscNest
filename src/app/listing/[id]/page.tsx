@@ -11,6 +11,7 @@ import { ArrowBigLeft, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ShareButton from '@/components/ui/ShareButton';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { useAnalytics } from '@/lib/useAnalytics';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 // Lazy load ReportModal for better performance
@@ -21,6 +22,7 @@ const ReportModal = dynamic(() => import('@/components/modals/ReportModal'), {
 export default function ListingPage() {
   const params = useParams();
   const listingId = params.id;
+  const { trackEvent, trackPageView } = useAnalytics();
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,12 @@ export default function ListingPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Track page view
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      trackPageView(window.location.pathname, 'Listing Detail');
+    }
+  }, [trackPageView]);
 
   useEffect(() => {
     if (!listingId) return;
@@ -42,6 +50,19 @@ export default function ListingPage() {
         if (!res.ok) throw new Error('Listing not found');
         const data = await res.json();
         setListing(data.listing as Listing);
+        
+        // Track listing view event
+        if (data.listing) {
+          trackEvent('listing_view', {
+            listing_id: data.listing._id,
+            listing_title: data.listing.title,
+            listing_brand: data.listing.brand,
+            listing_type: data.listing.type,
+            listing_price: data.listing.price,
+            listing_condition: data.listing.condition,
+            listing_location: data.listing.location,
+          });
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to fetch listing');
       } finally {
@@ -50,7 +71,7 @@ export default function ListingPage() {
     };
 
     fetchListing();
-  }, [listingId]);
+  }, [listingId, trackEvent]);
 
   if (loading)
     return (

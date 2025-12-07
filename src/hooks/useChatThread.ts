@@ -9,6 +9,7 @@ import {
   mapMessageDBtoUI,
   mapThreadDBtoUI,
 } from '@/lib/messageMapping';
+import { useAnalytics } from '@/lib/useAnalytics';
 
 export default function useChatThread(
   threadId: string | undefined,
@@ -22,6 +23,7 @@ export default function useChatThread(
   sendMessage: () => Promise<void>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
 } {
+  const { trackEvent } = useAnalytics();
   const [thread, setThread] = useState<ThreadUI | null>(null);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
@@ -115,6 +117,13 @@ export default function useChatThread(
         setThread(previousThread);
         return;
       }
+
+      // Track message sent event
+      trackEvent('message_sent', {
+        thread_id: threadId,
+        listing_id: thread.listing?._id,
+        listing_title: thread.listing?.title,
+      });
 
       fetchThread();
     } catch (err) {

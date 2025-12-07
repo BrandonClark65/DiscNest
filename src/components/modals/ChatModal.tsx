@@ -7,6 +7,7 @@ import type { ThreadUI } from "@/types/thread";
 import type { MessageUI } from "@/types/message";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send } from "lucide-react";
+import { useAnalytics } from "@/lib/useAnalytics";
 
 type ChatModalProps = {
   threadId: string;
@@ -19,6 +20,7 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
   const [newMessage, setNewMessage] = useState("");
   const [mounted, setMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const { trackEvent } = useAnalytics();
 
   const { data: session, status } = useSession();
   if (status !== "authenticated" || !session?.user?.id) return null;
@@ -123,6 +125,13 @@ async function sendMessage() {
 
     // success → reload full thread
     fetchThread();
+    
+    // Track message sent event
+    trackEvent('message_sent', {
+      thread_id: thread._id,
+      listing_id: thread.listing?._id,
+      listing_title: thread.listing?.title,
+    });
   } catch (error) {
     console.error("Failed to send message:", error);
 

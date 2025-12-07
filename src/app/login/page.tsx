@@ -5,8 +5,10 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import GradientButton from '@/components/ui/GradientButton';
 import { Disc, LogIn, Eye, EyeOff } from 'lucide-react';
+import { useAnalytics } from '@/lib/useAnalytics';
 
 export default function LoginPage() {
+  const { trackEvent } = useAnalytics();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,6 +27,10 @@ export default function LoginPage() {
     if (res?.error) {
       setError('Invalid email or password');
     } else {
+      // Track user login event
+      trackEvent('user_login', {
+        login_method: 'credentials',
+      });
       router.push('/profile');
     }
   };
@@ -136,7 +142,13 @@ export default function LoginPage() {
         {/* Social Logins */}
         <div className="space-y-3">
           <button
-            onClick={() => signIn('google')}
+            onClick={async () => {
+              // Track social login attempt
+              trackEvent('user_login', {
+                login_method: 'google',
+              });
+              await signIn('google');
+            }}
             className="
               w-full py-3 rounded-xl 
               bg-[#4285F4] text-white font-medium
