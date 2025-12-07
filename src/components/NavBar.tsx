@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
+import NavLogo from '@/components/NavLogo';
 
 export default function NavBar() {
   const { data: session, status } = useSession();
@@ -44,12 +45,7 @@ export default function NavBar() {
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3 md:py-4">
         {/* Logo */}
-        <Link
-          href="/"
-          className="text-2xl font-heading font-extrabold tracking-wide text-foreground hover:opacity-90 transition"
-        >
-          DiscNest
-        </Link>
+        <NavLogo />
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6 text-sm font-medium">

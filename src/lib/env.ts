@@ -87,11 +87,14 @@ const envVars: EnvVar[] = [
   {
     name: 'RESEND_FROM_PROD',
     required: true,
-    description: 'Production email sender (must be from verified domain)',
+    description: 'Production email sender (must be from verified domain). Can be "email@domain.com" or "Display Name <email@domain.com>"',
     validate: (value) => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        return 'RESEND_FROM_PROD must be a valid email address';
+      if (!value) return 'RESEND_FROM_PROD is required';
+      // Support both formats: "email@domain.com" or "Display Name <email@domain.com>"
+      const simpleEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const displayNameEmailRegex = /^.+<[^\s@]+@[^\s@]+\.[^\s@]+>$/;
+      if (!simpleEmailRegex.test(value.trim()) && !displayNameEmailRegex.test(value.trim())) {
+        return 'RESEND_FROM_PROD must be a valid email address (e.g., "email@domain.com" or "Display Name <email@domain.com>")';
       }
       return true;
     },
@@ -99,11 +102,14 @@ const envVars: EnvVar[] = [
   {
     name: 'RESEND_FROM_DEV',
     required: true,
-    description: 'Development email sender (can use onboarding@resend.dev)',
+    description: 'Development email sender (can use onboarding@resend.dev). Can be "email@domain.com" or "Display Name <email@domain.com>"',
     validate: (value) => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        return 'RESEND_FROM_DEV must be a valid email address';
+      if (!value) return 'RESEND_FROM_DEV is required';
+      // Support both formats: "email@domain.com" or "Display Name <email@domain.com>"
+      const simpleEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const displayNameEmailRegex = /^.+<[^\s@]+@[^\s@]+\.[^\s@]+>$/;
+      if (!simpleEmailRegex.test(value.trim()) && !displayNameEmailRegex.test(value.trim())) {
+        return 'RESEND_FROM_DEV must be a valid email address (e.g., "email@domain.com" or "Display Name <email@domain.com>")';
       }
       return true;
     },
@@ -113,11 +119,14 @@ const envVars: EnvVar[] = [
   {
     name: 'ADMIN_EMAIL',
     required: true,
-    description: 'Admin email for receiving notifications and contact form submissions',
+    description: 'Admin email for receiving notifications and contact form submissions. Can be "email@domain.com" or "Display Name <email@domain.com>"',
     validate: (value) => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        return 'ADMIN_EMAIL must be a valid email address';
+      if (!value) return 'ADMIN_EMAIL is required';
+      // Support both formats: "email@domain.com" or "Display Name <email@domain.com>"
+      const simpleEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const displayNameEmailRegex = /^.+<[^\s@]+@[^\s@]+\.[^\s@]+>$/;
+      if (!simpleEmailRegex.test(value.trim()) && !displayNameEmailRegex.test(value.trim())) {
+        return 'ADMIN_EMAIL must be a valid email address (e.g., "email@domain.com" or "Display Name <email@domain.com>")';
       }
       return true;
     },
@@ -125,12 +134,15 @@ const envVars: EnvVar[] = [
   {
     name: 'FROM_ALERT_EMAIL',
     required: false,
-    description: 'From email address for alert notifications (error alerts, listing reviews, etc.). Falls back to RESEND_FROM_PROD/RESEND_FROM_DEV if not set',
+    description: 'From email address for alert notifications (error alerts, listing reviews, etc.). Falls back to RESEND_FROM_PROD/RESEND_FROM_DEV if not set. Can be "email@domain.com" or "Display Name <email@domain.com>"',
     validate: (value) => {
-      if (value) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) {
-          return 'FROM_ALERT_EMAIL must be a valid email address';
+      // Only validate format if value is provided (it's optional)
+      if (value && value.trim()) {
+        // Support both formats: "email@domain.com" or "Display Name <email@domain.com>"
+        const simpleEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const displayNameEmailRegex = /^.+<[^\s@]+@[^\s@]+\.[^\s@]+>$/;
+        if (!simpleEmailRegex.test(value.trim()) && !displayNameEmailRegex.test(value.trim())) {
+          return 'FROM_ALERT_EMAIL must be a valid email address (e.g., "email@domain.com" or "Display Name <email@domain.com>")';
         }
       }
       return true;
@@ -187,9 +199,10 @@ export function validateEnv(): void {
 
   for (const envVar of envVars) {
     const value = process.env[envVar.name];
+    const isEmpty = !value || value.trim() === '';
 
-    // Check if required variable is missing
-    if (envVar.required && !value) {
+    // Check if required variable is missing or empty
+    if (envVar.required && isEmpty) {
       errors.push(
         `❌ Missing required environment variable: ${envVar.name}${envVar.description ? ` (${envVar.description})` : ''}`
       );
@@ -197,12 +210,12 @@ export function validateEnv(): void {
     }
 
     // Skip validation if variable is optional and not set
-    if (!envVar.required && !value) {
+    if (!envVar.required && isEmpty) {
       continue;
     }
 
-    // Run custom validation if provided
-    if (value && envVar.validate) {
+    // Run custom validation if provided and value exists
+    if (!isEmpty && envVar.validate) {
       const validationResult = envVar.validate(value);
       if (validationResult !== true) {
         const errorMsg = typeof validationResult === 'string' ? validationResult : 'Invalid format';
@@ -241,13 +254,22 @@ export function validateEnv(): void {
   }
 
   // Throw error if any required variables are missing or invalid
+  // In production, fail hard. In development, warn but allow startup (for easier local dev)
   if (errors.length > 0) {
     console.error('\n❌ Environment Variable Validation Failed:\n');
     errors.forEach((error) => console.error(error));
     console.error('\n💡 Please check your .env.local file or environment variables.\n');
-    throw new Error(
-      `Environment validation failed: ${errors.length} error(s). See console for details.`
-    );
+    
+    // In production, fail hard to catch issues early
+    // In development, warn but allow startup (some vars may be optional for local dev)
+    if (nodeEnv === 'production') {
+      throw new Error(
+        `Environment validation failed: ${errors.length} error(s). See console for details.`
+      );
+    } else {
+      // Development: warn but don't block
+      console.warn('⚠️  Continuing in development mode despite validation errors. Fix these before deploying to production.\n');
+    }
   }
 
   // Validation complete - all required variables are present and valid

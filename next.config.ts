@@ -27,8 +27,7 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true,
   },
-  // Output optimization
-  swcMinify: true,
+  // Note: swcMinify is deprecated in Next.js 15 - minification is enabled by default
   // Headers for caching and performance
   async headers() {
     return [
