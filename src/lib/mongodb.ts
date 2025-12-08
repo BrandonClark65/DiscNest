@@ -31,7 +31,7 @@ interface GlobalWithMongoose extends NodeJS.Global {
 
 const globalForMongoose = global as GlobalWithMongoose;
 
-let cached: Cached = globalForMongoose.mongoose || { conn: null, promise: null };
+const cached: Cached = globalForMongoose.mongoose || { conn: null, promise: null };
 if (!globalForMongoose.mongoose) {
   globalForMongoose.mongoose = cached;
 }
