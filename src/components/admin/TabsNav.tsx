@@ -1,11 +1,15 @@
 'use client';
 
+import { Dispatch, SetStateAction } from 'react';
+
+type TabType = 'stats' | 'discs' | 'users' | 'pending' | 'errors' | 'flagged' | 'reports';
+
 type TabsNavProps = {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab: TabType;
+  setActiveTab: Dispatch<SetStateAction<TabType>>;
 };
 
-const tabs = [
+const tabs: Array<{ key: TabType; label: string }> = [
   { key: 'stats', label: 'Dashboard' },
   { key: 'discs', label: 'Disc Catalog' },
   { key: 'users', label: 'Users' },

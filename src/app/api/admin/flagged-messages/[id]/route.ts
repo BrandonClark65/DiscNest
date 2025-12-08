@@ -12,9 +12,12 @@ import User from "@/models/User";
 // -----------------------
 const flaggedMessageAction = async (
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context?: { params?: { id: string } }
 ) => {
-  const { id } = await context.params;
+  const id = context?.params?.id;
+  if (!id) {
+    return NextResponse.json({ error: "Missing id parameter" }, { status: 400 });
+  }
   const { action } = await req.json();
 
   const flagged = await FlaggedMessage.findById(id);

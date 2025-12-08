@@ -7,11 +7,14 @@ import { connectToDatabase } from "@/lib/mongodb";
 
 const actionHandler = async (
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context?: { params?: { id: string } }
 ) => {
   await connectToDatabase();
 
-  const { id } = await context.params;     // ← FIXED
+  const id = context?.params?.id;
+  if (!id) {
+    return NextResponse.json({ error: "Missing id parameter" }, { status: 400 });
+  }
   const { action } = await req.json();
 
   const report = await UserReport.findById(id);

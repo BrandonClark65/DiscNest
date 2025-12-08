@@ -1,26 +1,28 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { requireAdmin } from "./requireAdmin";
 
-type Handler = (req: Request, ...args: unknown[]) => Promise<NextResponse>;
-
 /**
- * Admin-only wrapper that works with BOTH:
- *  - (req) style handlers
- *  - (req, context) style App Router handlers
+ * Admin-only wrapper for Next.js 15 route handlers.
+ * Compatible with Next.js 15 where params is a Promise.
  */
-export function withAdminAuth(handler: Handler) {
-  return async (req: Request, ...args: unknown[]) => {
+export function withAdminAuth<
+  T extends { params?: Record<string, unknown> } = Record<string, never>
+>(
+  handler: (
+    req: Request,
+    context?: T
+  ) => Promise<NextResponse>
+): (request: NextRequest, context: { params: Promise<Record<string, unknown>> }) => void | Response | Promise<void | Response> {
+  return async (request: NextRequest, context: { params: Promise<Record<string, unknown>> }) => {
     try {
       // ensures admin session
       await requireAdmin();
 
-      // If handler expects (req, context), pass context through
-      if (args.length > 0) {
-        return await handler(req, ...args);
-      }
-
-      // Otherwise call the standard 1-arg handler
-      return await handler(req);
+      // Resolve params Promise (Next.js 15) - for routes without dynamic segments, this will be {}
+      const resolvedParams = await context.params;
+      const resolvedContext = { params: resolvedParams as Record<string, unknown> } as T;
+      // Call handler - it may or may not use the context parameter
+      return await handler(request, resolvedContext);
     } catch (err: unknown) {
       console.error("[withAdminAuth]", err);
       const error = err as { name?: string; message?: string };
