@@ -66,7 +66,7 @@ export default function MarketplacePage() {
       setMyListings((prev) => prev.map((l) => (l._id === id ? { ...l, sold: true } : l)));
   };
 
-  const isOwner = (id: any) =>
+  const isOwner = (id: string | { _id: string } | undefined) =>
     (typeof id === 'string' ? id : id?._id) === userId;
 
   const totalPages = activeTab === 'market' ? marketTotalPages : myTotalPages;

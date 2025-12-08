@@ -7,8 +7,21 @@ import Pagination from './Pagination';
 const ITEMS_PER_PAGE = 25;
 
 export default function ErrorsTab() {
-  const [errorLogs, setErrorLogs] = useState<any[]>([]);
-  const [selectedLog, setSelectedLog] = useState<any | null>(null);
+  interface ErrorLog {
+    _id: string;
+    message: string;
+    route?: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    source: 'client' | 'server';
+    userId?: { name?: string; email?: string };
+    createdAt: string;
+    resolved?: boolean;
+    metadata?: Record<string, unknown>;
+    stack?: string;
+  }
+
+  const [errorLogs, setErrorLogs] = useState<ErrorLog[]>([]);
+  const [selectedLog, setSelectedLog] = useState<ErrorLog | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchErrorLogs = async () => {

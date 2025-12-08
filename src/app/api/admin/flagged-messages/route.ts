@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import FlaggedMessage from "@/models/FlaggedMessage";
-import User from "@/models/User";
 
 export async function GET() {
   await connectToDatabase();

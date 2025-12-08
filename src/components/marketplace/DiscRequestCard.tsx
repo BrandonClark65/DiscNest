@@ -5,8 +5,21 @@ import Image from "next/image";
 import GradientButton from "@/components/ui/GradientButton";
 import { MessageCircle, MapPin } from "lucide-react";
 
+interface DiscRequest {
+  _id: string;
+  title: string;
+  description?: string;
+  brand?: string;
+  plastic?: string;
+  weight?: number;
+  condition?: string;
+  userId?: { _id: string; username?: string; name?: string; avatarUrl?: string };
+  distanceMeters?: number;
+  [key: string]: unknown;
+}
+
 type Props = {
-  request: any;
+  request: DiscRequest;
   currentUserId?: string;
 };
 

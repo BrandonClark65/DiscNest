@@ -2,7 +2,7 @@
 
 type TabsNavProps = {
   activeTab: string;
-  setActiveTab: (tab: any) => void;
+  setActiveTab: (tab: string) => void;
 };
 
 const tabs = [

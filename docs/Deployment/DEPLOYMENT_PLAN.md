@@ -296,8 +296,12 @@ Once verified, configure:
 3. Driver: Node.js, Version: 5.5 or later
 4. Copy connection string
 5. Replace `<password>` with your database user password
-6. Replace `<dbname>` with `discnest` (or your database name)
-7. Format: `mongodb+srv://discnest-prod:<password>@cluster.mongodb.net/discnest?retryWrites=true&w=majority`
+6. **Add database name** (if not already in the string):
+   - Your connection string might look like: `mongodb+srv://<username>:<password>@cluster.mongodb.net/?appName=...`
+   - Add `/discnest` before the `?`: `mongodb+srv://<username>:<password>@cluster.mongodb.net/discnest?appName=...`
+   - **Note:** The database name (`/discnest`) is optional but recommended. If omitted, MongoDB will use a default database, but it's better to specify it explicitly.
+7. **Optional:** Add `retryWrites=true&w=majority` for better reliability:
+   - Final format: `mongodb+srv://discnest-prod:<password>@cluster.mongodb.net/discnest?retryWrites=true&w=majority&appName=discnest-production`
 
 ### 5.5 Enable Backups (M10+)
 

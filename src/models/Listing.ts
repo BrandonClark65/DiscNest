@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 import { DiscBrands, DiscPlastics } from "@/app/constants/discData";
 
 const ListingSchema = new Schema({

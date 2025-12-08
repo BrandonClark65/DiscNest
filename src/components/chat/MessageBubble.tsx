@@ -7,7 +7,6 @@ type MessageBubbleProps = {
   msg: MessageUI;
   isOwn: boolean;
   index: number;
-  threadId: string;
   onReportMessage: (messageId: string, senderId: string) => void;
 };
 
@@ -15,7 +14,6 @@ export default function MessageBubble({
   msg,
   isOwn,
   index,
-  threadId,
   onReportMessage,
 }: MessageBubbleProps) {
   const isSystem = msg.sender._id === "system";

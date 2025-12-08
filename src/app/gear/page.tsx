@@ -143,7 +143,7 @@ export default function GearPage() {
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
 
-    const reorderList = async (arr: Disc[], setArr: any, zone: 'shelf' | 'bag') => {
+    const reorderList = async (arr: Disc[], setArr: React.Dispatch<React.SetStateAction<Disc[]>>, zone: 'shelf' | 'bag') => {
       const oldIndex = arr.findIndex((d) => d._id === active.id);
       const newIndex = arr.findIndex((d) => d._id === over.id);
       if (oldIndex !== -1 && newIndex !== -1) {

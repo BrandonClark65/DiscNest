@@ -6,8 +6,7 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import MessageSellerButton from '@/components/MessageSellerButton';
 import type { Listing } from '@/types/listing';
-import GradientButton from '@/components/ui/GradientButton';
-import { ArrowBigLeft, MoreVertical } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ShareButton from '@/components/ui/ShareButton';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -63,8 +62,9 @@ export default function ListingPage() {
             listing_location: data.listing.location,
           });
         }
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch listing');
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch listing';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }

@@ -10,7 +10,7 @@ type Props = {
   loading: boolean;
   activeTab: 'market' | 'myListings';
   myListingsTab: 'active' | 'sold';
-  isOwner: (id: any) => boolean;
+  isOwner: (id: string | { _id: string } | undefined) => boolean;
   onDelete: (id: string) => void;
   onMarkSold: (id: string) => void;
 };

@@ -17,7 +17,7 @@ cloudinary.config({
 import type { UserSession } from "@/types/api";
 
 /* ---------- Upload + NSFW Detection Handler ---------- */
-const uploadImageHandler = async (req: Request, session: UserSession) => {
+const uploadImageHandler = async (req: Request) => {
   const formData = await req.formData();
   const file = formData.get("file") as File;
   const folder = formData.get("folder")?.toString() || "misc";   // ⭐ NEW

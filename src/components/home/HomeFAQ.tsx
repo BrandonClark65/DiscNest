@@ -40,8 +40,6 @@ const faqs: FAQ[] = [
 export default function HomeFAQ() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
-
   // FAQ Structured Data
   const faqSchema = {
     '@context': 'https://schema.org',

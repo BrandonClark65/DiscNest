@@ -122,7 +122,7 @@ export function recommendDiscs(
     }
 
     // 5️⃣ Favorite brand
-    if (user.favoriteBrands?.includes(candidate.brand as any)) {
+    if (candidate.brand && user.favoriteBrands?.includes(candidate.brand)) {
       score += 1.5;
       reasons.push({
         type: 'brand_match',

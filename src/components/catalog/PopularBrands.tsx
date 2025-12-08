@@ -25,8 +25,9 @@ export default function PopularBrands({ isMobile }: Props) {
   useEffect(() => {
     if (isMobile) {
       const handleOpen = () => setMobileOpen(true);
-      window.addEventListener('openPopularBrands' as any, handleOpen);
-      return () => window.removeEventListener('openPopularBrands' as any, handleOpen);
+      const eventName = 'openPopularBrands' as keyof WindowEventMap;
+      window.addEventListener(eventName, handleOpen as EventListener);
+      return () => window.removeEventListener(eventName, handleOpen as EventListener);
     }
   }, [isMobile]);
 

@@ -12,7 +12,7 @@ const seedHandler = async () => {
   );
 
   // Log process exit
-  seed.on("close", (code) => {
+  seed.on("close", () => {
     // Seed script completed
   });
 

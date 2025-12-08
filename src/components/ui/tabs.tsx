@@ -32,7 +32,7 @@ export function Tabs({ defaultValue, children }: TabsProps) {
 
   // Clone children to inject activeTab/onChange props
   const enhancedChildren = Array.isArray(children)
-    ? children.map((child: any) =>
+    ? children.map((child: React.ReactElement) =>
         child.type === TabsList
           ? {
               ...child,
@@ -68,7 +68,7 @@ export function TabsList({
       )}
     >
       {Array.isArray(children)
-        ? children.map((child: any) =>
+        ? children.map((child: React.ReactElement) =>
             child.type === TabsTrigger
               ? {
                   ...child,

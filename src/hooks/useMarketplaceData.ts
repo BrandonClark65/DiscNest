@@ -83,7 +83,7 @@ export function useMarketplaceData() {
             const ownerId =
               typeof l.userId === 'string'
                 ? l.userId
-                : String((l.userId as any)?._id || '');
+                : String((typeof l.userId === 'object' && l.userId !== null && '_id' in l.userId) ? l.userId._id : '');
             return ownerId !== userId;
           })
         : listings;

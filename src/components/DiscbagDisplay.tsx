@@ -15,7 +15,6 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
   const [bagDiscs, setBagDiscs] = useState<Disc[]>(bag || []);
   const [visibleCount, setVisibleCount] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [bagLoaded, setBagLoaded] = useState(false);
 
   const isLoggedIn = !!sessionEmail;
 

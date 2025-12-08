@@ -32,7 +32,6 @@ export default function MessageList({
             msg={msg}
             isOwn={isOwn}
             index={i}
-            threadId={thread._id}
             onReportMessage={onReportMessage}
           />
         );

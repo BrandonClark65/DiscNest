@@ -47,7 +47,7 @@ const getListingsHandler = async (req: Request) => {
     try {
       const session = await requireUser();
       sessionUserId = session.user.id;
-    } catch (err) {
+    } catch {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }

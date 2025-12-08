@@ -31,11 +31,17 @@ export async function sendMessageNotification(
     }
 
     // Get the thread with populated data
+    interface PopulatedThread {
+      participants: Array<{ _id: mongoose.Types.ObjectId; name?: string; email?: string } | mongoose.Types.ObjectId>;
+      listingId?: { _id: mongoose.Types.ObjectId; title?: string } | mongoose.Types.ObjectId | null;
+      requestId?: { _id: mongoose.Types.ObjectId; title?: string } | mongoose.Types.ObjectId | null;
+    }
+
     const thread = (await MessageThread.findById(threadId)
       .populate("participants", "_id name email")
       .populate("listingId", "title")
       .populate("requestId", "title")
-      .lean()) as any;
+      .lean()) as PopulatedThread | null;
 
     if (!thread) {
       await logError({
@@ -48,7 +54,12 @@ export async function sendMessageNotification(
     }
 
     // Get sender info
-    const sender = (await User.findById(senderIdString, "name email").lean()) as any;
+    interface Sender {
+      _id: mongoose.Types.ObjectId;
+      name?: string;
+      email?: string;
+    }
+    const sender = (await User.findById(senderIdString, "name email").lean()) as Sender | null;
     if (!sender) {
       await logError({
         message: `Sender ${senderIdString} not found when sending message notification`,
@@ -63,8 +74,8 @@ export async function sendMessageNotification(
 
     // Find recipients (participants who are not the sender)
     const recipientIds = (thread.participants || [])
-      .map((p: any) => {
-        const id = typeof p === "object" && p._id ? p._id.toString() : p.toString();
+      .map((p) => {
+        const id = typeof p === "object" && p !== null && "_id" in p ? p._id.toString() : p.toString();
         return id;
       })
       .filter((id: string) => id !== senderIdString);
@@ -75,10 +86,15 @@ export async function sendMessageNotification(
     }
 
     // Fetch recipient users with email addresses
+    interface Recipient {
+      _id: mongoose.Types.ObjectId;
+      name?: string;
+      email?: string;
+    }
     const recipients = (await User.find(
       { _id: { $in: recipientIds }, email: { $exists: true, $ne: null } },
       "_id name email"
-    ).lean()) as any[];
+    ).lean()) as Recipient[];
 
     if (recipients.length === 0) {
       // No recipients with email addresses
@@ -88,11 +104,15 @@ export async function sendMessageNotification(
     // Determine context (listing or request title)
     let contextTitle = "";
     if (thread.listingId) {
-      const listing = thread.listingId as any;
-      contextTitle = listing?.title || "a listing";
+      const listing = thread.listingId;
+      contextTitle = (typeof listing === "object" && listing !== null && "title" in listing && typeof listing.title === "string") 
+        ? listing.title 
+        : "a listing";
     } else if (thread.requestId) {
-      const request = thread.requestId as any;
-      contextTitle = request?.title || "a disc request";
+      const request = thread.requestId;
+      contextTitle = (typeof request === "object" && request !== null && "title" in request && typeof request.title === "string")
+        ? request.title
+        : "a disc request";
     }
 
     // Determine "from" email based on environment
@@ -123,7 +143,7 @@ export async function sendMessageNotification(
         : messageContent;
 
     // Send email to each recipient
-    const emailPromises = recipients.map(async (recipient: any) => {
+    const emailPromises = recipients.map(async (recipient: Recipient) => {
       if (!recipient.email) return;
 
       const recipientName = recipient.name || "there";

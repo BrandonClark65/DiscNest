@@ -5,10 +5,7 @@ import type { RefObject } from 'react';
 import type { Session } from 'next-auth';
 import type { ThreadDB, ThreadUI } from '@/types/thread';
 import type { MessageUI } from '@/types/message';
-import {
-  mapMessageDBtoUI,
-  mapThreadDBtoUI,
-} from '@/lib/messageMapping';
+import { mapThreadDBtoUI } from '@/lib/messageMapping';
 import { useAnalytics } from '@/lib/useAnalytics';
 
 export default function useChatThread(

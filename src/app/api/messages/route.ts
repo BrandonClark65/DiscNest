@@ -5,16 +5,13 @@ import MessageThread from "@/models/MessageThread";
 import "@/models/Listing";
 import User from "@/models/User";
 import { connectToDatabase } from "@/lib/mongodb";
-import type { Thread } from "@/types/thread";
-import type { Message } from "@/types/message";
-import mongoose, { Types } from "mongoose";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import { sendMessageNotification } from "@/lib/messages/sendMessageNotification";
 
 // ----------------------
 // GET: all message threads for current user
 // ----------------------
-const getThreadsHandler = async (req: Request) => {
+const getThreadsHandler = async () => {
   await connectToDatabase();
 
   const session = await getServerSession(authOptions);

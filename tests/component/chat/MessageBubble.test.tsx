@@ -27,7 +27,6 @@ describe("MessageBubble", () => {
         msg={message}
         isOwn={false}
         index={0}
-        threadId="thread-1"
         onReportMessage={vi.fn()}
       />
     );
@@ -48,7 +47,6 @@ describe("MessageBubble", () => {
         msg={message}
         isOwn={false}
         index={1}
-        threadId="thread-1"
         onReportMessage={vi.fn()}
       />
     );
@@ -68,7 +66,6 @@ describe("MessageBubble", () => {
         msg={baseMessage}
         isOwn={false}
         index={2}
-        threadId="thread-1"
         onReportMessage={onReport}
       />
     );
@@ -86,7 +83,6 @@ describe("MessageBubble", () => {
         msg={baseMessage}
         isOwn
         index={0}
-        threadId="thread-1"
         onReportMessage={vi.fn()}
       />
     );

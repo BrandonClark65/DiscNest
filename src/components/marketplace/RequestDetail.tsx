@@ -13,7 +13,21 @@ const ReportModal = dynamic(() => import("@/components/modals/ReportModal"), {
   ssr: false,
 });
 
-export default function RequestDetail({ request }: { request: any }) {
+interface DiscRequest {
+  _id: string;
+  title: string;
+  description?: string;
+  brand?: string;
+  plastic?: string;
+  weight?: number;
+  color?: string;
+  condition?: string;
+  userId?: { _id: string; username?: string; name?: string; avatarUrl?: string };
+  location?: { coordinates: [number, number] };
+  [key: string]: unknown;
+}
+
+export default function RequestDetail({ request }: { request: DiscRequest }) {
   const { data: session } = useSession();
   const router = useRouter();
 

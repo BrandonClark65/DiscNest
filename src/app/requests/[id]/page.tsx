@@ -8,7 +8,21 @@ export default function RequestPage() {
   const params = useParams();
   const id = params.id;
 
-  const [request, setRequest] = useState<any | null>(null);
+  interface DiscRequest {
+    _id: string;
+    title: string;
+    description?: string;
+    brand?: string;
+    plastic?: string;
+    weight?: number;
+    color?: string;
+    condition?: string;
+    userId?: string | { _id: string; name?: string; username?: string };
+    location?: { coordinates: [number, number] };
+    [key: string]: unknown;
+  }
+
+  const [request, setRequest] = useState<DiscRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,8 +35,9 @@ export default function RequestPage() {
         if (!res.ok) throw new Error("Failed to load request");
         const data = await res.json();
         setRequest(data);
-      } catch (err: any) {
-        setError(err.message || "Error loading request");
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Error loading request";
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }

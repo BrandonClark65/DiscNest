@@ -25,9 +25,15 @@ interface Cached {
 }
 
 // Use a global cache in dev to avoid creating multiple connections
-let cached: Cached = (global as any).mongoose;
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+interface GlobalWithMongoose extends NodeJS.Global {
+  mongoose?: Cached;
+}
+
+const globalForMongoose = global as GlobalWithMongoose;
+
+let cached: Cached = globalForMongoose.mongoose || { conn: null, promise: null };
+if (!globalForMongoose.mongoose) {
+  globalForMongoose.mongoose = cached;
 }
 
 export async function connectToDatabase() {

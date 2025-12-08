@@ -68,7 +68,32 @@ export default async function ListingLayout({
       const data = await res.json();
       const listing = data.listing;
 
-      const productData: any = {
+      interface ProductSchema {
+        '@context': string;
+        '@type': string;
+        name: string;
+        description: string;
+        image: string[];
+        category: string;
+        offers: {
+          '@type': string;
+          price: number;
+          priceCurrency: string;
+          availability: string;
+          seller: {
+            '@type': string;
+            name: string;
+          };
+          url: string;
+        };
+        brand?: {
+          '@type': string;
+          name: string;
+        };
+        itemCondition?: string;
+      }
+
+      const productData: ProductSchema = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: listing.title,

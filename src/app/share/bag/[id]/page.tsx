@@ -1,5 +1,4 @@
 import { connectToDatabase } from '@/lib/mongodb';
-import Disc from '@/models/Disc';
 import User from '@/models/User';
 import DiscBagDisplay from '@/components/DiscbagDisplay';
 import DiscCard from '@/components/DiscCard';

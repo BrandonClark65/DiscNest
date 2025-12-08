@@ -36,7 +36,7 @@ function mapMessageDBtoUI(msg: MessageDB): MessageUI {
   // Normal user message
   let senderName = "Unknown";
   if (typeof msg.sender === "object" && msg.sender && "_id" in msg.sender) {
-    senderName = (msg.sender as any).name || "Unknown";
+    senderName = ("name" in msg.sender && typeof msg.sender.name === "string") ? msg.sender.name : "Unknown";
   }
 
   return {
@@ -58,7 +58,7 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
 
     participants: thread.participants.map((p) =>
       "_id" in p
-        ? { _id: p._id.toString(), name: (p as any).name || "Unknown" }
+        ? { _id: p._id.toString(), name: ("name" in p && typeof p.name === "string") ? p.name : "Unknown" }
         : { _id: p.toString(), name: "Unknown" }
     ),
 
@@ -70,8 +70,8 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
       if (typeof l === "object" && "_id" in l) {
         return {
           _id: l._id.toString(),
-          title: (l as any).title || "Listing",
-          imageUrls: (l as any).imageUrls || [],
+          title: ("title" in l && typeof l.title === "string") ? l.title : "Listing",
+          imageUrls: ("imageUrls" in l && Array.isArray(l.imageUrls)) ? l.imageUrls : [],
         };
       }
 
@@ -86,7 +86,7 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
       if (typeof r === "object" && "_id" in r) {
         return {
           _id: r._id.toString(),
-          title: (r as any).title || "Disc Request",
+          title: ("title" in r && typeof r.title === "string") ? r.title : "Disc Request",
         };
       }
 

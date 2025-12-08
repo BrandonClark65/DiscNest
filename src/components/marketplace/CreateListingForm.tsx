@@ -118,7 +118,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     }));
   }, [selectedDisc, discs, touchedFields]);
 
-  function handleFieldChange<K extends keyof typeof form>(field: K, value: any) {
+  function handleFieldChange<K extends keyof typeof form>(field: K, value: typeof form[K]) {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (['title', 'brand', 'plastic', 'weight'].includes(field)) {
       setTouchedFields((prev) => ({ ...prev, [field]: true }));
@@ -248,9 +248,10 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         imageUrls: [...prev.imageUrls, data.imageUrl],
         publicIds: [...(prev.publicIds || []), data.publicId],
       }));
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(err.message || 'Error uploading image');
+      const errorMessage = err instanceof Error ? err.message : 'Error uploading image';
+      alert(errorMessage);
     } finally {
       setUploading(false);
       e.target.value = '';

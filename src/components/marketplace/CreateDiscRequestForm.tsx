@@ -111,7 +111,7 @@ export default function CreateDiscRequestForm({ user, onClose }: CreateDiscReque
     );
   }, []);
 
-  function handleFieldChange<K extends keyof typeof form>(field: K, value: any) {
+  function handleFieldChange<K extends keyof typeof form>(field: K, value: typeof form[K]) {
     setForm((prev) => ({ ...prev, [field]: value }));
 
     if (['title', 'brand', 'plastic', 'weight', 'color'].includes(field)) {
@@ -171,9 +171,10 @@ export default function CreateDiscRequestForm({ user, onClose }: CreateDiscReque
       alert('Disc request posted!');
       if (onClose) onClose();
       resetForm();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(err.message || 'Failed to create disc request');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create disc request';
+      alert(errorMessage);
     } finally {
       setSubmitting(false);
     }

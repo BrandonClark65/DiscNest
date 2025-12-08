@@ -10,8 +10,6 @@ import OpenAI from "openai";
 import { Filter } from "bad-words";
 import User from "@/models/User";
 import FlaggedMessage from "@/models/FlaggedMessage";
-import Listing from "@/models/Listing";
-import DiscRequest from "@/models/DiscRequest";
 import { sendMessageNotification } from "@/lib/messages/sendMessageNotification";
 
 
@@ -141,7 +139,7 @@ const postMessageHandler = async (
       input: content,
     });
 
-    const result = (mod as any).results[0];
+    const result = mod.results[0];
     flagged = result.flagged;
     flaggedCategories = result.categories;
 

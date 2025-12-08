@@ -27,7 +27,7 @@ export type LogErrorOptions = {
   route?: string;
   severity?: "low" | "medium" | "high" | "critical";
   userId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   source?: "server" | "client";
 };
 

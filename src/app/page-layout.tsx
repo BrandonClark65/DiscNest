@@ -3,7 +3,21 @@ import Script from 'next/script';
 export default function HomePageLayout({ children }: { children: React.ReactNode }) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
 
-  const organizationSchema: any = {
+  interface OrganizationSchema {
+    '@context': string;
+    '@type': string;
+    name: string;
+    url: string;
+    logo: string;
+    description: string;
+    contactPoint: {
+      '@type': string;
+      contactType: string;
+      url: string;
+    };
+  }
+
+  const organizationSchema: OrganizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'DiscNest',

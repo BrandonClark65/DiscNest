@@ -1,4 +1,3 @@
-import { DiscNestUser as User } from "./user";
 import { Types } from "mongoose";
 import mongoose from "mongoose";
 
