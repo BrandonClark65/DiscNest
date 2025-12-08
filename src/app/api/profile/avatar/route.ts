@@ -4,6 +4,7 @@ import { withErrorHandling } from "@/lib/withErrorHandling";
 import User from "@/models/User";
 import { connectToDatabase } from "@/lib/mongodb";
 import cloudinary from "cloudinary";
+import type { UserSession } from "@/types/api";
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -11,7 +12,7 @@ cloudinary.v2.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-const handler = async (req: Request, session: any) => {
+const handler = async (req: Request, session: UserSession) => {
   await connectToDatabase();
 
   const formData = await req.formData();
@@ -44,7 +45,6 @@ const handler = async (req: Request, session: any) => {
   user.avatarUrl = uploadData.imageUrl;
   user.avatarPublicId = uploadData.publicId;
   await user.save();
-  const userAfterSave = await User.findById(userId);
 
   return NextResponse.json({
     success: true,

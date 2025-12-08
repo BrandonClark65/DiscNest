@@ -14,8 +14,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
+import type { UserSession } from "@/types/api";
+
 /* ---------- Upload + NSFW Detection Handler ---------- */
-const uploadImageHandler = async (req: Request, session: any) => {
+const uploadImageHandler = async (req: Request, session: UserSession) => {
   const formData = await req.formData();
   const file = formData.get("file") as File;
   const folder = formData.get("folder")?.toString() || "misc";   // ⭐ NEW
@@ -57,7 +59,13 @@ const uploadImageHandler = async (req: Request, session: any) => {
   );
 
   // ☁️ Cloudinary Upload 
-  const uploadResult: any = await new Promise((resolve, reject) => {
+  interface CloudinaryResult {
+    secure_url: string;
+    public_id: string;
+    [key: string]: unknown;
+  }
+
+  const uploadResult = await new Promise<CloudinaryResult>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder }, 
       (err, result) => (err ? reject(err) : resolve(result))

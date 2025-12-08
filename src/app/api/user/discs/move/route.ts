@@ -4,9 +4,10 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import { recalcDiscCount } from "@/lib/updateDiscCount";
+import type { UserSession } from "@/types/api";
 
 /* ---------- Handler ---------- */
-const moveDiscHandler = async (req: Request, session: any) => {
+const moveDiscHandler = async (req: Request, session: UserSession) => {
   const { discId, from, to } = await req.json();
 
   if (
@@ -30,7 +31,12 @@ const moveDiscHandler = async (req: Request, session: any) => {
   }
 
   // Check if disc exists in source array
-  const existsInSource = user[from]?.some((d: any) => d.toString() === discId);
+  const existsInSource = user[from]?.some((d) => {
+    const discIdStr = typeof d === 'object' && d !== null && '_id' in d
+      ? String(d._id)
+      : String(d);
+    return discIdStr === discId;
+  });
   if (!existsInSource) {
     return NextResponse.json(
       { error: "Disc not found in source" },

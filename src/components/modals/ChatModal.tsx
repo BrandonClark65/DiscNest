@@ -23,47 +23,75 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
   const { trackEvent } = useAnalytics();
 
   const { data: session, status } = useSession();
-  if (status !== "authenticated" || !session?.user?.id) return null;
-  const currentUserId = session.user.id;
+  const currentUserId = session?.user?.id;
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
-    fetchThread();
-  }, [threadId]);
+    if (status === "authenticated" && currentUserId) {
+      fetchThread();
+    }
+  }, [threadId, status, currentUserId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread?.messages]);
+
+  if (status !== "authenticated" || !currentUserId) return null;
 
   async function fetchThread() {
     try {
       const res = await fetch(`/api/messages/${threadId}`);
       const data = await res.json();
 
+      interface ParticipantData {
+        _id: string;
+        name: string;
+      }
+
+      interface MessageData {
+        sender: ParticipantData;
+        content: string;
+        timestamp: string | Date;
+        readBy: (string | unknown)[];
+        flagged?: boolean;
+        flaggedCategories?: Record<string, unknown>;
+      }
+
+      interface ListingData {
+        _id: string;
+        title: string;
+        imageUrls?: string[];
+      }
+
+      interface RequestData {
+        _id: string;
+        title: string;
+      }
+
       const mappedThread: ThreadUI = {
         _id: data._id,
-        participants: data.participants.map((p: any) => ({
+        participants: (data.participants as ParticipantData[]).map((p) => ({
           _id: p._id,
           name: p.name,
         })),
         listingId: data.listingId
           ? {
-              _id: data.listingId._id,
-              title: data.listingId.title,
-              imageUrls: data.listingId.imageUrls || [],
+              _id: (data.listingId as ListingData)._id,
+              title: (data.listingId as ListingData).title,
+              imageUrls: (data.listingId as ListingData).imageUrls || [],
             }
           : null,
         requestId: data.requestId
           ? {
-              _id: data.requestId._id,
-              title: data.requestId.title,
+              _id: (data.requestId as RequestData)._id,
+              title: (data.requestId as RequestData).title,
             }
           : null,
-        messages: data.messages.map((msg: any) => ({
+        messages: (data.messages as MessageData[]).map((msg) => ({
           sender: { _id: msg.sender._id, name: msg.sender.name },
           content: msg.content,
           timestamp: new Date(msg.timestamp).toISOString(),
-          readBy: msg.readBy.map((id: any) => id.toString()),
+          readBy: msg.readBy.map((id) => id.toString()),
           flagged: msg.flagged ?? false,
           flaggedCategories: msg.flaggedCategories ?? {},
         })),

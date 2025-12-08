@@ -64,7 +64,7 @@ export default function FlaggedMessagesTab() {
                     className="text-blue-600 hover:underline"
                     target="_blank"
                   >
-                    View thread for: "{msg.threadId.listingId.title}"
+                    View thread for: &quot;{msg.threadId.listingId.title}&quot;
                   </Link>
                 ) : (
                   <Link

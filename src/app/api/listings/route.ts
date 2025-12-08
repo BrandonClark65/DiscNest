@@ -52,7 +52,16 @@ const getListingsHandler = async (req: Request) => {
     }
   }
 
-  const query: any = { pendingReview: { $ne: true } };
+  interface ListingQuery {
+    pendingReview?: { $ne: boolean };
+    userId?: { $ne: mongoose.Types.ObjectId } | mongoose.Types.ObjectId;
+    sold?: { $ne: boolean };
+    brand?: string;
+    condition?: string;
+    $or?: Array<{ [key: string]: { $regex: string; $options: string } }>;
+  }
+
+  const query: ListingQuery = { pendingReview: { $ne: true } };
 
   if (mode === "marketplace") {
     // Exclude current user's listings if logged in
@@ -77,7 +86,16 @@ const getListingsHandler = async (req: Request) => {
     ];
   }
 
-  let listings: any[] = [];
+  interface ListingDocument {
+    _id: unknown;
+    userId: unknown;
+    location?: {
+      coordinates: [number, number];
+    };
+    [key: string]: unknown;
+  }
+
+  let listings: ListingDocument[] = [];
   let totalCount = 0;
 
   // Geo sorting only for marketplace
@@ -136,7 +154,9 @@ export const GET = withErrorHandling(getListingsHandler, "/api/listings");
 // ----------------------
 // POST: create listing (auth required)
 // ----------------------
-const createListingHandler = async (req: Request, session: any) => {
+import type { UserSession } from "@/types/api";
+
+const createListingHandler = async (req: Request, session: UserSession) => {
   await connectToDatabase();
   const body = await req.json();
   const pendingReview = body.pendingReview || false;
@@ -155,7 +175,13 @@ const createListingHandler = async (req: Request, session: any) => {
     }
   }
 
-  const listingData: any = {
+  interface ListingData {
+    userId: string;
+    weight: number | null;
+    [key: string]: unknown;
+  }
+
+  const listingData: ListingData = {
     ...body,
     userId: session.user.id,
     weight:

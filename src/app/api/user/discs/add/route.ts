@@ -5,9 +5,10 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import { recalcDiscCount } from "@/lib/updateDiscCount";
+import type { UserSession } from "@/types/api";
 
 /* ---------- Handler ---------- */
-const addDiscHandler = async (req: Request, session: any) => {
+const addDiscHandler = async (req: Request, session: UserSession) => {
   const { discId, target } = await req.json();
 
   if (!discId || !target || !["shelf", "bag"].includes(target)) {

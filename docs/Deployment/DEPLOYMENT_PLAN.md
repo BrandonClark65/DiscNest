@@ -204,25 +204,139 @@ Once verified, configure:
 
 ## 🗄️ Step 5: Configure MongoDB Atlas
 
-### 5.1 Production Database
+### 5.1 Should You Create a Separate Production Cluster?
 
-1. Create a new cluster in MongoDB Atlas (or use existing)
-2. Ensure cluster is in same region as Vercel deployment
-3. Configure network access:
-   - Add `0.0.0.0/0` for Vercel IPs (or specific Vercel IPs)
-   - Or use MongoDB Atlas IP Access List
+**✅ YES - Strongly Recommended**
 
-### 5.2 Database User
+**Reasons:**
+- **Data Isolation:** Prevents accidental data loss from development/testing
+- **Performance:** Production workloads won't be affected by dev/testing queries
+- **Security:** Separate credentials and network access rules
+- **Cost Control:** Can use different tiers for dev vs production
+- **Backup Strategy:** Production backups are critical; dev backups are optional
 
-1. Create a database user with read/write permissions
-2. Update `MONGODB_URI` in Vercel with production connection string
-3. Format: `mongodb+srv://username:password@cluster.mongodb.net/discnest?retryWrites=true&w=majority`
+**Best Practice:** Keep development and production databases completely separate.
 
-### 5.3 Enable Backups
+### 5.2 Cluster Tier Recommendations
 
-1. Enable automated backups in MongoDB Atlas
-2. Configure backup schedule
-3. Test restore procedure
+**For Production (DiscNest):**
+
+**Recommended: M10 (Dedicated) - $57/month**
+- **2 GB RAM, 10 GB storage**
+- **Best for:** Small to medium applications, startups, MVP launches
+- **Why M10:**
+  - Dedicated resources (not shared)
+  - Includes automated backups
+  - Good performance for typical web app workloads
+  - Can handle thousands of users and millions of documents
+  - Easy to scale up later if needed
+
+**Alternative: M0 (Free) - $0/month**
+- **512 MB RAM, 512 MB storage**
+- **Best for:** Testing, very early stage, or extremely low traffic
+- **Limitations:**
+  - Shared resources (can be slower)
+  - No automated backups (manual only)
+  - Limited to 512 MB storage
+  - Not recommended for production with real users
+
+**Alternative: M30 (Dedicated) - $200/month**
+- **8 GB RAM, 40 GB storage**
+- **Best for:** High-traffic applications, established businesses
+- **When to choose:**
+  - You have 10,000+ active users
+  - You're processing thousands of queries per second
+  - You need guaranteed high performance
+  - You have budget for scaling
+
+**Alternative: Serverless (Flex) - Pay per operation**
+- **Variable cost based on usage**
+- **Best for:** Unpredictable traffic, cost optimization
+- **Considerations:**
+  - Can be cheaper for low/irregular traffic
+  - Can be more expensive for consistent high traffic
+  - Good for testing different usage patterns
+
+**Recommendation for DiscNest:**
+1. **Start with M10** - Best balance of cost, performance, and features
+2. **Monitor usage** - MongoDB Atlas provides metrics dashboard
+3. **Scale up to M30** if you see:
+   - Consistent high CPU usage (>70%)
+   - Slow query performance
+   - Storage approaching limits
+   - High user growth
+
+### 5.3 Create Production Cluster
+
+1. **In MongoDB Atlas Dashboard:**
+   - Click "Create" → "Cluster"
+   - Choose **M10** (or your selected tier)
+   - Select **same region as Vercel deployment** (e.g., US East if Vercel is in US)
+   - Choose **MongoDB 7.0** (or latest stable)
+   - Name it: `discnest-production`
+
+2. **Configure Network Access:**
+   - Go to Network Access
+   - Add IP Address: `0.0.0.0/0` (allows all IPs - Vercel uses dynamic IPs)
+   - **OR** (more secure): Add specific Vercel IP ranges if available
+   - **Note:** For production, consider restricting to known IPs if possible
+
+3. **Create Database User:**
+   - Go to Database Access
+   - Click "Add New Database User"
+   - Username: `discnest-prod` (or your preference)
+   - Password: Generate strong password (save securely!)
+   - Database User Privileges: "Read and write to any database"
+   - **Important:** Save credentials - you'll need them for connection string
+
+### 5.4 Get Connection String
+
+1. Click "Connect" on your cluster
+2. Choose "Connect your application"
+3. Driver: Node.js, Version: 5.5 or later
+4. Copy connection string
+5. Replace `<password>` with your database user password
+6. Replace `<dbname>` with `discnest` (or your database name)
+7. Format: `mongodb+srv://discnest-prod:<password>@cluster.mongodb.net/discnest?retryWrites=true&w=majority`
+
+### 5.5 Enable Backups (M10+)
+
+**M10 includes automated backups:**
+
+1. Go to your cluster → "Backup" tab
+2. Enable "Cloud Backup" (included with M10)
+3. Configure backup schedule:
+   - **Snapshot Schedule:** Daily at 2 AM UTC (or your preferred time)
+   - **Retention:** 7 days (default, can increase)
+4. **Test restore procedure:**
+   - Create a test document
+   - Perform a restore to verify backups work
+   - Document the restore process
+
+**Note:** M0 (Free) tier does NOT include automated backups. You must manually export data.
+
+### 5.6 Development Database (Optional but Recommended)
+
+**Create a separate M0 (Free) cluster for development:**
+- Name: `discnest-dev`
+- Use for: Local development, testing, staging
+- Benefits: No risk of affecting production data
+- Cost: Free (M0 tier)
+
+### 5.7 Performance Optimization
+
+1. **Create Indexes:**
+   - Index frequently queried fields (e.g., `listings.userId`, `listings.createdAt`)
+   - MongoDB Atlas can suggest indexes based on query patterns
+
+2. **Monitor Performance:**
+   - Use Atlas Performance Advisor
+   - Review slow query logs
+   - Monitor connection pool usage
+
+3. **Connection Pooling:**
+   - Next.js API routes handle connection pooling automatically
+   - Default connection limit is usually sufficient
 
 ---
 

@@ -40,9 +40,11 @@ export const GET = withErrorHandling(getListingHandler, "/api/listing/[id]");
 // ----------------------
 // PATCH: mark as sold
 // ----------------------
+import type { UserSession } from "@/types/api";
+
 const patchListingHandler = async (
   req: Request,
-  session: any,
+  session: UserSession,
   context?: { params: Promise<{ id: string }> }
 ) => {
   if (!context?.params)
@@ -93,7 +95,7 @@ export const PATCH = withErrorHandling(
 // ----------------------
 const deleteListingHandler = async (
   req: Request,
-  session: any,
+  session: UserSession,
   context?: { params: Promise<{ id: string }> }
 ) => {
   await connectToDatabase();

@@ -5,7 +5,7 @@ import { requireUser } from "./requireUser";
  * Wraps any API route handler to enforce user authentication.
  * Passes (req, session, context) into the wrapped handler.
  */
-export function withUserAuth<T extends { params?: any } = {}>(
+export function withUserAuth<T extends { params?: Record<string, unknown> } = Record<string, never>>(
   handler: (
     req: Request,
     session: Awaited<ReturnType<typeof requireUser>>,
@@ -16,10 +16,11 @@ export function withUserAuth<T extends { params?: any } = {}>(
     try {
       const session = await requireUser();
       return await handler(req, session, context);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[withUserAuth]", err);
-      const status = err.name === "UnauthorizedError" ? 401 : 500;
-      return NextResponse.json({ error: err.message }, { status });
+      const error = err as { name?: string; message?: string };
+      const status = error.name === "UnauthorizedError" ? 401 : 500;
+      return NextResponse.json({ error: error.message || "Internal server error" }, { status });
     }
   };
 }

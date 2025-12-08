@@ -10,7 +10,16 @@ import { withErrorHandling } from "@/lib/withErrorHandling";
 // ----------------------
 // POST: update profile
 // ----------------------
-const updateProfileHandler = async (req: Request, session: any) => {
+interface UserSession {
+  user: {
+    email: string;
+    id: string;
+  };
+}
+
+import type { UserSession } from "@/types/api";
+
+const updateProfileHandler = async (req: Request, session: UserSession) => {
   const body = await req.json();
 
   // Validate with Zod
@@ -86,7 +95,7 @@ export const POST = withErrorHandling(
 // ----------------------
 // GET: fetch current user profile
 // ----------------------
-const getProfileHandler = async (req: Request, session: any) => {
+const getProfileHandler = async (req: Request, session: UserSession) => {
   await connectToDatabase();
 
   const user = await User.findOne({ email: session.user.email }).lean();

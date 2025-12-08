@@ -12,9 +12,17 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
 
     // Parse request body safely
-    let body: any;
+    interface ErrorBody {
+      message?: string | { message?: string } | unknown;
+      stack?: string | unknown;
+      route?: string;
+      metadata?: Record<string, unknown>;
+      severity?: string;
+    }
+
+    let body: ErrorBody;
     try {
-      body = await req.json();
+      body = await req.json() as ErrorBody;
     } catch {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }

@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { recommendDiscs } from "@/lib/recommendations";
 import type { DiscNestUser } from "@/types/user";
 import type { Disc } from "@/types/disc";
+import type { UserSession } from "@/types/api";
 
 /* ---------- Properly typed Disc model ---------- */
 const DiscModel =
@@ -14,7 +15,7 @@ const DiscModel =
   mongoose.model<Disc>("Disc", new mongoose.Schema({}), "discs");
 
 /* ---------- Handler ---------- */
-const getRecommendationsHandler = async (_req: Request, session: any) => {
+const getRecommendationsHandler = async (_req: Request, session: UserSession) => {
   await connectToDatabase();
 
   // Load user

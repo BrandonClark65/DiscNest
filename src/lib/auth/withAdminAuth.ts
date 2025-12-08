@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "./requireAdmin";
 
+type Handler = (req: Request, ...args: unknown[]) => Promise<NextResponse>;
+
 /**
  * Admin-only wrapper that works with BOTH:
  *  - (req) style handlers
  *  - (req, context) style App Router handlers
  */
-export function withAdminAuth(handler: Function) {
-  return async (req: Request, ...args: any[]) => {
+export function withAdminAuth(handler: Handler) {
+  return async (req: Request, ...args: unknown[]) => {
     try {
       // ensures admin session
       await requireAdmin();
@@ -19,10 +21,11 @@ export function withAdminAuth(handler: Function) {
 
       // Otherwise call the standard 1-arg handler
       return await handler(req);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[withAdminAuth]", err);
-      const status = err.name === "UnauthorizedError" ? 403 : 500;
-      return NextResponse.json({ error: err.message }, { status });
+      const error = err as { name?: string; message?: string };
+      const status = error.name === "UnauthorizedError" ? 403 : 500;
+      return NextResponse.json({ error: error.message || "Internal server error" }, { status });
     }
   };
 }

@@ -12,6 +12,7 @@ if (typeof window === 'undefined') {
   // Only validate on server-side
   try {
     // Import validation (it will only run once due to module caching)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('@/lib/env').validateEnv();
   } catch (error) {
     // Error already logged by validateEnv

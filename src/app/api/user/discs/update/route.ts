@@ -4,9 +4,10 @@ import Disc from "@/models/Disc";
 import type { Disc as DiscType } from "@/types/disc";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
+import type { UserSession } from "@/types/api";
 
 /* ---------- Handler ---------- */
-const updateDiscHandler = async (req: Request, session: any) => {
+const updateDiscHandler = async (req: Request, session: UserSession) => {
   const body = await req.json();
   const { discId, plastic, wearLevel, notes, color, weight } = body;
 

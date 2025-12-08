@@ -3,9 +3,10 @@ import User from "@/models/User";
 import { connectToDatabase } from "@/lib/mongodb";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
+import type { UserSession } from "@/types/api";
 
 /* ---------- Handler ---------- */
-const getShelfHandler = async (_req: Request, session: any) => {
+const getShelfHandler = async (_req: Request, session: UserSession) => {
   await connectToDatabase();
 
   const user = await User.findById(session.user.id).populate("discShelf");

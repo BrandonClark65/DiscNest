@@ -23,7 +23,7 @@ export default function SiteAnnouncement() {
         </h2>
 
         <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed">
-          We're actively building and improving the platform, and we'd love your feedback.
+          We&apos;re actively building and improving the platform, and we&apos;d love your feedback.
           If you have ideas, feature suggestions, or thoughts about the site,
           please reach out through our{' '}
           <Link

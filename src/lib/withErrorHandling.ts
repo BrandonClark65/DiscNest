@@ -7,7 +7,7 @@ import { logError } from "@/lib/errorLogger";
  * and writes to the ErrorLog collection.
  */
 export function withErrorHandling<
-  T extends (...args: any[]) => Promise<NextResponse>
+  T extends (...args: unknown[]) => Promise<NextResponse>
 >(
   handler: T,
   routePath?: string
@@ -44,7 +44,7 @@ export function withErrorHandling<
             method: req?.method,
             rawError:
               err instanceof Error
-                ? { name: err.name, cause: (err as any).cause }
+                ? { name: err.name, cause: 'cause' in err ? (err as { cause?: unknown }).cause : undefined }
                 : err,
           },
         });

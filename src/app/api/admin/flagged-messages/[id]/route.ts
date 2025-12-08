@@ -23,7 +23,10 @@ const flaggedMessageAction = async (
     return NextResponse.json({ error: "Flagged message not found" }, { status: 404 });
   }
 
-  const adminId = (req as any).admin?._id; // from withAdminAuth
+  // Get admin ID from session (withAdminAuth ensures admin is authenticated)
+  const { requireAdmin } = await import("@/lib/auth/requireAdmin");
+  const adminSession = await requireAdmin();
+  const adminId = adminSession.user.id;
 
   // -------------------------
   // ACTION: DELIVER

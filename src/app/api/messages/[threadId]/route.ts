@@ -46,7 +46,12 @@ const getThreadHandler = async (
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
 
   const userId = session.user.id;
-  if (!thread.participants.some((p: any) => p._id.toString() === userId))
+  if (!thread.participants.some((p) => {
+    const participantId = typeof p === 'object' && p !== null && '_id' in p 
+      ? String(p._id) 
+      : String(p);
+    return participantId === userId;
+  }))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   return NextResponse.json(thread);
@@ -87,7 +92,12 @@ const postMessageHandler = async (
   if (!thread)
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
 
-  if (!thread.participants.some((p: any) => p.toString() === senderId))
+  if (!thread.participants.some((p) => {
+    const participantId = typeof p === 'object' && p !== null && 'toString' in p
+      ? p.toString()
+      : String(p);
+    return participantId === senderId;
+  }))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const senderObjectId = new mongoose.Types.ObjectId(senderId);

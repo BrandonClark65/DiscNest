@@ -9,29 +9,32 @@ import type { ThreadDB, ThreadUI } from "@/types/thread";
 -------------------------------------------------------- */
 
 // Raw ObjectId value
-function isObjectId(value: any): value is Types.ObjectId {
+function isObjectId(value: unknown): value is Types.ObjectId {
   return value instanceof Types.ObjectId;
 }
 
 // Populated user: { _id: ObjectId, name: string, ... }
 function isPopulatedUser(
-  value: any
+  value: unknown
 ): value is { _id: Types.ObjectId; name: string } {
   return (
-    value &&
+    value !== null &&
     typeof value === "object" &&
+    "_id" in value &&
     value._id instanceof Types.ObjectId &&
+    "name" in value &&
     typeof value.name === "string"
   );
 }
 
 // Populated Listing: { _id: ObjectId, title: string }
 function isPopulatedListing(
-  value: any
+  value: unknown
 ): value is { _id: Types.ObjectId; title: string; imageUrls?: string[] } {
   return (
-    value &&
+    value !== null &&
     typeof value === "object" &&
+    "_id" in value &&
     value._id instanceof Types.ObjectId &&
     "title" in value
   );
@@ -39,11 +42,12 @@ function isPopulatedListing(
 
 // Populated Request: { _id: ObjectId, title: string }
 function isPopulatedRequest(
-  value: any
+  value: unknown
 ): value is { _id: Types.ObjectId; title: string } {
   return (
-    value &&
+    value !== null &&
     typeof value === "object" &&
+    "_id" in value &&
     value._id instanceof Types.ObjectId &&
     "title" in value
   );
@@ -54,7 +58,7 @@ function isPopulatedRequest(
 -------------------------------------------------------- */
 
 export function mapMessageDBtoUI(msg: MessageDB): MessageUI {
-  const SYSTEM_IDS = [
+  const SYSTEM_IDS: (null | undefined | string)[] = [
     null,
     undefined,
     "",
@@ -71,7 +75,12 @@ export function mapMessageDBtoUI(msg: MessageDB): MessageUI {
       ? msg.sender
       : msg.sender._id?.toString() ?? null;
 
-  const isSystem = SYSTEM_IDS.includes(rawSender as any);
+  // Check if rawSender is a system ID (handles null, undefined, strings)
+  // Explicitly check for null/undefined first, then check array for strings
+  const isSystem = 
+    rawSender === null || 
+    rawSender === undefined || 
+    (typeof rawSender === "string" && SYSTEM_IDS.includes(rawSender));
 
   if (isSystem) {
     return {
@@ -84,12 +93,18 @@ export function mapMessageDBtoUI(msg: MessageDB): MessageUI {
     };
   }
 
+  interface SenderWithName {
+    _id?: unknown;
+    name?: string;
+  }
+
   const senderName =
     typeof msg.sender === "object" &&
-    msg.sender &&
+    msg.sender !== null &&
     "_id" in msg.sender &&
-    (msg.sender as any).name
-      ? (msg.sender as any).name
+    "name" in msg.sender &&
+    typeof (msg.sender as SenderWithName).name === "string"
+      ? (msg.sender as SenderWithName).name
       : "Unknown";
 
   return {

@@ -4,9 +4,10 @@ import { withErrorHandling } from "@/lib/withErrorHandling";
 import User from "@/models/User";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
+import type { UserSession } from "@/types/api";
 
 /* ---------- Handler ---------- */
-const reorderDiscsHandler = async (req: Request, session: any) => {
+const reorderDiscsHandler = async (req: Request, session: UserSession) => {
   await connectToDatabase();
 
   const { orderedIds, zone } = await req.json();

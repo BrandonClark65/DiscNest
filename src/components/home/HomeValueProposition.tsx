@@ -17,7 +17,7 @@ export default function HomeValueProposition() {
         >
           <h2 className="h2">Why Choose DiscNest?</h2>
           <p className="text-lg text-muted max-w-2xl mx-auto">
-            Whether you're buying your first disc or managing a professional collection, DiscNest provides all the tools you need for an exceptional disc golf experience.
+            Whether you&apos;re buying your first disc or managing a professional collection, DiscNest provides all the tools you need for an exceptional disc golf experience.
           </p>
         </motion.div>
 

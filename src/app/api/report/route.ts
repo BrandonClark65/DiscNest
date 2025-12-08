@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { connectToDatabase } from "@/lib/mongodb";
+import type { UserSession } from "@/types/api";
 
 import UserReport from "@/models/UserReport";
 import User from "@/models/User";
 
 
-const reportHandler = async (req: Request, session: any) => {
+const reportHandler = async (req: Request, session: UserSession) => {
   await connectToDatabase();
 
   const { reportedUserId, threadId, messageId, listingId, requestId, reason } =

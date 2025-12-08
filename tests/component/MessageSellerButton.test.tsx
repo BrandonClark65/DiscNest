@@ -1,5 +1,5 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import MessageSellerButton from "@/components/MessageSellerButton";
@@ -15,6 +15,17 @@ const chatModalMock = vi.hoisted(() => vi.fn(() => <div>Chat Modal</div>));
 vi.mock("@/components/modals/ChatModal", () => ({
   __esModule: true,
   default: chatModalMock,
+}));
+
+// Mock next/dynamic to return a component that calls our mock
+vi.mock("next/dynamic", () => ({
+  default: () => {
+    // Return a component that will call chatModalMock when rendered
+    return (props: { threadId: string; onClose: () => void }) => {
+      chatModalMock(props);
+      return <div>Chat Modal</div>;
+    };
+  },
 }));
 
 const gradientButtonMock = vi.hoisted(() =>
@@ -82,12 +93,16 @@ describe("MessageSellerButton", () => {
         }),
       })
     );
-    expect(chatModalMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        threadId: "thread-123",
-      }),
-      undefined
-    );
+    
+    // Wait for the async operation to complete and ChatModal to be rendered
+    await waitFor(() => {
+      expect(chatModalMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          threadId: "thread-123",
+          onClose: expect.any(Function),
+        })
+      );
+    });
   });
 });
 

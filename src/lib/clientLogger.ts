@@ -3,7 +3,7 @@ export async function logClientError(
   options?: {
     route?: string;
     severity?: "low" | "medium" | "high" | "critical";
-    metadata?: any;
+    metadata?: Record<string, unknown>;
   }
 ) {
   try {
