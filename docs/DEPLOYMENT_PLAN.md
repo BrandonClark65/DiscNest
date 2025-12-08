@@ -74,9 +74,22 @@ git push origin main
    - **Output Directory:** `.next`
    - **Install Command:** `npm install`
 
+**Branch Strategy:**
+- **Production:** `main` branch automatically deploys to production
+- **Preview:** All other branches and pull requests create preview deployments
+- **Development (Optional):** You can create a `dev` branch and configure it as a Development environment in Vercel settings
+
+**Note:** You don't need separate `prod` and `dev` branches. Vercel automatically:
+- Uses `main` for production deployments
+- Creates preview URLs for other branches/PRs
+- Allows different environment variables per environment (Production, Preview, Development)
+
 ### 2.2 Configure Environment Variables
 
-Add all required environment variables in Vercel dashboard:
+Add all required environment variables in Vercel dashboard. You can set different values for:
+- **Production** (main branch)
+- **Preview** (other branches/PRs)
+- **Development** (if you configure a dev branch)
 
 **Required Variables:**
 
