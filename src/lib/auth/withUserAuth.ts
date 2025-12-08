@@ -14,8 +14,8 @@ export function withUserAuth<
     session: Awaited<ReturnType<typeof requireUser>>,
     context?: T
   ) => Promise<NextResponse>
-): (request: NextRequest, context: { params: Promise<{}> }) => void | Response | Promise<void | Response> {
-  return async (request: NextRequest, context: { params: Promise<{}> }) => {
+): (request: NextRequest, context: { params: Promise<Record<string, unknown>> }) => void | Response | Promise<void | Response> {
+  return async (request: NextRequest, context: { params: Promise<Record<string, unknown>> }) => {
     try {
       const session = await requireUser();
       // Resolve params Promise (Next.js 15) - for routes without dynamic segments, this will be {}
