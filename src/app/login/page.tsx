@@ -147,7 +147,7 @@ export default function LoginPage() {
               trackEvent('user_login', {
                 login_method: 'google',
               });
-              await signIn('google');
+              await signIn('google', { callbackUrl: '/profile' });
             }}
             className="
               w-full py-3 rounded-xl 
