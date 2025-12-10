@@ -40,7 +40,15 @@ export default function SignupPage() {
       body: JSON.stringify({ name, email, password }),
     });
 
-    const data = await res.json();
+    let data;
+    try {
+      const text = await res.text();
+      data = text ? JSON.parse(text) : {};
+    } catch (parseError) {
+      setError('Failed to process server response. Please try again.');
+      return;
+    }
+
     if (!res.ok) {
       setError(data.error || 'Something went wrong');
       return;

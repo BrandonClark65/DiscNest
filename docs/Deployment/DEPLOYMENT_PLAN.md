@@ -99,7 +99,7 @@ MONGODB_URI=<your_mongodb_atlas_connection_string>
 
 # Authentication
 NEXTAUTH_SECRET=<generate_strong_secret_here>
-NEXTAUTH_URL=https://discnest.com
+NEXTAUTH_URL=https://www.discnest.com  # Must match Google OAuth redirect URI domain
 
 # Cloudinary (Image Storage)
 CLOUDINARY_CLOUD_NAME=<your_cloud_name>
@@ -581,6 +581,21 @@ Vercel will automatically redeploy.
 - Verify Cloudinary credentials
 - Check file size limits
 - Verify CORS settings (if applicable)
+
+**Google OAuth Error 400: redirect_uri_mismatch:**
+- **Cause:** The `NEXTAUTH_URL` environment variable doesn't match the redirect URI configured in Google Cloud Console
+- **Solution:**
+  1. Check your `NEXTAUTH_URL` in Vercel (should be `https://www.discnest.com` or `https://discnest.com`)
+  2. Verify the redirect URI in Google Cloud Console matches: `{NEXTAUTH_URL}/api/auth/callback/google`
+  3. **Recommended:** Add both redirect URIs to Google Cloud Console for flexibility:
+     - `https://www.discnest.com/api/auth/callback/google`
+     - `https://discnest.com/api/auth/callback/google`
+  4. Also add both JavaScript origins:
+     - `https://www.discnest.com`
+     - `https://discnest.com`
+  5. Update `NEXTAUTH_URL` in Vercel to match your preferred canonical domain
+  6. Redeploy after making changes
+- **Note:** Changes in Google Cloud Console may take 5 minutes to a few hours to take effect
 
 ---
 

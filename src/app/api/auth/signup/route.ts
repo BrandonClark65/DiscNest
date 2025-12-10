@@ -2,9 +2,35 @@ import { NextResponse } from 'next/server';
 import User from '@/models/User';
 import { connectToDatabase } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
+import { withErrorHandling } from '@/lib/withErrorHandling';
 
-export async function POST(req: Request) {
+async function handler(req: Request) {
   const { name, email, password } = await req.json();
+
+  // Input validation
+  if (!name || !email || !password) {
+    return NextResponse.json(
+      { error: 'Name, email, and password are required' },
+      { status: 400 }
+    );
+  }
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json(
+      { error: 'Please enter a valid email address' },
+      { status: 400 }
+    );
+  }
+
+  // Password validation
+  if (password.length < 6) {
+    return NextResponse.json(
+      { error: 'Password must be at least 6 characters long' },
+      { status: 400 }
+    );
+  }
 
   await connectToDatabase();
 
@@ -47,3 +73,8 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ success: true, user: newUser });
 }
+
+export const POST = withErrorHandling(
+  handler as (...args: unknown[]) => Promise<NextResponse>,
+  '/api/auth/signup'
+);
