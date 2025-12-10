@@ -99,8 +99,14 @@ Metadata:
 ${JSON.stringify(metadata, null, 2)}
           `;
 
+          // Format from email: if ALERTS_EMAIL already has display name format, use as-is
+          // Otherwise, wrap it with "DiscNest Alerts <email>"
+          const fromEmail = ALERTS_EMAIL.includes('<') && ALERTS_EMAIL.includes('>')
+            ? ALERTS_EMAIL
+            : `DiscNest Alerts <${ALERTS_EMAIL}>`;
+
           await resend.emails.send({
-            from: `DiscNest Alerts <${ALERTS_EMAIL}>`,
+            from: fromEmail,
             to: ADMIN_EMAIL,
             subject,
             text,
