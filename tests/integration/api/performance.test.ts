@@ -252,10 +252,9 @@ describe("Performance & Load Testing", () => {
         });
       }
 
-      const { getServerSession } = await import("next-auth");
-      vi.mocked(getServerSession).mockResolvedValue({
+      mockRequireUser.mockResolvedValueOnce({
         user: { id: user1._id.toString() },
-      } as any);
+      });
 
       const { result, time } = await measureTime(() =>
         request(app).get("/api/messages")
@@ -480,10 +479,9 @@ describe("Performance & Load Testing", () => {
         await MessageThread.insertMany(threads.slice(i, i + batchSize));
       }
 
-      const { getServerSession } = await import("next-auth");
-      vi.mocked(getServerSession).mockResolvedValue({
+      mockRequireUser.mockResolvedValueOnce({
         user: { id: user1._id.toString() },
-      } as any);
+      });
 
       const { result, time } = await measureTime(() =>
         request(app).get("/api/messages")
@@ -598,10 +596,9 @@ describe("Performance & Load Testing", () => {
         });
       }
 
-      const { getServerSession } = await import("next-auth");
-      vi.mocked(getServerSession).mockResolvedValue({
+      mockRequireUser.mockResolvedValueOnce({
         user: { id: user1._id.toString() },
-      } as any);
+      });
 
       // Monitor query count (this is a simplified check)
       const { result, time } = await measureTime(() =>

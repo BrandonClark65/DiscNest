@@ -406,16 +406,10 @@ describe("DELETE /api/listings/[id]", () => {
 
     await request(app).delete(`/api/listings/${listing._id}`);
 
-    // Verify Cloudinary destroy was called with the full URLs
-    // Note: When publicIds is not set, Mongoose sets it to [] (empty array)
-    // The code checks `if (!listing.publicIds && ...)` which is false for [],
-    // so extraction doesn't happen and full URLs are passed to destroy
-    expect(mockCloudinaryDestroy).toHaveBeenCalledWith(
-      "https://res.cloudinary.com/test/image/upload/v123/image1.jpg"
-    );
-    expect(mockCloudinaryDestroy).toHaveBeenCalledWith(
-      "https://res.cloudinary.com/test/image/upload/v456/image2.png"
-    );
+    // Verify Cloudinary destroy was called with extracted publicIds from URLs
+    // The code extracts publicIds from Cloudinary URLs when publicIds array is empty
+    expect(mockCloudinaryDestroy).toHaveBeenCalledWith("image1");
+    expect(mockCloudinaryDestroy).toHaveBeenCalledWith("image2");
   });
 
   test("returns 403 when non-owner tries to delete", async () => {

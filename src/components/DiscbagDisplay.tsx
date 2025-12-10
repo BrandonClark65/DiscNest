@@ -132,6 +132,7 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
         {/* ✅ Fixed-size canvas that we scale uniformly */}
         <div
           className="absolute top-0 left-0"
+          suppressHydrationWarning
           style={{
             width: BASE_W,
             height: BASE_H,
@@ -140,6 +141,7 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
           }}
         >
           {/* Background square (keep your original sizing/positioning) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/square-xxl.png"
             alt="Background"
@@ -256,13 +258,11 @@ export default function DiscBagDisplay({ bag }: DiscBagDisplayProps) {
               })}
 
             {/* Bag overlay image */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/bag-no-discs.png"
               alt="Disc Golf Bag"
               className="absolute top-0 left-0 z-20 w-full h-full pointer-events-none"
-              onLoad={() => {
-                setBagLoaded(true);
-              }}
               style={{
                 filter: 'drop-shadow(0 8px 12px rgba(0, 0, 0, 0.4))',
               }}

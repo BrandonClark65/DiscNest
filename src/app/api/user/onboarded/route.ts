@@ -19,4 +19,7 @@ const onboardingHandler = async (req: Request) => {
 };
 
 /* ---------- Export ---------- */
-export const POST = withErrorHandling(onboardingHandler, "/api/onboarding");
+export const POST = withErrorHandling(
+  onboardingHandler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/onboarding"
+);

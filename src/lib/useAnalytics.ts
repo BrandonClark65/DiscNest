@@ -25,9 +25,10 @@ export function useAnalytics() {
 
   const track = useCallback((eventName: GA4EventName, params?: GA4EventParams) => {
     // Automatically include user ID if available
+    const userId = session?.user ? (session.user as { id?: string }).id : undefined;
     const enrichedParams: GA4EventParams = {
       ...params,
-      ...(session?.user?.id && { user_id: session.user.id }),
+      ...(userId ? { user_id: userId } : {}),
     };
     trackEvent(eventName, enrichedParams);
   }, [session]);
@@ -42,9 +43,10 @@ export function useAnalytics() {
     currency: string = 'USD',
     params?: GA4EventParams
   ) => {
+    const userId = session?.user ? (session.user as { id?: string }).id : undefined;
     const enrichedParams: GA4EventParams = {
       ...params,
-      ...(session?.user?.id && { user_id: session.user.id }),
+      ...(userId ? { user_id: userId } : {}),
     };
     trackConversion(eventName, value, currency, enrichedParams);
   }, [session]);

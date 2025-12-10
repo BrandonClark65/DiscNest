@@ -71,7 +71,7 @@ export default function NavBar() {
             </Link>
           ))}
 
-          {status === 'authenticated' && session?.user?.role === 'admin' && (
+          {status === 'authenticated' && session?.user ? (session.user as { role?: string }).role : undefined === 'admin' && (
             <Link
               href="/admin"
               className={`relative group transition-colors duration-200 ${
@@ -198,7 +198,7 @@ export default function NavBar() {
                 </Link>
               ))}
 
-              {status === 'authenticated' && session?.user?.role === 'admin' && (
+              {status === 'authenticated' && session?.user ? (session.user as { role?: string }).role : undefined === 'admin' && (
                 <Link
                   href="/admin"
                   onClick={() => setMenuOpen(false)}

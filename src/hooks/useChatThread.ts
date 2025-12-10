@@ -118,8 +118,8 @@ export default function useChatThread(
       // Track message sent event
       trackEvent('message_sent', {
         thread_id: threadId,
-        listing_id: thread.listing?._id,
-        listing_title: thread.listing?.title,
+        listing_id: thread.listingId?._id,
+        listing_title: thread.listingId?.title,
       });
 
       fetchThread();

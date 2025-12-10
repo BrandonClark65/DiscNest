@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireUser } from "@/lib/auth/requireUser";
 import MessageThread from "@/models/MessageThread";
 import "@/models/Listing";
 import User from "@/models/User";
@@ -14,9 +13,7 @@ import { sendMessageNotification } from "@/lib/messages/sendMessageNotification"
 const getThreadsHandler = async () => {
   await connectToDatabase();
 
-  const session = await getServerSession(authOptions);
-  if (!session)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await requireUser();
 
   const userId = session.user.id;
 
@@ -28,7 +25,10 @@ const getThreadsHandler = async () => {
   return NextResponse.json(threads);
 };
 
-export const GET = withErrorHandling(getThreadsHandler, "/api/messages");
+export const GET = withErrorHandling(
+  getThreadsHandler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/messages"
+);
 
  // ----------------------
 // POST: create a new thread (listing OR request)
@@ -36,9 +36,7 @@ export const GET = withErrorHandling(getThreadsHandler, "/api/messages");
 const createThreadHandler = async (req: Request) => {
   await connectToDatabase();
 
-  const session = await getServerSession(authOptions);
-  if (!session)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await requireUser();
 
   const senderId = session.user.id;
   const { recipientId, listingId, requestId, content } = await req.json();
@@ -117,25 +115,25 @@ const createThreadHandler = async (req: Request) => {
     _id: unknown;
     name: string;
   }
-  const participantMap = new Map<string, ParticipantDoc>(participants.map((p) => [String(p._id), p as ParticipantDoc]));
+  const participantMap = new Map<string, ParticipantDoc>(participants.map((p) => [String(p._id), p as unknown as ParticipantDoc]));
   
   populatedThread.participants = populatedThread.participants.map((p) => {
     const id = typeof p === 'string' ? p : String(p);
     return participantMap.get(id) || { _id: id, name: "Unknown" };
-  });
+  }) as (string | { _id: string; name: string; })[];
 
   // Populate listingId if it exists
   if (populatedThread.listingId) {
     const Listing = (await import("@/models/Listing")).default;
     const listing = await Listing.findById(populatedThread.listingId, "title imageUrls").lean();
-    if (listing) populatedThread.listingId = listing as { _id: string; title: string; imageUrls?: string[] };
+    if (listing) populatedThread.listingId = listing as unknown as { _id: string; title: string; imageUrls?: string[] };
   }
 
   // Populate requestId if it exists
   if (populatedThread.requestId) {
     const DiscRequest = (await import("@/models/DiscRequest")).default;
     const request = await DiscRequest.findById(populatedThread.requestId, "title").lean();
-    if (request) populatedThread.requestId = request as { _id: string; title: string };
+    if (request) populatedThread.requestId = request as unknown as { _id: string; title: string };
   }
 
   // Populate message senders
@@ -148,12 +146,12 @@ const createThreadHandler = async (req: Request) => {
       _id: unknown;
       name: string;
     }
-    const senderMap = new Map<string, SenderDoc>(senders.map((s) => [String(s._id), s as SenderDoc]));
+    const senderMap = new Map<string, SenderDoc>(senders.map((s) => [String(s._id), s as unknown as SenderDoc]));
     
     populatedThread.messages = populatedThread.messages.map((m) => ({
       ...m,
-      sender: senderMap.get(typeof m.sender === 'string' ? m.sender : String(m.sender)) || { _id: String(m.sender), name: "Unknown" }
-    }));
+      sender: (senderMap.get(typeof m.sender === 'string' ? m.sender : String(m.sender)) || { _id: String(m.sender), name: "Unknown" }) as unknown as SenderDoc
+    })) as { sender: string | { _id: string; name: string; }; content: string; timestamp: Date; readBy: string[]; }[];
   }
 
   // Send email notification if initial message was created (non-blocking)
@@ -167,5 +165,8 @@ const createThreadHandler = async (req: Request) => {
 };
 
 
-export const POST = withErrorHandling(createThreadHandler, "/api/messages");
+export const POST = withErrorHandling(
+  createThreadHandler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/messages"
+);
 

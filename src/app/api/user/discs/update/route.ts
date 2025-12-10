@@ -4,10 +4,10 @@ import Disc from "@/models/Disc";
 import type { Disc as DiscType } from "@/types/disc";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 /* ---------- Handler ---------- */
-const updateDiscHandler = async (req: Request, session: UserSession) => {
+const updateDiscHandler = async (req: Request, session: Session) => {
   const body = await req.json();
   const { discId, plastic, wearLevel, notes, color, weight } = body;
 
@@ -60,6 +60,6 @@ const updateDiscHandler = async (req: Request, session: UserSession) => {
 
 /* ---------- Export ---------- */
 export const POST = withErrorHandling(
-  withUserAuth(updateDiscHandler),
+  withUserAuth(updateDiscHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/disc/update"
 );

@@ -45,4 +45,8 @@ const actionHandler = async (
   return NextResponse.json({ success: true });
 };
 
-export const POST = withAdminAuth(withErrorHandling(actionHandler));
+export const POST = withAdminAuth(
+  withErrorHandling(
+    actionHandler as (...args: unknown[]) => Promise<NextResponse>
+  )
+);

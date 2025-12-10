@@ -240,7 +240,7 @@ describe("Edge Cases: Input Validation", () => {
         messages: [],
       });
 
-      mockGetServerSession.mockResolvedValue({
+      mockRequireUser.mockResolvedValueOnce({
         user: {
           id: user1._id.toString(),
           email: user1.email,

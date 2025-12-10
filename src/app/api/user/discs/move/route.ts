@@ -4,10 +4,10 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import { recalcDiscCount } from "@/lib/updateDiscCount";
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 /* ---------- Handler ---------- */
-const moveDiscHandler = async (req: Request, session: UserSession) => {
+const moveDiscHandler = async (req: Request, session: Session) => {
   const { discId, from, to } = await req.json();
 
   if (
@@ -31,7 +31,7 @@ const moveDiscHandler = async (req: Request, session: UserSession) => {
   }
 
   // Check if disc exists in source array
-  const existsInSource = user[from]?.some((d) => {
+  const existsInSource = user[from]?.some((d: unknown) => {
     const discIdStr = typeof d === 'object' && d !== null && '_id' in d
       ? String(d._id)
       : String(d);
@@ -61,6 +61,6 @@ const moveDiscHandler = async (req: Request, session: UserSession) => {
 
 /* ---------- Export ---------- */
 export const POST = withErrorHandling(
-  withUserAuth(moveDiscHandler),
+  withUserAuth(moveDiscHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/move-disc"
 );

@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 import { recommendDiscs } from "@/lib/recommendations";
 import type { DiscNestUser } from "@/types/user";
 import type { Disc } from "@/types/disc";
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 /* ---------- Properly typed Disc model ---------- */
 const DiscModel =
@@ -15,7 +15,7 @@ const DiscModel =
   mongoose.model<Disc>("Disc", new mongoose.Schema({}), "discs");
 
 /* ---------- Handler ---------- */
-const getRecommendationsHandler = async (_req: Request, session: UserSession) => {
+const getRecommendationsHandler = async (_req: Request, session: Session) => {
   await connectToDatabase();
 
   // Load user
@@ -38,6 +38,6 @@ const getRecommendationsHandler = async (_req: Request, session: UserSession) =>
 
 /* ---------- Export ---------- */
 export const GET = withErrorHandling(
-  withUserAuth(getRecommendationsHandler),
+  withUserAuth(getRecommendationsHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/recommendations"
 );

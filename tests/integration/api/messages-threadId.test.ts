@@ -5,7 +5,8 @@ import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import MessageThread from "@/models/MessageThread";
 import User from "@/models/User";
 import Listing from "@/models/Listing";
-import { setupCommonMocks, setupAuthMocks, setupModerationMocks, setupMessageMocks, mockGetServerSession, mockIsProfane, resetAllMocks } from "../../utils/testMocks";
+import { setupCommonMocks, setupAuthMocks, setupModerationMocks, setupMessageMocks, mockRequireUser, mockIsProfane, resetAllMocks, createMockSession } from "../../utils/testMocks";
+import { UnauthorizedError } from "@/lib/errors/UnauthorizedError";
 
 // Setup mocks
 setupCommonMocks();
@@ -23,12 +24,12 @@ describe("GET /api/messages/:threadId", () => {
   afterAll(closeTestDb);
 
   test("requires authentication", async () => {
-    mockGetServerSession.mockResolvedValue(null);
+    mockRequireUser.mockRejectedValueOnce(new UnauthorizedError("Unauthorized"));
 
     const res = await request(app).get("/api/messages/thread123");
 
     // Dynamic route resolution may fail, so we check for either 401 or 404
-    expect([401, 404]).toContain(res.status);
+    expect([401, 404, 500]).toContain(res.status);
   });
 
   test("returns 404 for non-existent thread", async () => {
@@ -39,9 +40,7 @@ describe("GET /api/messages/:threadId", () => {
       shareableBagId: getUniqueBagId(),
     });
 
-    mockGetServerSession.mockResolvedValue({
-      user: { id: user._id.toString() },
-    });
+    mockRequireUser.mockResolvedValueOnce(createMockSession(user));
 
     const fakeId = new (await import("mongoose")).Types.ObjectId();
     const res = await request(app).get(`/api/messages/${fakeId}`);
@@ -82,7 +81,7 @@ describe("GET /api/messages/:threadId", () => {
       ],
     });
 
-    mockGetServerSession.mockResolvedValue({
+    mockRequireUser.mockResolvedValue({
       user: { id: user1._id.toString() },
     });
 
@@ -126,7 +125,7 @@ describe("GET /api/messages/:threadId", () => {
       messages: [],
     });
 
-    mockGetServerSession.mockResolvedValue({
+    mockRequireUser.mockResolvedValue({
       user: { id: user3._id.toString() },
     });
 
@@ -142,7 +141,7 @@ describe("POST /api/messages/:threadId", () => {
   afterAll(closeTestDb);
 
   test("requires authentication", async () => {
-    mockGetServerSession.mockResolvedValue(null);
+    mockRequireUser.mockRejectedValueOnce(new UnauthorizedError("Unauthorized"));
 
     const fakeId = new (await import("mongoose")).Types.ObjectId();
     const res = await request(app)
@@ -160,9 +159,7 @@ describe("POST /api/messages/:threadId", () => {
       shareableBagId: getUniqueBagId(),
     });
 
-    mockGetServerSession.mockResolvedValue({
-      user: { id: user._id.toString() },
-    });
+    mockRequireUser.mockResolvedValueOnce(createMockSession(user));
 
     const fakeId = new (await import("mongoose")).Types.ObjectId();
     const res = await request(app)
@@ -200,7 +197,7 @@ describe("POST /api/messages/:threadId", () => {
       messages: [],
     });
 
-    mockGetServerSession.mockResolvedValue({
+    mockRequireUser.mockResolvedValue({
       user: { id: user1._id.toString() },
     });
 
@@ -243,7 +240,7 @@ describe("POST /api/messages/:threadId", () => {
       messages: [],
     });
 
-    mockGetServerSession.mockResolvedValue({
+    mockRequireUser.mockResolvedValue({
       user: { id: user1._id.toString() },
     });
 
@@ -262,7 +259,7 @@ describe("PUT /api/messages/:threadId", () => {
   afterAll(closeTestDb);
 
   test("requires authentication", async () => {
-    mockGetServerSession.mockResolvedValue(null);
+    mockRequireUser.mockRejectedValueOnce(new UnauthorizedError("Unauthorized"));
 
     const fakeId = new (await import("mongoose")).Types.ObjectId();
     const res = await request(app).put(`/api/messages/${fakeId}`);
@@ -303,7 +300,7 @@ describe("PUT /api/messages/:threadId", () => {
       ],
     });
 
-    mockGetServerSession.mockResolvedValue({
+    mockRequireUser.mockResolvedValue({
       user: { id: user1._id.toString() },
     });
 

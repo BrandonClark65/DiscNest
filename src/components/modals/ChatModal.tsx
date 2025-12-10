@@ -23,7 +23,7 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
   const { trackEvent } = useAnalytics();
 
   const { data: session, status } = useSession();
-  const currentUserId = session?.user?.id;
+  const currentUserId = session?.user ? (session.user as { id?: string }).id : undefined;
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -90,10 +90,10 @@ export default function ChatModal({ threadId, onClose }: ChatModalProps) {
         messages: (data.messages as MessageData[]).map((msg) => ({
           sender: { _id: msg.sender._id, name: msg.sender.name },
           content: msg.content,
-          timestamp: new Date(msg.timestamp).toISOString(),
-          readBy: msg.readBy.map((id) => id.toString()),
+          timestamp: new Date(msg.timestamp),
+          readBy: msg.readBy.map((id: unknown) => String(id)),
           flagged: msg.flagged ?? false,
-          flaggedCategories: msg.flaggedCategories ?? {},
+          flaggedCategories: (msg.flaggedCategories ?? {}) as Record<string, boolean>,
         })),
         updatedAt: new Date(data.updatedAt).toISOString(),
       };
@@ -113,7 +113,7 @@ async function sendMessage() {
 
   // --- Optimistic UI message ---
   const tempMsg: MessageUI = {
-    sender: { _id: currentUserId, name: userName },
+    sender: { _id: currentUserId || '', name: userName },
     content: newMessage,
     timestamp: new Date(),
     readBy: [],
@@ -157,8 +157,8 @@ async function sendMessage() {
     // Track message sent event
     trackEvent('message_sent', {
       thread_id: thread._id,
-      listing_id: thread.listing?._id,
-      listing_title: thread.listing?.title,
+      listing_id: thread.listingId?._id,
+      listing_title: thread.listingId?.title,
     });
   } catch (error) {
     console.error("Failed to send message:", error);

@@ -1,6 +1,13 @@
 'use client';
 
 import type { Disc } from '@/types/disc';
+import Image from 'next/image';
+
+// Helper function to check if URL is external
+const isExternalUrl = (url?: string | null): boolean => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://');
+};
 
 type Props = {
   disc: Disc | null;
@@ -29,11 +36,16 @@ export default function HoverPreview({ disc, onClose, isMobile }: Props) {
       )}
       {disc.image && (
         <>
-          <img
-            src={disc.image}
-            alt={`${disc.name} ${disc.brand} ${disc.type} disc golf disc${disc.plastic ? ` in ${disc.plastic} plastic` : ''}`}
-            className="w-full h-64 object-contain mb-4 rounded-lg bg-background"
-          />
+          <div className="w-full h-64 relative mb-4 rounded-lg bg-background">
+            <Image
+              src={disc.image}
+              alt={`${disc.name} ${disc.brand} ${disc.type} disc golf disc${disc.plastic ? ` in ${disc.plastic} plastic` : ''}`}
+              width={320}
+              height={205}
+              className="object-contain rounded-lg"
+              unoptimized={isExternalUrl(disc.image)}
+            />
+          </div>
           <h3 className="text-xl font-bold text-center text-primary">{disc.name}</h3>
           <p className="text-sm text-center text-muted">{disc.brand}</p>
         </>

@@ -115,14 +115,14 @@ const getListingsHandler = async (req: Request) => {
     totalCount = aggregateResult.length;
     const paginated = aggregateResult.slice(skip, skip + limit);
     const listingIds = paginated.map((r) => r._id);
-    listings = await Listing.find({ _id: { $in: listingIds } }).lean();
+    listings = (await Listing.find({ _id: { $in: listingIds } }).lean()) as unknown as ListingDocument[];
   } else {
     totalCount = await Listing.countDocuments(query);
-    listings = await Listing.find(query)
+    listings = (await Listing.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean();
+      .lean()) as unknown as ListingDocument[];
   }
 
   // Populate user names
@@ -132,7 +132,7 @@ const getListingsHandler = async (req: Request) => {
 
   listings = listings.map((l) => ({
     ...l,
-    userId: { _id: l.userId, name: userMap[l.userId?.toString()] || "Unknown" },
+    userId: { _id: l.userId, name: userMap[l.userId?.toString() ?? ""] || "Unknown" },
     location: l.location?.coordinates
       ? {
           ...l.location,
@@ -149,14 +149,17 @@ const getListingsHandler = async (req: Request) => {
   return NextResponse.json({ listings, totalPages, totalCount });
 };
 
-export const GET = withErrorHandling(getListingsHandler, "/api/listings");
+export const GET = withErrorHandling(
+  getListingsHandler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/listings"
+);
 
 // ----------------------
 // POST: create listing (auth required)
 // ----------------------
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
-const createListingHandler = async (req: Request, session: UserSession) => {
+const createListingHandler = async (req: Request, session: Session) => {
   await connectToDatabase();
   const body = await req.json();
   const pendingReview = body.pendingReview || false;
@@ -201,7 +204,8 @@ const createListingHandler = async (req: Request, session: UserSession) => {
 
   // Remove location if it doesn't have valid coordinates (geo index requires coordinates)
   if (listingData.location) {
-    if (!listingData.location.coordinates || listingData.location.coordinates.length !== 2) {
+    const location = listingData.location as { coordinates?: number[] };
+    if (!location.coordinates || location.coordinates.length !== 2) {
       delete listingData.location;
     }
   }
@@ -255,6 +259,6 @@ const createListingHandler = async (req: Request, session: UserSession) => {
 };
 
 export const POST = withErrorHandling(
-  withUserAuth(createListingHandler),
+  withUserAuth(createListingHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/listings"
 );

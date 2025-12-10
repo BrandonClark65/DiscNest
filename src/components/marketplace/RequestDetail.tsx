@@ -46,6 +46,7 @@ export default function RequestDetail({ request }: { request: DiscRequest }) {
     if (!navigator.geolocation || !request.location?.coordinates) return;
 
     navigator.geolocation.getCurrentPosition((pos) => {
+      if (!request.location?.coordinates) return;
       const [lng, lat] = request.location.coordinates;
 
       const R = 6371; // km
@@ -70,6 +71,10 @@ export default function RequestDetail({ request }: { request: DiscRequest }) {
    * -------------------------- */
   async function handleMessage() {
     if (!session?.user) return router.push("/login");
+    if (!requester) {
+      console.error("Requester not found");
+      return;
+    }
 
     setMessaging(true);
 
@@ -140,7 +145,7 @@ export default function RequestDetail({ request }: { request: DiscRequest }) {
           <div className="flex items-center gap-4">
             {requester?.avatarUrl ? (
               <Image
-                src={requester.avatarUrl}
+                src={requester?.avatarUrl}
                 alt={`${requester?.username || requester?.name || 'User'}'s profile picture`}
                 width={56}
                 height={56}
@@ -219,7 +224,7 @@ export default function RequestDetail({ request }: { request: DiscRequest }) {
       <ReportModal
         open={reportOpen}
         onClose={() => setReportOpen(false)}
-        reportedUserId={request.userId?._id}
+        reportedUserId={request.userId?._id || ''}
         requestId={request._id}      // ← IMPORTANT
       />
     </>

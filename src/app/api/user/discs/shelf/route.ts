@@ -3,10 +3,10 @@ import User from "@/models/User";
 import { connectToDatabase } from "@/lib/mongodb";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 /* ---------- Handler ---------- */
-const getShelfHandler = async (_req: Request, session: UserSession) => {
+const getShelfHandler = async (_req: Request, session: Session) => {
   await connectToDatabase();
 
   const user = await User.findById(session.user.id).populate("discShelf");
@@ -21,6 +21,6 @@ const getShelfHandler = async (_req: Request, session: UserSession) => {
 
 /* ---------- Export ---------- */
 export const GET = withErrorHandling(
-  withUserAuth(getShelfHandler),
+  withUserAuth(getShelfHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/shelf"
 );

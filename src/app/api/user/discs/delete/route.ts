@@ -5,10 +5,10 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import { recalcDiscCount } from "@/lib/updateDiscCount";
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 /* ---------- Handler ---------- */
-const removeDiscHandler = async (req: Request, session: UserSession) => {
+const removeDiscHandler = async (req: Request, session: Session) => {
   const { discId, target } = await req.json();
 
   if (!discId || !target || !["discShelf", "bag"].includes(target)) {
@@ -39,6 +39,6 @@ const removeDiscHandler = async (req: Request, session: UserSession) => {
 
 /* ---------- Export ---------- */
 export const POST = withErrorHandling(
-  withUserAuth(removeDiscHandler),
+  withUserAuth(removeDiscHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/remove-disc"
 );

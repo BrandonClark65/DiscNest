@@ -35,23 +35,26 @@ const getListingHandler = async (
   return NextResponse.json({ listing });
 };
 
-export const GET = withErrorHandling(getListingHandler, "/api/listing/[id]");
+export const GET = withErrorHandling(
+  getListingHandler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/listing/[id]"
+);
 
 // ----------------------
 // PATCH: mark as sold
 // ----------------------
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 const patchListingHandler = async (
   req: Request,
-  session: UserSession,
-  context?: { params: Promise<{ id: string }> }
+  session: Session,
+  context?: { params?: Record<string, unknown> }
 ) => {
   if (!context?.params)
     return NextResponse.json({ error: "Missing params" }, { status: 400 });
 
-  const { id } = await context.params;
-  if (!id)
+  const { id } = context.params;
+  if (!id || typeof id !== "string")
     return NextResponse.json({ error: "Missing listing ID" }, { status: 400 });
 
   const { action } = await req.json();
@@ -86,7 +89,7 @@ const patchListingHandler = async (
 };
 
 export const PATCH = withErrorHandling(
-  withUserAuth(patchListingHandler),
+  withUserAuth(patchListingHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/listing/[id]"
 );
 
@@ -95,17 +98,17 @@ export const PATCH = withErrorHandling(
 // ----------------------
 const deleteListingHandler = async (
   req: Request,
-  session: UserSession,
-  context?: { params: Promise<{ id: string }> }
+  session: Session,
+  context?: { params?: Record<string, unknown> }
 ) => {
   await connectToDatabase();
 
   if (!context?.params)
     return NextResponse.json({ error: "Missing params" }, { status: 400 });
 
-  const { id } = await context.params;
+  const { id } = context.params;
 
-  if (!id)
+  if (!id || typeof id !== "string")
     return NextResponse.json({ error: "Missing listing ID" }, { status: 400 });
 
   const listing = await Listing.findById(id);
@@ -122,15 +125,20 @@ const deleteListingHandler = async (
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   // Delete images from Cloudinary
-  const imagesToDelete = listing.publicIds?.length
+  const hasPublicIds = listing.publicIds && listing.publicIds.length > 0;
+  const imagesToDelete = hasPublicIds
     ? listing.publicIds
     : listing.imageUrls || [];
 
   for (const item of imagesToDelete) {
     try {
-      let publicId = item;
+      let publicId: string | null = null;
 
-      if (!listing.publicIds && typeof item === "string") {
+      if (hasPublicIds) {
+        // Use publicIds directly
+        publicId = typeof item === "string" ? item : null;
+      } else if (typeof item === "string") {
+        // Extract publicId from Cloudinary URL
         const match = item.match(/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/);
         publicId = match ? match[1] : null;
       }
@@ -153,6 +161,6 @@ const deleteListingHandler = async (
 };
 
 export const DELETE = withErrorHandling(
-  withUserAuth(deleteListingHandler),
+  withUserAuth(deleteListingHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/listing/[id]"
 );

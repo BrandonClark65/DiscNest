@@ -97,7 +97,10 @@ const GET_handler = async (req: Request) => {
   return NextResponse.json({ requests, page, limit });
 };
 
-export const GET = withErrorHandling(GET_handler, "/api/requests");
+export const GET = withErrorHandling(
+  GET_handler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/requests"
+);
 
 
 //
@@ -148,4 +151,7 @@ const POST_handler = withUserAuth(async (req, session) => {
   return NextResponse.json(doc, { status: 201 });
 });
 
-export const POST = withErrorHandling(POST_handler, "/api/requests");
+export const POST = withErrorHandling(
+  POST_handler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/requests"
+);

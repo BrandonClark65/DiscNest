@@ -24,7 +24,9 @@ const seedHandler = async () => {
   return NextResponse.json({ message: "Seeding started" });
 };
 
-export const POST = withErrorHandling(
-  withAdminAuth(seedHandler),
-  "/api/seed"
+export const POST = withAdminAuth(
+  withErrorHandling(
+    seedHandler as (...args: unknown[]) => Promise<NextResponse>,
+    "/api/seed"
+  )
 );

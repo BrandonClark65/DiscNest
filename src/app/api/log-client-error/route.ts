@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/errorLogger";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 /**
  * Logs client-side runtime and promise errors
@@ -9,7 +7,14 @@ import { authOptions } from "@/lib/auth";
  */
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    // Session is optional for client error logging
+    let session: { user?: { id?: string } } | null = null;
+    try {
+      const { requireUser } = await import("@/lib/auth/requireUser");
+      session = await requireUser();
+    } catch {
+      // User not authenticated, continue without session
+    }
 
     // Parse request body safely
     interface ErrorBody {
@@ -33,8 +38,10 @@ export async function POST(req: Request) {
     const normalizedMessage =
       typeof message === "string"
         ? message
-        : message?.message ||
-          (typeof message === "object"
+        : (typeof message === "object" && message !== null && "message" in message
+            ? (message as { message?: string }).message
+            : undefined) ||
+          (typeof message === "object" && message !== null
             ? JSON.stringify(message, Object.getOwnPropertyNames(message))
             : String(message ?? "Unknown client error"));
 
@@ -46,11 +53,16 @@ export async function POST(req: Request) {
         : undefined;
 
     // --- 📩 Log structured error ---
+    const validSeverities = ["low", "medium", "high", "critical"] as const;
+    const errorSeverity = (validSeverities.includes(severity as typeof validSeverities[number]) 
+      ? severity 
+      : "medium") as "low" | "medium" | "high" | "critical";
+    
     await logError({
       message: normalizedMessage,
       stack: normalizedStack,
       route: route || "client",
-      severity: severity || "medium",
+      severity: errorSeverity,
       userId: session?.user?.id,
       metadata: {
         source: "client",

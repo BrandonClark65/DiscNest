@@ -52,4 +52,6 @@ async function handler(req: Request) {
   return NextResponse.json({ success: true });
 }
 
-export const POST = withErrorHandling(handler);
+export const POST = withErrorHandling(
+  handler as (...args: unknown[]) => Promise<NextResponse>
+);

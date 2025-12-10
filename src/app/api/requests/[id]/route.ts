@@ -21,4 +21,7 @@ const GET_handler = async (req: Request, { params }: { params: { id: string } })
   return NextResponse.json(doc);
 };
 
-export const GET = withErrorHandling(GET_handler, "/api/requests/[id]");
+export const GET = withErrorHandling(
+  GET_handler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/requests/[id]"
+);

@@ -75,7 +75,7 @@ export async function sendMessageNotification(
     // Find recipients (participants who are not the sender)
     const recipientIds = (thread.participants || [])
       .map((p) => {
-        const id = typeof p === "object" && p !== null && "_id" in p ? p._id.toString() : p.toString();
+        const id = typeof p === "object" && p !== null && "_id" in p ? String((p as { _id: unknown })._id) : String(p);
         return id;
       })
       .filter((id: string) => id !== senderIdString);

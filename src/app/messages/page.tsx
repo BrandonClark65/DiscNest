@@ -56,10 +56,10 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
   return {
     _id: thread._id.toString(),
 
-    participants: thread.participants.map((p) =>
-      "_id" in p
-        ? { _id: p._id.toString(), name: ("name" in p && typeof p.name === "string") ? p.name : "Unknown" }
-        : { _id: p.toString(), name: "Unknown" }
+    participants: thread.participants.map((p: unknown) =>
+      typeof p === "object" && p !== null && "_id" in p
+        ? { _id: String((p as { _id: unknown })._id), name: ("name" in p && typeof (p as { name?: unknown }).name === "string") ? (p as { name: string }).name : "Unknown" }
+        : { _id: String(p), name: "Unknown" }
     ),
 
     // ---- LISTING ----
@@ -75,7 +75,7 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
         };
       }
 
-      return { _id: l.toString(), title: "", imageUrls: [] };
+      return { _id: String(l), title: "", imageUrls: [] };
     })(),
 
     // ---- REQUEST ----
@@ -90,7 +90,7 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
         };
       }
 
-      return { _id: r.toString(), title: "Disc Request" };
+      return { _id: String(r), title: "Disc Request" };
     })(),
 
     messages: thread.messages.map(mapMessageDBtoUI),
@@ -103,7 +103,7 @@ function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
 -------------------------------------------------------- */
 export default function MessagesPage() {
   const { data: session, status } = useSession();
-  const currentUserId = session?.user?.id;
+  const currentUserId = session?.user ? (session.user as { id?: string }).id : undefined;
 
   const [threads, setThreads] = useState<ThreadUI[]>([]);
   const [loading, setLoading] = useState(true);

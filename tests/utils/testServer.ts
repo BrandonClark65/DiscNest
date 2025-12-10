@@ -266,9 +266,8 @@ app.use("/api", async (req, res) => {
     
     // For dynamic routes, pass params in context
     // Extract param from URL (e.g., /api/messages/abc123 -> threadId: "abc123")
-    const context = Object.keys(params).length > 0 
-      ? { params: Promise.resolve(params) }
-      : undefined;
+    // Always provide context with params (even if empty) to match Next.js behavior
+    const context = { params: Promise.resolve(params) };
     
     const webRes = await routeModule[method](webReq, context);
     return sendWebResponse(webRes, res);

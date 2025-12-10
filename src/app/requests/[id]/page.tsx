@@ -8,7 +8,7 @@ export default function RequestPage() {
   const params = useParams();
   const id = params.id;
 
-  interface DiscRequest {
+  interface LocalDiscRequest {
     _id: string;
     title: string;
     description?: string;
@@ -22,7 +22,7 @@ export default function RequestPage() {
     [key: string]: unknown;
   }
 
-  const [request, setRequest] = useState<DiscRequest | null>(null);
+  const [request, setRequest] = useState<LocalDiscRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +52,7 @@ export default function RequestPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      <RequestDetail request={request} />
+      <RequestDetail request={request as unknown as { _id: string; title: string; description?: string; brand?: string; plastic?: string; weight?: number; color?: string; condition?: string; userId?: { _id: string; username?: string; name?: string; avatarUrl?: string }; location?: { coordinates: [number, number] }; [key: string]: unknown } } />
     </div>
   );
 }

@@ -37,7 +37,7 @@ export function Tabs({ defaultValue, children }: TabsProps) {
           ? {
               ...child,
               props: {
-                ...child.props,
+                ...(child.props || {}),
                 activeTab,
                 setActiveTab,
               },
@@ -45,7 +45,7 @@ export function Tabs({ defaultValue, children }: TabsProps) {
           : child.type === TabsContent
           ? {
               ...child,
-              props: { ...child.props, activeTab },
+              props: { ...(child.props || {}), activeTab },
             }
           : child
       )
@@ -72,7 +72,7 @@ export function TabsList({
             child.type === TabsTrigger
               ? {
                   ...child,
-                  props: { ...child.props, activeTab, onChange: setActiveTab },
+                  props: { ...(child.props || {}), activeTab, onChange: setActiveTab },
                 }
               : child
           )

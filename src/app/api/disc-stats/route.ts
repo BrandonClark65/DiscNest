@@ -23,4 +23,9 @@ const handler = async () => {
 };
 
 // ✅ Combines both admin authentication and automatic error logging
-export const GET = withErrorHandling(withAdminAuth(handler), "/api/disc-stats");
+export const GET = withAdminAuth(
+  withErrorHandling(
+    handler as (...args: unknown[]) => Promise<NextResponse>,
+    "/api/disc-stats"
+  )
+);

@@ -137,7 +137,7 @@ export default function MarketplacePage() {
       {isCreatingListing && session?.user && (
         <div className="border border-[var(--muted)]/30 rounded-lg p-5 mb-8 bg-[var(--surface)]/80 shadow-md">
           <CreateListingForm
-            user={session.user}
+            user={{ id: (session.user as { id?: string }).id || '', name: session.user.name || undefined, email: session.user.email || undefined }}
             onClose={() => setIsCreatingListing(false)}
           />
         </div>
@@ -147,7 +147,7 @@ export default function MarketplacePage() {
       {isCreatingRequest && session?.user && (
         <div className="border border-[var(--muted)]/30 rounded-lg p-5 mb-8 bg-[var(--surface)]/80 shadow-md">
           <CreateDiscRequestForm
-            user={session.user}
+            user={{ id: (session.user as { id?: string }).id || '', name: session.user.name || undefined, email: session.user.email || undefined }}
             onClose={() => setIsCreatingRequest(false)}
           />
         </div>

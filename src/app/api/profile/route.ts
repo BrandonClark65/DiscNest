@@ -10,16 +10,9 @@ import { withErrorHandling } from "@/lib/withErrorHandling";
 // ----------------------
 // POST: update profile
 // ----------------------
-interface UserSession {
-  user: {
-    email: string;
-    id: string;
-  };
-}
+import type { Session } from "next-auth";
 
-import type { UserSession } from "@/types/api";
-
-const updateProfileHandler = async (req: Request, session: UserSession) => {
+const updateProfileHandler = async (req: Request, session: Session) => {
   const body = await req.json();
 
   // Validate with Zod
@@ -88,14 +81,14 @@ const updateProfileHandler = async (req: Request, session: UserSession) => {
 };
 
 export const POST = withErrorHandling(
-  withUserAuth(updateProfileHandler),
+  withUserAuth(updateProfileHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/profile"
 );
 
 // ----------------------
 // GET: fetch current user profile
 // ----------------------
-const getProfileHandler = async (req: Request, session: UserSession) => {
+const getProfileHandler = async (req: Request, session: Session) => {
   await connectToDatabase();
 
   const user = await User.findOne({ email: session.user.email }).lean();
@@ -107,6 +100,6 @@ const getProfileHandler = async (req: Request, session: UserSession) => {
 };
 
 export const GET = withErrorHandling(
-  withUserAuth(getProfileHandler),
+  withUserAuth(getProfileHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/profile"
 );

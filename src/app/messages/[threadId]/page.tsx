@@ -18,7 +18,7 @@ const ReportModal = dynamic(() => import('@/components/modals/ReportModal'), {
 
 export default function ChatPage() {
   const { data: session } = useSession();
-  const currentUserId = session?.user?.id;
+  const currentUserId = session?.user ? (session.user as { id?: string }).id : undefined;
   const router = useRouter();
 
   const params = useParams();
@@ -31,7 +31,7 @@ export default function ChatPage() {
     setNewMessage,
     sendMessage,
     messagesEndRef,
-  } = useChatThread(threadId, currentUserId, session || null);
+  } = useChatThread(threadId, currentUserId, (session as unknown as import('next-auth').Session) || null);
 
   const [reportOpen, setReportOpen] = useState(false);
   const [reportContext, setReportContext] = useState<{

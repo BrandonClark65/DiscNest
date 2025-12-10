@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { connectToDatabase } from "@/lib/mongodb";
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 import UserReport from "@/models/UserReport";
 import User from "@/models/User";
 
 
-const reportHandler = async (req: Request, session: UserSession) => {
+const reportHandler = async (req: Request, session: Session) => {
   await connectToDatabase();
 
   const { reportedUserId, threadId, messageId, listingId, requestId, reason } =
@@ -58,5 +58,8 @@ const reportHandler = async (req: Request, session: UserSession) => {
 
 // ✔ Correct order: withUserAuth wraps withErrorHandling
 export const POST = withUserAuth(
-  withErrorHandling(reportHandler, "/api/report")
+  withErrorHandling(
+    reportHandler as (...args: unknown[]) => Promise<NextResponse>,
+    "/api/report"
+  )
 );

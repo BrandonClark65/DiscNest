@@ -5,10 +5,10 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
 import { withErrorHandling } from "@/lib/withErrorHandling";
 import { recalcDiscCount } from "@/lib/updateDiscCount";
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 /* ---------- Handler ---------- */
-const addDiscHandler = async (req: Request, session: UserSession) => {
+const addDiscHandler = async (req: Request, session: Session) => {
   const { discId, target } = await req.json();
 
   if (!discId || !target || !["shelf", "bag"].includes(target)) {
@@ -63,6 +63,6 @@ const addDiscHandler = async (req: Request, session: UserSession) => {
 
 /* ---------- Export ---------- */
 export const POST = withErrorHandling(
-  withUserAuth(addDiscHandler),
+  withUserAuth(addDiscHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/add-disc"
 );

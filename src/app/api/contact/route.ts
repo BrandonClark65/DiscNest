@@ -48,4 +48,7 @@ ${message}
 };
 
 // ✅ Wrap the handler with error logging
-export const POST = withErrorHandling(handler, "/api/contact");
+export const POST = withErrorHandling(
+  handler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/contact"
+);

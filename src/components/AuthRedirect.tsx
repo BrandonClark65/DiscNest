@@ -14,7 +14,7 @@ export default function AuthRedirect() {
   useEffect(() => {
     if (
       status === 'authenticated' &&
-      session?.user?.hasOnboarded === false &&
+      session?.user ? (session.user as { hasOnboarded?: boolean }).hasOnboarded : undefined === false &&
       !whitelist.includes(pathname)
     ) {
       router.push('/onboarding');

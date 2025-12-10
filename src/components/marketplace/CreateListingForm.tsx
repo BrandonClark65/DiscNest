@@ -5,6 +5,7 @@ import type { Disc } from '@/types/disc';
 import imageCompression from 'browser-image-compression';
 import { DiscBrands, DiscPlastics } from '@/app/constants/discData';
 import { useAnalytics } from '@/lib/useAnalytics';
+import Image from 'next/image';
 
 
 type CreateListingFormProps = {
@@ -507,7 +508,15 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           <div className="flex gap-2 mt-2 flex-wrap">
             {form.imageUrls.map((url, i) => (
               <div key={i} className="relative border-2 border-green-500 rounded">
-                <img src={url} className="w-24 h-24 object-cover rounded" />
+                <div className="relative w-24 h-24">
+                  <Image
+                    src={url}
+                    alt={`Listing image ${i + 1}`}
+                    width={96}
+                    height={96}
+                    className="object-cover rounded"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => handleRemoveImage(url)}
@@ -520,7 +529,15 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             {form.flaggedImages.map((urlOrName, i) => (
               <div key={i} className="relative border-2 border-red-500 rounded bg-red-100">
                 {urlOrName.startsWith('http') ? (
-                  <img src={urlOrName} className="w-24 h-24 object-cover rounded" />
+                  <div className="relative w-24 h-24">
+                    <Image
+                      src={urlOrName}
+                      alt={`Flagged image ${i + 1}`}
+                      width={96}
+                      height={96}
+                      className="object-cover rounded"
+                    />
+                  </div>
                 ) : (
                   <span className="px-2 py-1 text-red-800">{urlOrName}</span>
                 )}

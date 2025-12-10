@@ -9,7 +9,7 @@ export type MarketplaceTab = 'market' | 'myListings' | 'requests';
 
 export function useMarketplaceData() {
   const { data: session, status } = useSession();
-  const userId = session?.user?.id;
+  const userId = session?.user ? (session.user as { id?: string }).id : undefined;
 
   const [marketListings, setMarketListings] = useState<Listing[]>([]);
   const [myListings, setMyListings] = useState<Listing[]>([]);
@@ -83,7 +83,7 @@ export function useMarketplaceData() {
             const ownerId =
               typeof l.userId === 'string'
                 ? l.userId
-                : String((typeof l.userId === 'object' && l.userId !== null && '_id' in l.userId) ? l.userId._id : '');
+                : String((typeof l.userId === 'object' && l.userId !== null && '_id' in l.userId) ? (l.userId as { _id: unknown })._id : '');
             return ownerId !== userId;
           })
         : listings;

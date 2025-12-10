@@ -25,5 +25,5 @@ export async function resetTestDb() {
     }
   }
   // Clear mongoose model cache to avoid schema issues
-  mongoose.models = {};
+  (mongoose.models as Record<string, unknown>) = {};
 }

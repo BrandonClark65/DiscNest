@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import MessageThread from "@/models/MessageThread";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireUser } from "@/lib/auth/requireUser";
 import type { Message } from "@/types/message";
 import mongoose from "mongoose";
 import { withErrorHandling } from "@/lib/withErrorHandling";
@@ -29,9 +28,7 @@ const getThreadHandler = async (
   const { threadId } = await context.params;
   await connectToDatabase();
 
-  const session = await getServerSession(authOptions);
-  if (!session)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await requireUser();
 
   const thread = await MessageThread.findById(threadId)
     .populate("participants", "_id name")
@@ -44,9 +41,9 @@ const getThreadHandler = async (
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
 
   const userId = session.user.id;
-  if (!thread.participants.some((p) => {
+  if (!thread.participants.some((p: unknown) => {
     const participantId = typeof p === 'object' && p !== null && '_id' in p 
-      ? String(p._id) 
+      ? String((p as { _id: unknown })._id) 
       : String(p);
     return participantId === userId;
   }))
@@ -56,7 +53,7 @@ const getThreadHandler = async (
 };
 
 export const GET = withErrorHandling(
-  getThreadHandler,
+  getThreadHandler as (...args: unknown[]) => Promise<NextResponse>,
   "/api/messages/[threadId]"
 );
 
@@ -73,9 +70,7 @@ const postMessageHandler = async (
   const { threadId } = await context.params;
   await connectToDatabase();
 
-  const session = await getServerSession(authOptions);
-  if (!session)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await requireUser();
 
   const senderId = session.user.id;
   const { content } = await req.json();
@@ -90,7 +85,7 @@ const postMessageHandler = async (
   if (!thread)
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
 
-  if (!thread.participants.some((p) => {
+  if (!thread.participants.some((p: unknown) => {
     const participantId = typeof p === 'object' && p !== null && 'toString' in p
       ? p.toString()
       : String(p);
@@ -141,7 +136,7 @@ const postMessageHandler = async (
 
     const result = mod.results[0];
     flagged = result.flagged;
-    flaggedCategories = result.categories;
+    flaggedCategories = result.categories as unknown as Record<string, boolean>;
 
     if (flagged) {
       // Save flagged message for admin review
@@ -203,7 +198,7 @@ const postMessageHandler = async (
 
 
 export const POST = withErrorHandling(
-  postMessageHandler,
+  postMessageHandler as (...args: unknown[]) => Promise<NextResponse>,
   "/api/messages/[threadId]"
 );
 
@@ -217,9 +212,7 @@ const markReadHandler = async (
   const { threadId } = await context.params;
   await connectToDatabase();
 
-  const session = await getServerSession(authOptions);
-  if (!session)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await requireUser();
 
   const userId = session.user.id;
 
@@ -235,6 +228,6 @@ const markReadHandler = async (
 };
 
 export const PUT = withErrorHandling(
-  markReadHandler,
+  markReadHandler as (...args: unknown[]) => Promise<NextResponse>,
   "/api/messages/[threadId]"
 );

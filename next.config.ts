@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
+      {
+        protocol: 'https',
+        hostname: 's3.amazonaws.com',
+      },
       // You can add more allowed domains here
       // { protocol: 'https', hostname: 'yourcdn.com' }
     ],

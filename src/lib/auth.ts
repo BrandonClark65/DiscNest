@@ -1,4 +1,3 @@
-import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 
@@ -21,7 +20,7 @@ if (typeof window === 'undefined') {
   }
 }
 
-export const authOptions: NextAuthOptions = {
+export const authOptions = {
   session: {
     strategy: 'jwt',
   },
@@ -94,7 +93,7 @@ export const authOptions: NextAuthOptions = {
     /**
      * Runs on ANY login attempt (OAuth or Credentials)
      */
-    async signIn({ user, account }) {
+    async signIn({ user, account }: { user: { email?: string | null; name?: string | null; image?: string | null }; account?: { provider?: string; providerAccountId?: string } | null }) {
       await connectToDatabase();
 
       const existingUser = await User.findOne({ email: user.email });
@@ -129,7 +128,7 @@ export const authOptions: NextAuthOptions = {
     /**
      * Create JWT token
      */
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: { sub?: string; email?: string; role?: string }; user?: { id?: string; email?: string; role?: string } }) {
       if (user) {
         token.sub = user.id ?? token.sub;
         token.email = user.email;
@@ -141,7 +140,7 @@ export const authOptions: NextAuthOptions = {
     /**
      * Hydrate session.user with token fields
      */
-    async session({ session, token }) {
+    async session({ session, token }: { session: { user?: { id?: string; email?: string; name?: string; role?: string } }; token: { sub?: string; email?: string; role?: string } }) {
       if (session.user) {
         session.user.id = token.sub as string;
         session.user.email = token.email as string;

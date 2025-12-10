@@ -27,7 +27,8 @@ export default function MessageSellerButton({
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleClick() {
-    if (!session?.user?.id) {
+    const userId = session?.user ? (session.user as { id?: string }).id : undefined;
+    if (!userId) {
       alert('Log in to message seller'); // replace with toast if you have one
       return;
     }

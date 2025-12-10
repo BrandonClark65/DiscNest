@@ -108,7 +108,7 @@ export function mapMessageDBtoUI(msg: MessageDB): MessageUI {
       : "Unknown";
 
   return {
-    sender: { _id: rawSender!, name: senderName },
+    sender: { _id: rawSender || '', name: senderName || 'Unknown' },
     content: msg.content,
     timestamp: new Date(msg.timestamp),
     readBy: msg.readBy?.map((id) => id.toString()) || [],

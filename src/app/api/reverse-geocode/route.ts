@@ -30,4 +30,7 @@ const reverseGeocodeHandler = async (req: Request) => {
   return NextResponse.json({ city, state });
 };
 
-export const GET = withErrorHandling(reverseGeocodeHandler, "/api/reverse-geocode");
+export const GET = withErrorHandling(
+  reverseGeocodeHandler as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/reverse-geocode"
+);

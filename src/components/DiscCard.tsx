@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { GripVertical } from 'lucide-react';
+import Image from 'next/image';
 
 type DiscCardProps = {
   disc: Disc;
@@ -20,6 +21,12 @@ type DiscCardProps = {
 
   // ✅ Optional drag handle props
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+};
+
+// Helper function to check if URL is external
+const isExternalUrl = (url?: string | null): boolean => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://');
 };
 
 export default function DiscCard({
@@ -37,6 +44,7 @@ export default function DiscCard({
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
   const [isMobile, setIsMobile] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -106,19 +114,30 @@ export default function DiscCard({
         }}
       >
         {/* Image */}
-        {disc.image && (
-          <img
-            src={disc.image}
-            alt={`${disc.name} ${disc.brand} ${disc.type} disc golf disc${disc.plastic ? ` in ${disc.plastic} plastic` : ''} - ${disc.stability || ''} stability`}
-            onError={(e) => ((e.target as HTMLImageElement).src = '/fallback.jpg')}
-            className={`object-contain ${
+        {(disc.image || imageError) && (
+          <div
+            className={`relative ${
               circleView
-                ? 'w-28 h-28 md:w-36 md:h-36 rounded-full border border-white shadow-inner mb-2'
+                ? 'w-28 h-28 md:w-36 md:h-36 mb-2'
                 : isMobile
-                ? 'w-32 h-32 mx-auto object-contain mb-4'
-                : 'w-20 h-20 mx-auto object-contain mb-2'
+                ? 'w-32 h-32 mx-auto mb-4'
+                : 'w-20 h-20 mx-auto mb-2'
             }`}
-          />
+          >
+            <Image
+              src={imageError ? '/fallback.jpg' : disc.image || '/fallback.jpg'}
+              alt={`${disc.name} ${disc.brand} ${disc.type} disc golf disc${disc.plastic ? ` in ${disc.plastic} plastic` : ''} - ${disc.stability || ''} stability`}
+              width={circleView ? 144 : isMobile ? 128 : 80}
+              height={circleView ? 144 : isMobile ? 128 : 80}
+              onError={() => setImageError(true)}
+              className={`object-contain ${
+                circleView
+                  ? 'rounded-full border border-white shadow-inner'
+                  : ''
+              }`}
+              unoptimized={isExternalUrl(disc.image)}
+            />
+          </div>
         )}
 
         {/* Info */}

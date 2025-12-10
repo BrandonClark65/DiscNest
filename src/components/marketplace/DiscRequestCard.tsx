@@ -38,6 +38,11 @@ export default function DiscRequestCard({ request, currentUserId }: Props) {
     return;
   }
 
+  if (!requester) {
+    console.error("Requester not found");
+    return;
+  }
+
   const res = await fetch("/api/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

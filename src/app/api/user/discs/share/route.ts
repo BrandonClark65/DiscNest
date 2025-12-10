@@ -4,7 +4,7 @@ import { withErrorHandling } from "@/lib/withErrorHandling";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { v4 as uuidv4 } from "uuid";
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 /**
  * POST /api/user/discs/share
@@ -13,7 +13,7 @@ import type { UserSession } from "@/types/api";
  * and returns the correct share URL (dev or prod).
  * Does NOT toggle visibility — this simply guarantees the share link exists.
  */
-const shareBagHandler = async (req: Request, session: UserSession) => {
+const shareBagHandler = async (req: Request, session: Session) => {
   await connectToDatabase();
 
   const user = await User.findById(session.user.id);
@@ -55,6 +55,6 @@ const shareBagHandler = async (req: Request, session: UserSession) => {
 
 /* ---------- Export ---------- */
 export const POST = withErrorHandling(
-  withUserAuth(shareBagHandler),
+  withUserAuth(shareBagHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/user/discs/share"
 );

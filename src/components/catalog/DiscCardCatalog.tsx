@@ -5,6 +5,7 @@ import { getContrastColor } from '@/lib/colors';
 import toast from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 type DiscCardCatalogProps = {
   disc: Disc;
@@ -12,6 +13,12 @@ type DiscCardCatalogProps = {
   onAction: () => void;
   onHover?: (disc: Disc | null) => void;
   isRecentlyAdded?: boolean;
+};
+
+// Helper function to check if URL is external
+const isExternalUrl = (url?: string | null): boolean => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://');
 };
 
 export default function DiscCardCatalog({
@@ -24,6 +31,7 @@ export default function DiscCardCatalog({
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
   const [isMobile, setIsMobile] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Calculate text contrast color, fallback to theme foreground if too close to background
   const contrastColor = getContrastColor(disc.color ?? '#ffffff');
@@ -63,13 +71,18 @@ export default function DiscCardCatalog({
       }}
     >
       {/* Disc Image */}
-      {disc.image && (
-        <img
-          src={disc.image}
-          alt={`${disc.name} ${disc.brand} ${disc.type} disc golf disc${disc.plastic ? ` in ${disc.plastic} plastic` : ''} - ${disc.stability || ''} stability`}
-          className="object-contain w-32 h-32 mx-auto mb-4 rounded-md shadow-sm"
-          onError={(e) => ((e.target as HTMLImageElement).src = '/fallback.jpg')}
-        />
+      {(disc.image || imageError) && (
+        <div className="w-32 h-32 mx-auto mb-4 relative">
+          <Image
+            src={imageError ? '/fallback.jpg' : disc.image || '/fallback.jpg'}
+            alt={`${disc.name} ${disc.brand} ${disc.type} disc golf disc${disc.plastic ? ` in ${disc.plastic} plastic` : ''} - ${disc.stability || ''} stability`}
+            width={128}
+            height={128}
+            className="object-contain rounded-md shadow-sm"
+            onError={() => setImageError(true)}
+            unoptimized={isExternalUrl(disc.image)}
+          />
+        </div>
       )}
 
       {/* Disc Info */}

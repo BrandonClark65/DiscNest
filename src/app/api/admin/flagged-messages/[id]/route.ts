@@ -108,7 +108,9 @@ const flaggedMessageAction = async (
 // -----------------------
 // EXPORT HANDLER WITH AUTH + ERROR HANDLING
 // -----------------------
-export const POST = withErrorHandling(
-  withAdminAuth(flaggedMessageAction),
-  "/api/admin/flagged-messages/[id]"
+export const POST = withAdminAuth(
+  withErrorHandling(
+    flaggedMessageAction as (...args: unknown[]) => Promise<NextResponse>,
+    "/api/admin/flagged-messages/[id]"
+  )
 );

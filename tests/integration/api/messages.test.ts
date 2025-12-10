@@ -5,7 +5,8 @@ import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import MessageThread from "@/models/MessageThread";
 import User from "@/models/User";
 import Listing from "@/models/Listing";
-import { setupCommonMocks, setupAuthMocks, setupMessageMocks, mockGetServerSession, resetAllMocks } from "../../utils/testMocks";
+import { setupCommonMocks, setupAuthMocks, setupMessageMocks, mockRequireUser, resetAllMocks, createMockSession } from "../../utils/testMocks";
+import { UnauthorizedError } from "@/lib/errors/UnauthorizedError";
 
 // Setup mocks
 setupCommonMocks();
@@ -21,7 +22,7 @@ describe("GET /api/messages", () => {
   afterAll(closeTestDb);
 
   test("requires authentication", async () => {
-    mockGetServerSession.mockResolvedValueOnce(null);
+    mockRequireUser.mockRejectedValueOnce(new UnauthorizedError("Unauthorized"));
 
     const res = await request(app).get("/api/messages");
 
@@ -36,9 +37,7 @@ describe("GET /api/messages", () => {
       shareableBagId: `bag-${Date.now()}-${Math.random()}`,
     });
 
-    mockGetServerSession.mockResolvedValueOnce({
-      user: { id: user._id.toString() },
-    });
+    mockRequireUser.mockResolvedValueOnce(createMockSession(user));
 
     const res = await request(app).get("/api/messages");
 
@@ -81,9 +80,7 @@ describe("GET /api/messages", () => {
       ],
     });
 
-    mockGetServerSession.mockResolvedValueOnce({
-      user: { id: user1._id.toString() },
-    });
+    mockRequireUser.mockResolvedValueOnce(createMockSession(user1));
 
     const res = await request(app).get("/api/messages");
 
@@ -102,7 +99,7 @@ describe("POST /api/messages", () => {
   afterAll(closeTestDb);
 
   test("requires authentication", async () => {
-    mockGetServerSession.mockResolvedValueOnce(null);
+    mockRequireUser.mockRejectedValueOnce(new UnauthorizedError("Unauthorized"));
 
     const res = await request(app)
       .post("/api/messages")
@@ -119,9 +116,7 @@ describe("POST /api/messages", () => {
       shareableBagId: `bag-${Date.now()}-${Math.random()}`,
     });
 
-    mockGetServerSession.mockResolvedValueOnce({
-      user: { id: user._id.toString() },
-    });
+    mockRequireUser.mockResolvedValueOnce(createMockSession(user));
 
     const res = await request(app)
       .post("/api/messages")
@@ -146,9 +141,7 @@ describe("POST /api/messages", () => {
       shareableBagId: `bag-${Date.now()}-${Math.random()}`,
     });
 
-    mockGetServerSession.mockResolvedValueOnce({
-      user: { id: user1._id.toString() },
-    });
+    mockRequireUser.mockResolvedValueOnce(createMockSession(user1));
 
     const res = await request(app)
       .post("/api/messages")
@@ -181,9 +174,7 @@ describe("POST /api/messages", () => {
       userId: user2._id,
     });
 
-    mockGetServerSession.mockResolvedValueOnce({
-      user: { id: user1._id.toString() },
-    });
+    mockRequireUser.mockResolvedValueOnce(createMockSession(user1));
 
     const res = await request(app)
       .post("/api/messages")
@@ -229,9 +220,7 @@ describe("POST /api/messages", () => {
       messages: [],
     });
 
-    mockGetServerSession.mockResolvedValueOnce({
-      user: { id: user1._id.toString() },
-    });
+    mockRequireUser.mockResolvedValueOnce(createMockSession(user1));
 
     const res = await request(app)
       .post("/api/messages")

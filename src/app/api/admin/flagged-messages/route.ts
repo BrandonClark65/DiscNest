@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { withAdminAuth } from "@/lib/auth/withAdminAuth";
+import { withErrorHandling } from "@/lib/withErrorHandling";
 import { connectToDatabase } from "@/lib/mongodb";
 import FlaggedMessage from "@/models/FlaggedMessage";
 
-export async function GET() {
+const getFlaggedMessages = async () => {
   await connectToDatabase();
-  const session = await getServerSession(authOptions);
-
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
   const messages = await FlaggedMessage.find({ status: "pending" })
     .populate("sender", "name email moderationFlags")
@@ -18,4 +13,11 @@ export async function GET() {
     .sort({ createdAt: -1 });
 
   return NextResponse.json(messages);
-}
+};
+
+export const GET = withAdminAuth(
+  withErrorHandling(
+    getFlaggedMessages as (...args: unknown[]) => Promise<NextResponse>,
+    "/api/admin/flagged-messages"
+  )
+);

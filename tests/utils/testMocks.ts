@@ -54,7 +54,13 @@ export function setupAuthMocks() {
     withUserAuth: (handler: any) => async (req: Request, context?: any) => {
       try {
         const session = await mockRequireUser();
-        return handler(req, session, context);
+        // Resolve params Promise if it exists (matching real withUserAuth behavior)
+        let resolvedContext = context;
+        if (context?.params && typeof context.params.then === 'function') {
+          const resolvedParams = await context.params;
+          resolvedContext = { params: resolvedParams };
+        }
+        return handler(req, session, resolvedContext);
       } catch (err: any) {
         const { NextResponse } = await import("next/server");
         const status = err.name === "UnauthorizedError" ? 401 : 500;
@@ -125,7 +131,41 @@ export function setupCommonMocks() {
   }));
 
   vi.mock("@/lib/withErrorHandling", () => ({
-    withErrorHandling: (handler: any) => handler,
+    withErrorHandling: (handler: any, routePath?: string) => {
+      return async (...args: any[]) => {
+        try {
+          return await handler(...args);
+        } catch (err: any) {
+          const { NextResponse } = await import("next/server");
+          const { UnauthorizedError } = await import("@/lib/errors/UnauthorizedError");
+          
+          // Check if it's an UnauthorizedError
+          const isUnauthorized = 
+            err instanceof UnauthorizedError ||
+            (err instanceof Error && (
+              err.name === "UnauthorizedError" ||
+              err.message?.includes("Unauthorized") ||
+              err.message?.includes("User must be logged in")
+            )) ||
+            (typeof err === "object" && err !== null && (
+              ("name" in err && String(err.name).toLowerCase().includes("unauthorized")) ||
+              ("message" in err && String(err.message).toLowerCase().includes("unauthorized"))
+            )) ||
+            String(err).toLowerCase().includes("unauthorized");
+          
+          if (isUnauthorized) {
+            const errorMessage = err instanceof Error ? err.message : 
+                                (typeof err === "object" && err !== null && "message" in err) ? String(err.message) :
+                                "Unauthorized";
+            return NextResponse.json({ error: errorMessage }, { status: 401 });
+          }
+          
+          // For other errors, return 500
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          return NextResponse.json({ error: errorMessage || "Internal Server Error" }, { status: 500 });
+        }
+      };
+    },
   }));
 }
 

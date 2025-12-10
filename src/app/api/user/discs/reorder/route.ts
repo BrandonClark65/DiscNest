@@ -4,10 +4,10 @@ import { withErrorHandling } from "@/lib/withErrorHandling";
 import User from "@/models/User";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
-import type { UserSession } from "@/types/api";
+import type { Session } from "next-auth";
 
 /* ---------- Handler ---------- */
-const reorderDiscsHandler = async (req: Request, session: UserSession) => {
+const reorderDiscsHandler = async (req: Request, session: Session) => {
   await connectToDatabase();
 
   const { orderedIds, zone } = await req.json();
@@ -46,6 +46,6 @@ const reorderDiscsHandler = async (req: Request, session: UserSession) => {
 
 /* ---------- Export ---------- */
 export const POST = withErrorHandling(
-  withUserAuth(reorderDiscsHandler),
+  withUserAuth(reorderDiscsHandler) as (...args: unknown[]) => Promise<NextResponse>,
   "/api/reorder-discs"
 );
