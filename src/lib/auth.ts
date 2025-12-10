@@ -127,12 +127,35 @@ export const authOptions = {
 
     /**
      * Create JWT token
+     * Ensures token.sub is always a MongoDB ObjectId, not a provider ID
+     * For OAuth users, user.id is the provider ID (e.g., Google ID), so we look up the MongoDB user
      */
     async jwt({ token, user }: { token: { sub?: string; email?: string; role?: string }; user?: { id?: string; email?: string; role?: string } }) {
       if (user) {
-        token.sub = user.id ?? token.sub;
-        token.email = user.email;
-        token.role = user.role ?? 'user';
+        // Check if user.id is a valid MongoDB ObjectId (24 hex characters)
+        // If not, or if we have email, look up the user in MongoDB to get the ObjectId
+        const isMongoObjectId = user.id && /^[0-9a-fA-F]{24}$/.test(user.id);
+        
+        if (!isMongoObjectId && user.email) {
+          // OAuth user - look up MongoDB ObjectId by email
+          await connectToDatabase();
+          const userInDb = await User.findOne({ email: user.email });
+          if (userInDb) {
+            token.sub = userInDb._id.toString();
+            token.email = user.email;
+            token.role = userInDb.role ?? 'user';
+          } else {
+            // Fallback (shouldn't happen after signIn callback)
+            token.sub = user.id ?? token.sub;
+            token.email = user.email;
+            token.role = user.role ?? 'user';
+          }
+        } else {
+          // Credentials login - user.id is already MongoDB ObjectId
+          token.sub = user.id ?? token.sub;
+          token.email = user.email;
+          token.role = user.role ?? 'user';
+        }
       }
       return token;
     },
