@@ -36,7 +36,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic listing pages
   let listingPages: MetadataRoute.Sitemap = [];
   try {
-    await connectToDatabase();
+    // Add timeout to prevent hanging on connection issues
+    const connectionPromise = connectToDatabase();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Database connection timeout')), 5000)
+    );
+    
+    await Promise.race([connectionPromise, timeoutPromise]);
+    
     const listings = await Listing.find({ sold: false })
       .select('_id updatedAt')
       .lean()
@@ -49,7 +56,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
   } catch (error) {
-    console.error('Error generating listing sitemap:', error);
+    // Silently fail during build - sitemap will still be generated with static pages
+    // This is expected if MongoDB is unavailable (e.g., IP not whitelisted during build)
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️  Could not connect to MongoDB for sitemap generation. Using static pages only.');
+      console.warn('   This is normal if your IP is not whitelisted in MongoDB Atlas.');
+    }
     // Return static pages only if database connection fails
     // This ensures sitemap is always generated even if DB is unavailable
   }
