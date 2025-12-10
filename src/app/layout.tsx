@@ -3,6 +3,8 @@ import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import { Inter, Poppins } from 'next/font/google';
 import ClientLayout from '@/components/ClientLayout';
+import GoogleAnalyticsHead from '@/components/analytics/GoogleAnalyticsHead';
+import { Analytics } from "@vercel/analytics/next"
 
 // ✅ Include weight and subset options for Poppins and Inter
 // display: 'swap' ensures text remains visible during webfont load (FOUT)
@@ -82,6 +84,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body className="bg-background text-neutral-900 font-sans antialiased flex flex-col min-h-screen">
+        {/* Google Analytics - Injects scripts directly into <head> */}
+        <GoogleAnalyticsHead />
+        <Analytics />
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
