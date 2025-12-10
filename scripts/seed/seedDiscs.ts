@@ -39,7 +39,7 @@ async function seedDiscs() {
       brand: disc.brand,
       type: disc.category,
       stability: disc.stability,
-      plastic: '',
+      plastic: 'Unknown', // Use "Unknown" enum value instead of empty string
       wearLevel: 0,
       notes: '',
       flight: {
