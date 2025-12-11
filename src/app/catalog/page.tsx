@@ -17,16 +17,29 @@ async function getDiscs(): Promise<DiscType[]> {
       .lean();
 
     // Convert MongoDB documents to plain objects with proper typing
-    return discs.map((disc) => ({
-      _id: disc._id.toString(),
-      name: disc.name,
-      brand: disc.brand,
-      type: disc.type,
-      stability: disc.stability,
-      image: disc.image,
-      flight: disc.flight,
-      addedAt: disc.addedAt?.toISOString(),
-    })) as DiscType[];
+    return discs.map((disc) => {
+      // Type assertion for lean() result - _id can be ObjectId or string
+      const discDoc = disc as unknown as {
+        _id: { toString: () => string } | string;
+        name?: string;
+        brand?: string;
+        type?: string;
+        stability?: string;
+        image?: string;
+        flight?: { speed?: number; glide?: number; turn?: number; fade?: number };
+        addedAt?: Date;
+      };
+      return {
+        _id: typeof discDoc._id === 'string' ? discDoc._id : discDoc._id.toString(),
+        name: discDoc.name,
+        brand: discDoc.brand,
+        type: discDoc.type,
+        stability: discDoc.stability,
+        image: discDoc.image,
+        flight: discDoc.flight,
+        addedAt: discDoc.addedAt?.toISOString(),
+      };
+    }) as DiscType[];
   } catch (error) {
     console.error('[Catalog] Failed to fetch discs:', error);
     // Return empty array on error - page will still render

@@ -1,25 +1,46 @@
 import type { Metadata } from 'next';
+import { connectToDatabase } from '@/lib/mongodb';
+import Listing from '@/models/Listing';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
 
-export const metadata: Metadata = {
-  title: 'Disc Golf Marketplace - Buy & Sell Discs',
-  description: 'Buy and sell disc golf discs in our marketplace. Browse listings, connect with sellers, and find the perfect disc for your game.',
-  openGraph: {
-    title: 'Disc Golf Marketplace - Buy & Sell Discs | DiscNest',
-    description: 'Buy and sell disc golf discs in our marketplace. Browse listings, connect with sellers, and find the perfect disc for your game.',
-    url: `${baseUrl}/marketplace`,
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Disc Golf Marketplace - Buy & Sell Discs | DiscNest',
-    description: 'Buy and sell disc golf discs in our marketplace.',
-  },
-  alternates: {
-    canonical: `${baseUrl}/marketplace`,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // Fetch listing count for metadata
+  let listingCount = 0;
+  try {
+    await connectToDatabase();
+    listingCount = await Listing.countDocuments({
+      pendingReview: { $ne: true },
+      sold: { $ne: true },
+    });
+  } catch (error) {
+    // If database is unavailable, use generic description
+    console.warn('[Marketplace Layout] Could not fetch listing count for metadata:', error);
+  }
+
+  const description = listingCount > 0
+    ? `Buy and sell disc golf discs in our marketplace. Browse ${listingCount} active listings, connect with sellers, and find the perfect disc for your game.`
+    : 'Buy and sell disc golf discs in our marketplace. Browse listings, connect with sellers, and find the perfect disc for your game.';
+
+  return {
+    title: 'Disc Golf Marketplace - Buy & Sell Discs',
+    description,
+    openGraph: {
+      title: 'Disc Golf Marketplace - Buy & Sell Discs | DiscNest',
+      description,
+      url: `${baseUrl}/marketplace`,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Disc Golf Marketplace - Buy & Sell Discs | DiscNest',
+      description,
+    },
+    alternates: {
+      canonical: `${baseUrl}/marketplace`,
+    },
+  };
+}
 
 export default function MarketplaceLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
