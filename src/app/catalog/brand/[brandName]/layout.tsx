@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { connectToDatabase } from '@/lib/mongodb';
+import Disc from '@/models/Disc';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
 
@@ -16,7 +18,24 @@ const brandDescriptions: Record<string, string> = {
 export async function generateMetadata({ params }: { params: Promise<{ brandName: string }> }): Promise<Metadata> {
   const { brandName: brandNameParam } = await params;
   const brandName = decodeURIComponent(brandNameParam);
-  const description = brandDescriptions[brandName] || `Browse ${brandName} disc golf discs. Find drivers, midranges, and putters from this trusted disc golf brand.`;
+  
+  // Fetch disc count for metadata
+  let discCount = 0;
+  try {
+    await connectToDatabase();
+    discCount = await Disc.countDocuments({ 
+      userId: { $exists: false },
+      brand: brandName 
+    });
+  } catch (error) {
+    // If database is unavailable, use generic description
+    console.warn(`[Brand Layout ${brandName}] Could not fetch disc count for metadata:`, error);
+  }
+
+  const baseDescription = brandDescriptions[brandName] || `Browse ${brandName} disc golf discs. Find drivers, midranges, and putters from this trusted disc golf brand.`;
+  const description = discCount > 0
+    ? `${baseDescription} Browse ${discCount} ${discCount === 1 ? 'disc' : 'discs'} from ${brandName}.`
+    : baseDescription;
   const brandUrl = `${baseUrl}/catalog/brand/${encodeURIComponent(brandName)}`;
 
   return {

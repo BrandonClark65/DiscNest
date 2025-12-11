@@ -1,16 +1,8 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import toast from 'react-hot-toast';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import CatalogGrid from '@/components/catalog/CatalogGrid';
-import CatalogPagination from '@/components/catalog/CatalogPagination';
-import HoverPreview from '@/components/catalog/HoverPreview';
+import { connectToDatabase } from '@/lib/mongodb';
+import Disc from '@/models/Disc';
+import type { Disc as DiscType } from '@/types/disc';
+import BrandClient from './BrandClient';
 import StructuredData from '@/components/StructuredData';
-import type { Disc } from '@/types/disc';
 
 // Brand descriptions for SEO and user information
 const brandDescriptions: Record<string, { description: string; keywords: string[] }> = {
@@ -44,78 +36,56 @@ const brandDescriptions: Record<string, { description: string; keywords: string[
   }
 };
 
-export default function BrandPage() {
-  const params = useParams();
-  const brandName = decodeURIComponent(params.brandName as string);
-  const { data: session } = useSession();
-  const email = session?.user?.email;
+async function getBrandDiscs(brandName: string): Promise<DiscType[]> {
+  try {
+    await connectToDatabase();
+    
+    // Fetch discs for this brand server-side (same query pattern as catalog)
+    const discs = await Disc.find(
+      { 
+        userId: { $exists: false },
+        brand: brandName 
+      },
+      'name brand type addedAt image stability flight'
+    )
+      .sort({ name: 1 }) // Sort by name within brand
+      .lean();
 
-  const [discs, setDiscs] = useState<Disc[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hoveredDisc, setHoveredDisc] = useState<Disc | null>(null);
-  const [addedDiscId, setAddedDiscId] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+    // Convert MongoDB documents to plain objects with proper typing
+    return discs.map((disc) => {
+      const discDoc = disc as unknown as {
+        _id: { toString: () => string } | string;
+        name?: string;
+        brand?: string;
+        type?: string;
+        stability?: string;
+        image?: string;
+        flight?: { speed?: number; glide?: number; turn?: number; fade?: number };
+        addedAt?: Date;
+      };
+      return {
+        _id: typeof discDoc._id === 'string' ? discDoc._id : discDoc._id.toString(),
+        name: discDoc.name,
+        brand: discDoc.brand,
+        type: discDoc.type,
+        stability: discDoc.stability,
+        image: discDoc.image,
+        flight: discDoc.flight,
+        addedAt: discDoc.addedAt?.toISOString(),
+      };
+    }) as DiscType[];
+  } catch (error) {
+    console.error(`[Brand ${brandName}] Failed to fetch discs:`, error);
+    // Return empty array on error - page will still render
+    return [];
+  }
+}
 
-  const discsPerPage = 24;
-
-  // Load discs for this brand
-  useEffect(() => {
-    setLoading(true);
-    fetch('/api/discs')
-      .then((res) => res.json())
-      .then((data: Disc[]) => {
-        const brandDiscs = data
-          .filter((disc) => disc.brand === brandName)
-          .sort((a, b) => {
-            // Sort by name within brand
-            return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
-          });
-        setDiscs(brandDiscs);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [brandName]);
-
-  // Handle mobile detection
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handleAdd = async (discId: string, target: 'shelf' | 'bag') => {
-    if (!email) return;
-    const disc = discs.find((d) => d._id === discId);
-
-    const res = await fetch('/api/user/discs/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, discId, target }),
-    });
-
-    if (res.ok) {
-      setAddedDiscId(discId);
-      toast.success(`${disc?.name || 'Disc'} added to ${target === 'shelf' ? 'Shelf' : 'Bag'}!`);
-      setTimeout(() => setAddedDiscId(null), 2000);
-    } else {
-      const error = await res.json();
-      toast.error(`Failed to add ${disc?.name || 'disc'}: ${error?.error || 'Unknown error'}`);
-    }
-  };
-
-  const totalPages = Math.ceil(discs.length / discsPerPage);
-  const startIndex = (currentPage - 1) * discsPerPage;
-  const paginated = discs.slice(startIndex, startIndex + discsPerPage);
-
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      setCurrentPage(page);
-    }
-  };
-
+export default async function BrandPage({ params }: { params: Promise<{ brandName: string }> }) {
+  const { brandName: brandNameParam } = await params;
+  const brandName = decodeURIComponent(brandNameParam);
+  const discs = await getBrandDiscs(brandName);
+  
   const brandInfo = brandDescriptions[brandName] || {
     description: `Browse ${brandName} disc golf discs. Find drivers, midranges, and putters from this trusted disc golf brand.`,
     keywords: [`${brandName} discs`, `${brandName} disc golf`]
@@ -130,6 +100,7 @@ export default function BrandPage() {
     name: `${brandName} Disc Golf Discs`,
     description: brandInfo.description,
     url: brandUrl,
+    numberOfItems: discs.length,
     mainEntity: {
       '@type': 'ItemList',
       itemListElement: discs.slice(0, 10).map((disc, index) => ({
@@ -150,67 +121,11 @@ export default function BrandPage() {
   return (
     <>
       <StructuredData data={collectionSchema} id="brand-schema" />
-      <main className="max-w-6xl mx-auto p-6 space-y-6 text-foreground">
-        <Breadcrumbs
-          items={[
-            { label: 'Catalog', href: '/catalog' },
-            { label: `${brandName} Discs`, href: `/catalog/brand/${encodeURIComponent(brandName)}` },
-          ]}
-          className="mb-4"
-        />
-
-        <div className="text-center space-y-4">
-          <h1 className="h1">
-            <span className="text-gradient-brand">{brandName}</span> Disc Golf Discs
-          </h1>
-          <p className="text-muted max-w-2xl mx-auto">
-            {brandInfo.description}
-          </p>
-          {discs.length > 0 && (
-            <p className="text-sm text-muted">
-              Showing {discs.length} {discs.length === 1 ? 'disc' : 'discs'}
-            </p>
-          )}
-        </div>
-
-        {loading && (
-          <p className="text-center text-muted mt-8">Loading {brandName} discs...</p>
-        )}
-
-        {!loading && discs.length === 0 && (
-          <div className="text-center text-muted mt-8 space-y-4">
-            <p>No discs found for {brandName}.</p>
-            <Link href="/catalog" className="text-accent hover:underline">
-              Browse all discs →
-            </Link>
-          </div>
-        )}
-
-        {!loading && discs.length > 0 && (
-          <>
-            <CatalogGrid
-              discs={paginated}
-              addedDiscId={addedDiscId}
-              onAdd={handleAdd}
-              onHover={setHoveredDisc}
-            />
-
-            {discs.length > discsPerPage && (
-              <CatalogPagination
-                totalPages={totalPages}
-                currentPage={currentPage}
-                onChange={handlePageChange}
-              />
-            )}
-          </>
-        )}
-
-        <HoverPreview
-          disc={hoveredDisc}
-          onClose={() => setHoveredDisc(null)}
-          isMobile={isMobile}
-        />
-      </main>
+      <BrandClient 
+        initialDiscs={discs} 
+        brandName={brandName}
+        brandDescription={brandInfo.description}
+      />
     </>
   );
 }
