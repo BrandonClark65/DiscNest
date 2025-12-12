@@ -79,14 +79,19 @@ export const metadata: Metadata = {
     canonical: baseUrl,
   },
   icons: {
+    // Primary favicon - Next.js automatically serves icon.png from app directory
+    // Using absolute URLs for better search engine compatibility
     icon: [
-      { url: '/og-image.png', sizes: 'any' },
-      { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
+      { url: new URL('/icon.png', baseUrl).toString(), sizes: 'any', type: 'image/png' },
+      { url: new URL('/icon.png', baseUrl).toString(), sizes: '192x192', type: 'image/png' },
+      { url: new URL('/icon.png', baseUrl).toString(), sizes: '32x32', type: 'image/png' },
+      { url: new URL('/favicon.ico', baseUrl).toString(), sizes: 'any' },
     ],
+    // Apple touch icon - should be 180x180 square
     apple: [
-      { url: '/og-image.png', sizes: '180x180', type: 'image/png' },
+      { url: new URL('/icon.png', baseUrl).toString(), sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico',
+    shortcut: new URL('/icon.png', baseUrl).toString(),
   },
 };
 
