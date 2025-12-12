@@ -5,10 +5,14 @@
 // You can add more over time (e.g. specialty, boutique, secondary brands).
 export const DiscBrands = [
   "Axiom",
+  "Clash Discs",
+  "Climo Disc Golf",
   "DGA",
   "Discmania",
   "Discraft",
   "Dynamic Discs",
+  "Elevation",
+  "EV-7",
   "Gateway",
   "Infinite Discs",
   "Innova",
@@ -21,6 +25,7 @@ export const DiscBrands = [
   "RPM",
   "Streamline",
   "Thought Space Athletics",
+  "Viking Discs",
   "Westside Discs",
 ] as const;
 
