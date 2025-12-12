@@ -176,9 +176,9 @@ export default function GearPage() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-4"
+          className="text-center"
         >
-          <h1 className="h1 text-gradient-brand">Your Gear</h1>
+          <h1 className="h1 text-gradient-brand mb-6 leading-tight pb-2">Disc Golf Bag Builder</h1>
           <GradientButton
             label="Browse Disc Catalog"
             href="/catalog"

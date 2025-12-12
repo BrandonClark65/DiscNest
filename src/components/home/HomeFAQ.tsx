@@ -13,7 +13,7 @@ interface FAQ {
 const faqs: FAQ[] = [
   {
     question: 'What is DiscNest?',
-    answer: 'DiscNest is the ultimate platform for disc golf enthusiasts. You can buy and sell disc golf discs, manage your personal disc collection, browse a comprehensive catalog of discs, and connect with other players in the community.',
+    answer: 'DiscNest is the ultimate disc golf marketplace and bag builder. You can buy and sell used disc golf discs in our marketplace, build and manage your disc golf bag, browse a comprehensive catalog of discs, and connect with other players in the community.',
   },
   {
     question: 'How do I buy discs on DiscNest?',
@@ -24,8 +24,8 @@ const faqs: FAQ[] = [
     answer: 'Yes! Create a free account and list your discs for sale. Include photos, condition details, and your location. Buyers can find your listings and message you directly to make a purchase.',
   },
   {
-    question: 'What is the disc bag tracker?',
-    answer: 'The bag tracker helps you manage your disc golf collection. Organize discs between your shelf and active bag, track which discs you own, and share your bag with friends. It\'s a complete inventory management system for your disc golf gear.',
+    question: 'What is the disc golf bag builder?',
+    answer: 'The disc golf bag builder helps you build and manage your disc golf collection. Organize discs between your shelf and active bag, track which discs you own, analyze your bag composition, and share your bag with friends. It\'s a complete inventory management system for your disc golf gear.',
   },
   {
     question: 'How do I find discs near me?',

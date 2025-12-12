@@ -23,13 +23,13 @@ export default function HomeValueProposition() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <ValueCard
-            title="Buy & Sell Safely"
-            description="Connect with trusted sellers and buyers. Our messaging system keeps communication secure and organized."
+            title="Disc Golf Marketplace"
+            description="Buy and sell used disc golf discs safely. Connect with trusted sellers and buyers nationwide. Our messaging system keeps communication secure and organized."
             icon={<ShoppingCart className="w-8 h-8" />}
           />
           <ValueCard
-            title="Manage Your Collection"
-            description="Track every disc in your collection with our intuitive bag management system. Organize, catalog, and share your gear."
+            title="Disc Golf Bag Builder"
+            description="Build and manage your disc golf bag with our intuitive bag builder. Track every disc in your collection, organize between shelf and bag, and optimize your setup."
             icon={<Package className="w-8 h-8" />}
           />
           <ValueCard

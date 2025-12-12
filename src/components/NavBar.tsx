@@ -32,7 +32,7 @@ export default function NavBar() {
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/marketplace', label: 'Marketplace', icon: Store },
-    { href: '/gear', label: 'Gear', icon: ShoppingBag },
+    { href: '/gear', label: 'Bag Builder', icon: ShoppingBag },
     { href: '/catalog', label: 'Catalog', icon: Disc },
   ];
 

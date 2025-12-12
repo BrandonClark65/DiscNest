@@ -16,10 +16,10 @@ export default function HomeHero() {
         className="text-center space-y-4 max-w-3xl"
       >
         <h1 className="h1">
-          The Ultimate Platform for <span className="text-gradient-brand">Disc Golf</span> Enthusiasts
+          The Ultimate <span className="text-gradient-brand">Disc Golf Marketplace</span> & Bag Builder
         </h1>
         <p className="p text-lg max-w-2xl mx-auto text-muted">
-          Buy and sell disc golf discs, manage your bag, explore our comprehensive catalog, and connect with players nationwide. Everything you need for your disc golf journey in one place.
+          Buy and sell used disc golf discs in our marketplace, build and manage your disc golf bag, explore our comprehensive catalog, and connect with players nationwide. Everything you need for your disc golf journey in one place.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">

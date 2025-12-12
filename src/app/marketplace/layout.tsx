@@ -23,17 +23,18 @@ export async function generateMetadata(): Promise<Metadata> {
     : 'Buy and sell disc golf discs in our marketplace. Browse listings, connect with sellers, and find the perfect disc for your game.';
 
   return {
-    title: 'Disc Golf Marketplace - Buy & Sell Discs',
+    title: 'Disc Golf Marketplace - Buy & Sell Used Disc Golf Discs',
     description,
+    keywords: ['disc golf marketplace', 'used disc golf marketplace', 'buy disc golf discs', 'sell disc golf discs', 'disc golf buy sell', 'used disc golf discs for sale'],
     openGraph: {
-      title: 'Disc Golf Marketplace - Buy & Sell Discs | DiscNest',
+      title: 'Disc Golf Marketplace - Buy & Sell Used Disc Golf Discs | DiscNest',
       description,
       url: `${baseUrl}/marketplace`,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Disc Golf Marketplace - Buy & Sell Discs | DiscNest',
+      title: 'Disc Golf Marketplace - Buy & Sell Used Disc Golf Discs | DiscNest',
       description,
     },
     alternates: {

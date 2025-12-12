@@ -24,14 +24,14 @@ export default function HomeFeatures() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <FeatureCard
             href="/marketplace"
-            title="Marketplace"
-            description="Buy and sell discs from players nationwide. Filter by brand, condition, and location."
+            title="Disc Golf Marketplace"
+            description="Buy and sell used disc golf discs from players nationwide. Filter by brand, condition, and location."
             Icon={ShoppingCart}
           />
           <FeatureCard
             href="/gear"
-            title="Bag Tracker"
-            description="Manage your disc collection. Organize between shelf and bag, track your inventory."
+            title="Disc Golf Bag Builder"
+            description="Build and manage your disc golf bag. Organize between shelf and bag, track your inventory, and optimize your collection."
             Icon={Package}
           />
           <FeatureCard

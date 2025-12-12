@@ -15,7 +15,7 @@ export default function HomeTrustSignals() {
           transition={{ duration: 0.6 }}
           className="text-center space-y-8"
         >
-          <h2 className="h2">Trusted by Disc Golf Players</h2>
+          <h2 className="h2">Trusted by Disc Golfers</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <TrustCard
               icon={<Shield className="w-10 h-10" />}

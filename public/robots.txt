@@ -4,7 +4,8 @@ Disallow: /api/
 Disallow: /admin/
 Disallow: /messages/
 Disallow: /profile/
-Disallow: /gear/
+# Allow bag builder for SEO
+Allow: /gear
 Disallow: /login
 Disallow: /signup
 Disallow: /reset-password

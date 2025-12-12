@@ -31,8 +31,8 @@ export const metadata: Metadata = {
     default: 'DiscNest - Buy, Sell & Manage Disc Golf Discs',
     template: '%s | DiscNest',
   },
-  description: 'The ultimate platform for disc golf enthusiasts. Buy and sell discs, manage your bag, explore the catalog, and connect with players.',
-  keywords: ['disc golf', 'frisbee golf', 'disc golf marketplace', 'disc golf bag', 'disc golf catalog', 'buy disc golf discs', 'sell disc golf discs'],
+  description: 'The ultimate disc golf marketplace and bag builder. Buy and sell used disc golf discs, manage your bag, explore the catalog, and connect with players nationwide.',
+  keywords: ['disc golf', 'frisbee golf', 'disc golf marketplace', 'used disc golf marketplace', 'disc golf bag builder', 'disc golf bag', 'disc golf catalog', 'buy disc golf discs', 'sell disc golf discs', 'disc golf buy sell', 'used disc golf discs'],
   authors: [{ name: 'DiscNest' }],
   creator: 'DiscNest',
   publisher: 'DiscNest',
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     url: baseUrl,
     siteName: 'DiscNest',
     title: 'DiscNest - Buy, Sell & Manage Disc Golf Discs',
-    description: 'The ultimate platform for disc golf enthusiasts. Buy and sell discs, manage your bag, explore the catalog, and connect with players.',
+    description: 'The ultimate disc golf marketplace and bag builder. Buy and sell used disc golf discs, manage your bag, explore the catalog, and connect with players nationwide.',
     images: [
       {
         url: '/og-image.png',
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'DiscNest - Buy, Sell & Manage Disc Golf Discs',
-    description: 'The ultimate platform for disc golf enthusiasts.',
+    description: 'The ultimate disc golf marketplace and bag builder. Buy and sell used disc golf discs.',
     images: ['/og-image.png'],
     creator: '@discnest',
   },

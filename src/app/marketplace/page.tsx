@@ -146,10 +146,27 @@ export default async function MarketplacePage() {
   const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'Disc Golf Marketplace',
-    description: `Buy and sell disc golf discs in our marketplace. Browse ${totalCount} active listings.`,
+    name: 'Disc Golf Marketplace - Used Disc Golf Discs Buy & Sell',
+    description: `Buy and sell used disc golf discs in our marketplace. Browse ${totalCount} active listings from players nationwide.`,
     url: `${baseUrl}/marketplace`,
     numberOfItems: totalCount,
+    itemListElement: listings.slice(0, 10).map((listing, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'Product',
+        name: listing.title,
+        description: listing.description || 'Disc golf disc for sale',
+        brand: listing.brand ? { '@type': 'Brand', name: listing.brand } : undefined,
+        offers: listing.price ? {
+          '@type': 'Offer',
+          price: listing.price,
+          priceCurrency: 'USD',
+          availability: listing.sold ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+        } : undefined,
+        url: `${baseUrl}/listing/${listing._id}`,
+      },
+    })),
   };
 
   return (
