@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { editableProfileSchema } from '@/lib/validation/userSchema';
 import { z } from 'zod';
 import GradientButton from '@/components/ui/GradientButton';
@@ -22,21 +22,26 @@ export default function ProfilePage() {
   const [discCount, setDiscCount] = useState(0);
 
   // --- Fetch profile ---
- useEffect(() => {
-  if (status === 'authenticated') {
-    fetch('/api/profile')
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.user) return;
-        const userData = { ...data.user };
-        delete userData.location; // 🧩 prevent Zod from parsing this field
-        const parsed = editableProfileSchema.parse(userData);
-        setProfile(parsed);
-        setDiscCount(data.user.discCount || 0);
-      })
-      .catch((err) => console.error('Error loading profile:', err));
-  }
-}, [status]);
+  const fetchProfile = useCallback(() => {
+    if (status === 'authenticated') {
+      // Add cache-busting query parameter to ensure fresh data
+      fetch(`/api/profile?t=${Date.now()}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.user) return;
+          const userData = { ...data.user };
+          delete userData.location; // 🧩 prevent Zod from parsing this field
+          const parsed = editableProfileSchema.parse(userData);
+          setProfile(parsed);
+          setDiscCount(data.user.discCount || 0);
+        })
+        .catch((err) => console.error('Error loading profile:', err));
+    }
+  }, [status]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
 
   const handleSave = async () => {
@@ -80,6 +85,7 @@ export default function ProfilePage() {
         name={profile.name || profile.username || session.user.name || 'User'}
         discCount={discCount}
         avatarUrl={profile.avatarUrl}
+        onAvatarUpdate={fetchProfile}
       />
 
       <ProfileProgress percent={completionPercent} />

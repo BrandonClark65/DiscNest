@@ -96,7 +96,17 @@ const getProfileHandler = async (req: Request, session: Session) => {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ user });
+  // Prevent caching to ensure fresh data (especially for avatar updates)
+  return NextResponse.json(
+    { user },
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    }
+  );
 };
 
 export const GET = withErrorHandling(

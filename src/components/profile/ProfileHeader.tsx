@@ -1,22 +1,29 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GradientButton from "@/components/ui/GradientButton";
 
 type ProfileHeaderProps = {
   name: string;
   discCount: number;
   avatarUrl?: string;
+  onAvatarUpdate?: () => void;
 };
 
 export default function ProfileHeader({
   name,
   discCount,
   avatarUrl,
+  onAvatarUpdate,
 }: ProfileHeaderProps) {
   const [uploading, setUploading] = useState(false);
   const [localAvatar, setLocalAvatar] = useState(avatarUrl);
+
+  // Sync localAvatar with prop when it changes (e.g., after page refresh)
+  useEffect(() => {
+    setLocalAvatar(avatarUrl);
+  }, [avatarUrl]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -36,7 +43,11 @@ export default function ProfileHeader({
     const data = await res.json();
     setUploading(false);
 
-    if (data.avatarUrl) setLocalAvatar(data.avatarUrl);
+    if (data.avatarUrl) {
+      setLocalAvatar(data.avatarUrl);
+      // Notify parent to refresh profile data
+      onAvatarUpdate?.();
+    }
   };
 
   return (
