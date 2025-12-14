@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import { editableProfileSchema } from '@/lib/validation/userSchema';
 import { DiscBrands, DiscPlastics } from '@/app/constants/discData';
 import MultiSelect from '@/components/ui/MultiSelect';
+import GroupedSelect from '@/components/ui/GroupedSelect';
 
 type EditableUserFields = z.infer<typeof editableProfileSchema>;
 
@@ -164,6 +165,7 @@ export default function ProfilePlayTab({ profile, setProfile }: Props) {
               preferredPlastics: val as EditableUserFields['preferredPlastics'],
             })
           }
+          groupedByBrand={true}
         />
       </div>
     </div>

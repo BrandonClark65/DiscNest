@@ -4,7 +4,15 @@ import { useState, useEffect } from 'react';
 import type { Disc } from '@/types/disc';
 import imageCompression from 'browser-image-compression';
 import { DiscBrands, DiscPlastics } from '@/app/constants/discData';
+import type { DiscBrand } from '@/app/constants/discData';
+
+// Helper to validate if a string is a valid DiscBrand
+function isValidDiscBrand(brand: string | undefined | null): brand is DiscBrand {
+  if (!brand) return false;
+  return DiscBrands.includes(brand as DiscBrand);
+}
 import { useAnalytics } from '@/lib/useAnalytics';
+import GroupedSelect from '@/components/ui/GroupedSelect';
 import Image from 'next/image';
 
 
@@ -109,7 +117,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     setForm((prev) => ({
       ...prev,
       title: touchedFields.title ? prev.title : disc.name || '',
-      brand: touchedFields.brand ? prev.brand : disc.brand || '',
+      brand: touchedFields.brand ? prev.brand : (isValidDiscBrand(disc.brand) ? disc.brand : ''),
       plastic: touchedFields.plastic ? prev.plastic : disc.plastic || '',
       weight: touchedFields.weight
         ? prev.weight
@@ -382,19 +390,14 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           <label htmlFor="plastic" className="block font-medium mb-1">
             Plastic
           </label>
-          <select
+          <GroupedSelect
             id="plastic"
             value={form.plastic}
-            onChange={(e) => handleFieldChange('plastic', e.target.value)}
+            onChange={(val) => handleFieldChange('plastic', val)}
+            filterByBrand={isValidDiscBrand(form.brand) ? form.brand : ''}
             className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-          >
-            <option value="">Select plastic</option>
-            {DiscPlastics.map((plastic) => (
-              <option key={plastic} value={plastic}>
-                {plastic}
-              </option>
-            ))}
-          </select>
+            placeholder="Select plastic"
+          />
         </div>
         <div>
           <label htmlFor="weight" className="block font-medium mb-1">

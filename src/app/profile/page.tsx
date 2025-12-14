@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 import { editableProfileSchema } from '@/lib/validation/userSchema';
 import { z } from 'zod';
+import toast from 'react-hot-toast';
 import GradientButton from '@/components/ui/GradientButton';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileProgress from '@/components/profile/ProfileProgress';
@@ -46,12 +47,26 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     setLoading(true);
-    await fetch('/api/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(profile),
-    });
-    setLoading(false);
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+      });
+      
+      if (response.ok) {
+        toast.success('Profile saved successfully!');
+        // Refresh profile data to get any server-side updates
+        fetchProfile();
+      } else {
+        toast.error('Failed to save profile. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Failed to save profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (status === 'loading')
@@ -61,6 +76,16 @@ export default function ProfilePage() {
     return <p className="p-6 text-center text-[var(--foreground)]/70">Log in to view profile</p>;
 
   // --- Profile completion ---
+  // Default values for fields that have defaults in the UI
+  const fieldDefaults: Partial<Record<keyof EditableUserFields, string>> = {
+    dominantHand: 'Right',
+    throwStyle: 'Backhand',
+    stabilityPreference: 'Straight',
+    armSpeed: 'Medium',
+    skillLevel: 'Intermediate',
+    playFrequency: '1-2 times per week',
+  };
+
   const profileFields: (keyof EditableUserFields)[] = [
     'name', 'username', 'bio',
     'pdgaNumber', 'homeCourse', 'goals',
@@ -71,6 +96,13 @@ export default function ProfilePage() {
 
   const filledFields = profileFields.filter((f) => {
     const val = profile[f];
+    
+    // If field has a default value, count it as filled (even if not explicitly set)
+    if (fieldDefaults[f]) {
+      return true;
+    }
+    
+    // Otherwise, check if the field has a value
     if (Array.isArray(val)) return val.length > 0;
     if (typeof val === 'string') return val.trim().length > 0;
     if (typeof val === 'number') return val > 0;

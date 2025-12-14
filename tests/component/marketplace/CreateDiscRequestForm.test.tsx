@@ -9,10 +9,31 @@ const defaultUser = { id: "user-1", email: "user@test.com", name: "User" };
 const originalFetch = global.fetch;
 
 function getControlLabeled(labelText: RegExp) {
+  // First try using RTL's getByLabelText which handles htmlFor/id associations
+  try {
+    const control = screen.getByLabelText(labelText);
+    if (control && (control.tagName === 'INPUT' || control.tagName === 'TEXTAREA' || control.tagName === 'SELECT')) {
+      return control as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    }
+  } catch {
+    // Fallback to original logic
+  }
+  
   const label = screen.getAllByText(labelText)[0];
   if (!label) {
     throw new Error(`Label ${labelText} not found`);
   }
+  
+  // Try to find control via htmlFor/id association
+  const htmlFor = label.getAttribute('htmlFor') || label.getAttribute('for');
+  if (htmlFor) {
+    const control = document.getElementById(htmlFor);
+    if (control && (control.tagName === 'INPUT' || control.tagName === 'TEXTAREA' || control.tagName === 'SELECT')) {
+      return control as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    }
+  }
+  
+  // Fallback: look in parent element
   const control = label.parentElement?.querySelector<HTMLElement>(
     "input, textarea, select"
   );

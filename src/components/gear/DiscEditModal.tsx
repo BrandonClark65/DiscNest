@@ -5,6 +5,7 @@ import type { Disc } from '@/types/disc';
 import { DiscPlastics } from '@/app/constants/discData';
 import type { DiscPlastic } from '@/app/constants/discData';
 import GradientButton from '@/components/ui/GradientButton';
+import GroupedSelect from '@/components/ui/GroupedSelect';
 import { X } from 'lucide-react';
 
 export default function DiscEditModal({
@@ -68,18 +69,12 @@ export default function DiscEditModal({
         {/* Plastic */}
         <div>
           <label className="block text-sm font-medium mb-1">Plastic</label>
-          <select
+          <GroupedSelect
             value={plastic}
-            onChange={(e) => setPlastic(e.target.value as DiscPlastic)}
+            onChange={(val) => setPlastic(val as DiscPlastic)}
             className="w-full rounded-md px-3 py-2 bg-[var(--background)]/60 border border-[var(--primary)]/20 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/40 outline-none transition"
-          >
-            <option value="">Select Plastic</option>
-            {DiscPlastics.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+            placeholder="Select Plastic"
+          />
         </div>
 
         {/* Wear Level */}
