@@ -5,11 +5,13 @@ import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import User from "@/models/User";
 import DiscRequest from "@/models/DiscRequest";
+import MessageThread from "@/models/MessageThread";
 import { UnauthorizedError } from "@/lib/errors/UnauthorizedError";
-import { setupStandardMocks, mockRequireUser, resetAllMocks } from "../../utils/testMocks";
+import { setupStandardMocks, setupMessageMocks, mockRequireUser, mockAddSystemMessageToRequestThreads, resetAllMocks } from "../../utils/testMocks";
 
 // Setup mocks
 setupStandardMocks();
+setupMessageMocks();
 
 /* ----------------------------------------------------
    TESTS
@@ -305,5 +307,150 @@ describe("GET /api/requests/[id]", () => {
     const res = await request(app).get("/api/requests/invalid-id");
 
     expect(res.status).toBe(500);
+  });
+});
+
+describe("DELETE /api/requests/[id]", () => {
+  beforeAll(connectTestDb);
+  afterEach(async () => {
+    await resetTestDb();
+    resetAllMocks();
+  });
+  afterAll(closeTestDb);
+
+  test("requires authentication", async () => {
+    const user = await User.create({
+      name: "Requester",
+      email: `requester-delete-auth-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const discRequest = await DiscRequest.create({
+      userId: user._id,
+      title: "Looking for Destroyer",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockRejectedValueOnce(new UnauthorizedError("Unauthorized"));
+
+    const res = await request(app).delete(`/api/requests/${discRequest._id}`);
+
+    expect(res.status).toBe(401);
+  });
+
+  test("deletes request when owner", async () => {
+    const user = await User.create({
+      name: "Requester",
+      email: `requester-delete-owner-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const discRequest = await DiscRequest.create({
+      userId: user._id,
+      title: "Looking for Destroyer",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    // Create a message thread for this request
+    const otherUser = await User.create({
+      name: "Other User",
+      email: `other-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const thread = await MessageThread.create({
+      participants: [user._id, otherUser._id],
+      requestId: discRequest._id,
+      messages: [],
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString() },
+    });
+
+    const res = await request(app).delete(`/api/requests/${discRequest._id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("Request deleted successfully");
+
+    // Verify request was deleted from database
+    const deletedRequest = await DiscRequest.findById(discRequest._id);
+    expect(deletedRequest).toBeNull();
+
+    // Verify system message was sent to threads
+    expect(mockAddSystemMessageToRequestThreads).toHaveBeenCalledWith(
+      discRequest._id.toString(),
+      "This request has been deleted by the requester."
+    );
+  });
+
+  test("returns 403 when non-owner tries to delete", async () => {
+    const owner = await User.create({
+      name: "Owner",
+      email: `owner-delete-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const otherUser = await User.create({
+      name: "Other User",
+      email: `other-delete-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const discRequest = await DiscRequest.create({
+      userId: owner._id,
+      title: "Looking for Destroyer",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: otherUser._id.toString() },
+    });
+
+    const res = await request(app).delete(`/api/requests/${discRequest._id}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("Forbidden");
+
+    // Verify request was not deleted
+    const unchangedRequest = await DiscRequest.findById(discRequest._id);
+    expect(unchangedRequest).toBeTruthy();
+
+    // Verify system message was not sent
+    expect(mockAddSystemMessageToRequestThreads).not.toHaveBeenCalled();
+  });
+
+  test("returns 404 for non-existent request", async () => {
+    const user = await User.create({
+      name: "Requester",
+      email: `requester-delete-404-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString() },
+    });
+
+    // Use a valid ObjectId format but non-existent ID
+    const fakeId = "507f1f77bcf86cd799439011";
+    const res = await request(app).delete(`/api/requests/${fakeId}`);
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe("Request not found");
   });
 });

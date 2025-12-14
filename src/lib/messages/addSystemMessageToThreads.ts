@@ -25,3 +25,27 @@ export async function addSystemMessageToThreads(listingId: string, text: string)
 
   return threads.length;
 }
+
+export async function addSystemMessageToRequestThreads(requestId: string, text: string) {
+  await connectToDatabase();
+
+  // System messages use "null" sender to indicate non-user content
+  const systemSender = new mongoose.Types.ObjectId("000000000000000000000000");
+
+  // Find threads tied to this request
+  const threads = await MessageThread.find({ requestId });
+
+  for (const thread of threads) {
+    thread.messages.push({
+      sender: systemSender,          // <-- Fake system sender ID
+      content: text,
+      timestamp: new Date(),
+      readBy: [],                    // Nobody has read it yet
+    });
+
+    thread.updatedAt = new Date();
+    await thread.save();
+  }
+
+  return threads.length;
+}

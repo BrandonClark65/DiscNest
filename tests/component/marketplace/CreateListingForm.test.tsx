@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 
 import CreateListingForm from "@/components/marketplace/CreateListingForm";
 import type { Disc } from "@/types/disc";
@@ -11,6 +12,18 @@ vi.mock("browser-image-compression", () => ({
 
 const defaultUser = { id: "user-1", email: "user@test.com", name: "User" };
 const originalFetch = global.fetch;
+
+const toastMock = vi.hoisted(() => {
+  const fn = vi.fn();
+  fn.success = vi.fn();
+  fn.error = vi.fn();
+  return fn;
+});
+
+vi.mock("react-hot-toast", () => ({
+  default: toastMock,
+  toast: toastMock,
+}));
 
 const makeResponse = (data: any, ok = true) => ({
   ok,
@@ -52,18 +65,14 @@ const setupFetchForListing = (discs: Disc[] = []) => {
 };
 
 describe("CreateListingForm", () => {
-  const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
-
   afterEach(() => {
     global.fetch = originalFetch;
-  });
-
-  afterAll(() => {
-    alertSpy.mockRestore();
+    toastMock.mockClear();
+    toastMock.success.mockClear();
+    toastMock.error.mockClear();
   });
 
   beforeEach(() => {
-    alertSpy.mockClear();
     setGeoSuccess();
   });
 
@@ -140,7 +149,7 @@ describe("CreateListingForm", () => {
     });
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith("Listing created!");
+      expect(toastMock.success).toHaveBeenCalledWith("Listing created!");
     });
     expect(onClose).toHaveBeenCalled();
   });

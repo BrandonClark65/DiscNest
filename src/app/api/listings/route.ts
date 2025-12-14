@@ -197,7 +197,10 @@ const createListingHandler = async (req: Request, session: Session) => {
     createdAt: new Date(),
   };
 
-  // Remove plastic if it's an empty string (not a valid enum value)
+  // Remove brand and plastic if they're empty strings (not valid enum values)
+  if (listingData.brand === "") {
+    delete listingData.brand;
+  }
   if (listingData.plastic === "") {
     delete listingData.plastic;
   }

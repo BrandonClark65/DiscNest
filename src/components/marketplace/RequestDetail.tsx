@@ -4,12 +4,16 @@ import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import GradientButton from "@/components/ui/GradientButton";
-import { MessageCircle, MapPin, MoreVertical, ArrowBigLeft } from "lucide-react";
+import { MessageCircle, MapPin, MoreVertical, ArrowBigLeft, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import toast from "react-hot-toast";
 
-// Lazy load ReportModal for better performance
+// Lazy load modals for better performance
 const ReportModal = dynamic(() => import("@/components/modals/ReportModal"), {
+  ssr: false,
+});
+const ConfirmModal = dynamic(() => import("@/components/modals/ConfirmModal"), {
   ssr: false,
 });
 
@@ -35,9 +39,15 @@ export default function RequestDetail({ request }: { request: DiscRequest }) {
   const [distance, setDistance] = useState<string | null>(null);
   const [messaging, setMessaging] = useState(false);
 
-  // NEW — report dropdown state
+  // Menu and modal state
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Check if current user is the owner
+  const currentUserId = session?.user ? (session.user as { id?: string }).id : undefined;
+  const isOwner = currentUserId && requester?._id && currentUserId === requester._id;
 
   /** --------------------------
    *  Distance Calculation
@@ -97,6 +107,34 @@ export default function RequestDetail({ request }: { request: DiscRequest }) {
   }
 
   /** --------------------------
+   *  Delete Handler
+   * -------------------------- */
+  async function handleDelete() {
+    if (!session?.user) return router.push("/login");
+    
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/requests/${request._id}`, {
+        method: "DELETE",
+      });
+      
+      if (res.ok) {
+        toast.success("Request deleted successfully");
+        router.push("/marketplace");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to delete request");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete request");
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirm(false);
+    }
+  }
+
+  /** --------------------------
    *  Render
    * -------------------------- */
   return (
@@ -126,15 +164,29 @@ export default function RequestDetail({ request }: { request: DiscRequest }) {
 
           {menuOpen && (
             <div className="absolute right-0 top-10 w-40 bg-[var(--surface)] border border-[var(--muted)]/40 shadow-lg rounded-xl p-1 z-20">
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  setReportOpen(true);
-                }}
-                className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-500/10 text-red-600"
-              >
-                Report User
-              </button>
+              {isOwner && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setDeleteConfirm(true);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-500/10 text-red-600 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Request
+                </button>
+              )}
+              {!isOwner && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setReportOpen(true);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-500/10 text-red-600"
+                >
+                  Report User
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -225,7 +277,20 @@ export default function RequestDetail({ request }: { request: DiscRequest }) {
         open={reportOpen}
         onClose={() => setReportOpen(false)}
         reportedUserId={request.userId?._id || ''}
-        requestId={request._id}      // ← IMPORTANT
+        requestId={request._id}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        open={deleteConfirm}
+        onClose={() => setDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Delete Request"
+        message="Are you sure you want to delete this request? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={isDeleting}
       />
     </>
   );

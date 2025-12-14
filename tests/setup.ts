@@ -15,6 +15,12 @@ vi.mock("next-auth/react", () => ({
 /**
  * (Optional) Global mock for react-hot-toast to avoid noisy console output.
  */
-vi.mock("react-hot-toast", () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}));
+vi.mock("react-hot-toast", () => {
+  const toastFn = vi.fn() as any;
+  toastFn.success = vi.fn();
+  toastFn.error = vi.fn();
+  return {
+    default: toastFn,
+    toast: toastFn,
+  };
+});

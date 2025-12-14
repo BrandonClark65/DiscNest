@@ -10,7 +10,7 @@ vi.mock("next-auth/react", () => ({
   useSession: () => useSessionMock(),
 }));
 
-const chatModalMock = vi.hoisted(() => vi.fn(() => <div>Chat Modal</div>));
+const chatModalMock = vi.hoisted(() => vi.fn((props?: any) => <div>Chat Modal</div>));
 
 vi.mock("@/components/modals/ChatModal", () => ({
   __esModule: true,
@@ -45,7 +45,18 @@ vi.mock("@/components/ui/GradientButton", () => ({
   default: gradientButtonMock,
 }));
 
-const alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
+const toastMock = vi.hoisted(() => {
+  const fn = vi.fn() as any;
+  fn.success = vi.fn();
+  fn.error = vi.fn();
+  return fn;
+});
+
+vi.mock("react-hot-toast", () => ({
+  default: toastMock,
+  toast: toastMock,
+}));
+
 const fetchMock = vi.fn();
 
 describe("MessageSellerButton", () => {
@@ -53,6 +64,7 @@ describe("MessageSellerButton", () => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockReset();
     chatModalMock.mockClear();
+    toastMock.mockClear();
   });
 
   afterEach(() => {
@@ -66,7 +78,7 @@ describe("MessageSellerButton", () => {
     render(<MessageSellerButton sellerId="seller-1" listingId="listing-1" />);
 
     await user.click(screen.getByRole("button", { name: "Message Seller" }));
-    expect(alertMock).toHaveBeenCalledWith("Log in to message seller");
+    expect(toastMock).toHaveBeenCalledWith("Log in to message seller");
   });
 
   test("creates thread and shows modal", async () => {

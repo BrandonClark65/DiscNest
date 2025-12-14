@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 
 import CreateDiscRequestForm from "@/components/marketplace/CreateDiscRequestForm";
 import type { Disc } from "@/types/disc";
@@ -7,6 +8,18 @@ import type { Disc } from "@/types/disc";
 const defaultUser = { id: "user-1", email: "user@test.com", name: "User" };
 
 const originalFetch = global.fetch;
+
+const toastMock = vi.hoisted(() => {
+  const fn = vi.fn();
+  fn.success = vi.fn();
+  fn.error = vi.fn();
+  return fn;
+});
+
+vi.mock("react-hot-toast", () => ({
+  default: toastMock,
+  toast: toastMock,
+}));
 
 function getControlLabeled(labelText: RegExp) {
   // First try using RTL's getByLabelText which handles htmlFor/id associations
@@ -95,18 +108,11 @@ const setupFetchForRequest = (discs: Disc[] = []) => {
 };
 
 describe("CreateDiscRequestForm", () => {
-  const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
-
   afterEach(() => {
     global.fetch = originalFetch;
-  });
-
-  afterAll(() => {
-    alertSpy.mockRestore();
-  });
-
-  beforeEach(() => {
-    alertSpy.mockClear();
+    toastMock.mockClear();
+    toastMock.success.mockClear();
+    toastMock.error.mockClear();
   });
 
   test("selecting disc auto-fills fields", async () => {
@@ -174,7 +180,9 @@ describe("CreateDiscRequestForm", () => {
       });
     });
 
-    expect(alertSpy).toHaveBeenCalledWith("Disc request posted!");
+    await waitFor(() => {
+      expect(toastMock.success).toHaveBeenCalledWith("Disc request posted!");
+    });
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -196,7 +204,7 @@ describe("CreateDiscRequestForm", () => {
     await userEvent.click(screen.getByRole("button", { name: /Post Request/i }));
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith(
+      expect(toastMock.error).toHaveBeenCalledWith(
         "Location not provided. Please enable location or enter city/state."
       );
     });

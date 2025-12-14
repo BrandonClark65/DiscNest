@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import type { Disc } from '@/types/disc';
 import imageCompression from 'browser-image-compression';
 import { DiscBrands, DiscPlastics } from '@/app/constants/discData';
@@ -138,7 +139,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     e.preventDefault();
 
     if (form.flaggedImages.length > 0) {
-      alert('Cannot submit listing: one or more images were flagged.');
+      toast.error('Cannot submit listing: one or more images were flagged.');
       return;
     }
 
@@ -197,18 +198,18 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       }
 
       if (form.pendingReview) {
-        alert(
+        toast.success(
           'Your listing has been submitted successfully but is pending review. It will not appear publicly until approved by an admin.'
         );
       } else {
-        alert('Listing created!');
+        toast.success('Listing created!');
       }
 
       resetForm();
       if (onClose) onClose();
     } catch (err) {
       console.error(err);
-      alert('Error creating listing');
+      toast.error('Error creating listing');
     } finally {
       setSubmitting(false);
     }
@@ -260,7 +261,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'Error uploading image';
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
       e.target.value = '';

@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useMarketplaceData } from '@/hooks/useMarketplaceData';
 import MarketplaceHeader from '@/components/marketplace/MarketplaceHeader';
 import MarketplaceTabs from '@/components/marketplace/MarketplaceTabs';
@@ -12,6 +13,7 @@ import CreateListingForm from '@/components/marketplace/CreateListingForm';
 import CreateDiscRequestForm from '@/components/marketplace/CreateDiscRequestForm';
 import RequestsTab from '@/components/marketplace/RequestsTab';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import ConfirmModal from '@/components/modals/ConfirmModal';
 import type { ListingAdmin } from '@/types/listing';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
@@ -52,6 +54,8 @@ export default function MarketplaceClient({
 
   const [isCreatingListing, setIsCreatingListing] = useState(false);
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Use server-fetched listings when on market tab and no filters/search/pagination are active
   // Once user interacts (filters, search, pagination), use client-fetched data
@@ -64,13 +68,31 @@ export default function MarketplaceClient({
       : listingsToShow;
 
   // ---- ACTIONS ----
-  const handleLoginRequired = (msg: string) => alert(`Log in to ${msg}`);
+  const handleLoginRequired = (msg: string) => toast(`Log in to ${msg}`);
 
   const handleDelete = async (id: string) => {
     if (!userId) return handleLoginRequired('delete listings');
-    if (!confirm('Are you sure?')) return;
-    const res = await fetch(`/api/listings/${id}`, { method: 'DELETE' });
-    if (res.ok) setMyListings((prev) => prev.filter((l) => l._id !== id));
+    setDeleteConfirm({ id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/listings/${deleteConfirm.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setMyListings((prev) => prev.filter((l) => l._id !== deleteConfirm.id));
+        toast.success('Listing deleted');
+      } else {
+        toast.error('Failed to delete listing');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete listing');
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirm(null);
+    }
   };
 
   const handleMarkSold = async (id: string) => {
@@ -157,6 +179,19 @@ export default function MarketplaceClient({
           />
         </div>
       )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <ConfirmModal
+        open={deleteConfirm !== null}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Listing"
+        message="Are you sure you want to delete this listing? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={isDeleting}
+      />
 
       {/* MAP */}
       {activeTab === 'market' && (

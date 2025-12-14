@@ -133,20 +133,42 @@ const POST_handler = withUserAuth(async (req, session) => {
     );
   }
 
-  const doc = await DiscRequest.create({
+  // Remove brand and plastic if they're empty strings (not valid enum values)
+  const requestData: {
+    userId: string;
+    title: string;
+    description?: string;
+    brand?: string;
+    plastic?: string;
+    weight?: number;
+    color?: string;
+    condition?: string;
+    location: {
+      type: "Point";
+      coordinates: [number, number];
+    };
+  } = {
     userId: session.user.id,
     title,
     description,
-    brand,
-    plastic,
     weight,
     color,
     condition,
     location: {
       type: "Point",
-          coordinates: [longitude, latitude],
+      coordinates: [longitude, latitude],
     },
-  });
+  };
+
+  // Only include brand and plastic if they're not empty strings
+  if (brand && brand.trim() !== "") {
+    requestData.brand = brand;
+  }
+  if (plastic && plastic.trim() !== "") {
+    requestData.plastic = plastic;
+  }
+
+  const doc = await DiscRequest.create(requestData);
 
   return NextResponse.json(doc, { status: 201 });
 });

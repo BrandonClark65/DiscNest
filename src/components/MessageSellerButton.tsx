@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import dynamic from 'next/dynamic';
+import toast from 'react-hot-toast';
 import GradientButton from './ui/GradientButton';
 import { MessageCircle } from 'lucide-react';
 
@@ -29,7 +30,7 @@ export default function MessageSellerButton({
   async function handleClick() {
     const userId = session?.user ? (session.user as { id?: string }).id : undefined;
     if (!userId) {
-      alert('Log in to message seller'); // replace with toast if you have one
+      toast('Log in to message seller');
       return;
     }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import type { Disc } from '@/types/disc';
 import { DiscBrands, DiscPlastics } from '@/app/constants/discData';
 import type { DiscBrand } from '@/app/constants/discData';
@@ -149,7 +150,7 @@ export default function CreateDiscRequestForm({ user, onClose }: CreateDiscReque
       }
 
       if (!finalLocation) {
-        alert('Location not provided. Please enable location or enter city/state.');
+        toast.error('Location not provided. Please enable location or enter city/state.');
         setSubmitting(false);
         return;
       }
@@ -176,13 +177,13 @@ export default function CreateDiscRequestForm({ user, onClose }: CreateDiscReque
         throw new Error(err.error || 'Failed to create request');
       }
 
-      alert('Disc request posted!');
+      toast.success('Disc request posted!');
       if (onClose) onClose();
       resetForm();
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create disc request';
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
