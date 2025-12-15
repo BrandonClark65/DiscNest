@@ -32,6 +32,7 @@ const ListingSchema = new Schema({
   pendingReview: { type: Boolean, default: false },
   sold: { type: Boolean, default: false },
   weight: { type: Number, default: null }, // in grams
+  color: { type: String, required: false }, // optional color description
 });
 
 ListingSchema.index({ location: "2dsphere" }); // enable geo queries

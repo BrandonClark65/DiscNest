@@ -18,6 +18,7 @@ export type Listing = {
   plastic?: string;
   sold?: boolean;
   weight?: number; // in grams
+  color?: string; // optional color description
 };
 
 export type ListingAdmin = Listing & {

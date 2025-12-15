@@ -35,6 +35,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     brand: '',
     plastic: '',
     weight: '', // always controlled as string
+    color: '',
     condition: 'Like New',
     type: 'Sell',
     price: 0,
@@ -283,6 +284,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       brand: '',
       plastic: '',
       weight: '', // reset to empty string
+      color: '',
       condition: 'Like New',
       type: 'Sell',
       price: 0,
@@ -411,6 +413,20 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
             onChange={(e) => handleFieldChange('weight', e.target.value)}
             className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
             placeholder="e.g. 175"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="color" className="block font-medium mb-1">
+            Color (optional)
+          </label>
+          <input
+            id="color"
+            type="text"
+            value={form.color}
+            onChange={(e) => handleFieldChange('color', e.target.value)}
+            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+            placeholder="e.g. Red, Blue, Yellow"
           />
         </div>
 

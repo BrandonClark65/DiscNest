@@ -257,6 +257,14 @@ export default function ListingPage() {
                   </span>{' '}
                   {listing.weight ? `${listing.weight}g` : '-'}
                 </p>
+                {listing.color && (
+                  <p>
+                    <span className="font-semibold text-[var(--foreground)]/60">
+                      Color:
+                    </span>{' '}
+                    {listing.color}
+                  </p>
+                )}
                 <p>
                   <span className="font-semibold text-[var(--foreground)]/60">
                     Condition:
