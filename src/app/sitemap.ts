@@ -3,7 +3,9 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Listing from '@/models/Listing';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
+  // Use the canonical production domain by default to avoid redirect warnings
+  // in Google Search Console when sitemap URLs redirect from non-www → www.
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.discnest.com';
   
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [

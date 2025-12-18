@@ -1,3 +1,4 @@
+import { Metadata } from 'next';
 import { connectToDatabase } from '@/lib/mongodb';
 import Disc from '@/models/Disc';
 import type { Disc as DiscType } from '@/types/disc';
@@ -35,6 +36,33 @@ const brandDescriptions: Record<string, { description: string; keywords: string[
     keywords: ['Prodigy discs', 'Prodigy disc golf', 'Prodigy drivers', 'Prodigy putters']
   }
 };
+
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.discnest.com';
+
+type BrandParams = { brandName: string };
+
+export async function generateMetadata(
+  { params }: { params: Promise<BrandParams> }
+): Promise<Metadata> {
+  const { brandName: brandNameParam } = await params;
+  const brandName = decodeURIComponent(brandNameParam);
+
+  const brandInfo = brandDescriptions[brandName] || {
+    description: `Browse ${brandName} disc golf discs. Find drivers, midranges, and putters from this trusted disc golf brand.`,
+    keywords: [`${brandName} discs`, `${brandName} disc golf`]
+  };
+
+  const canonical = `${baseUrl}/catalog/brand/${encodeURIComponent(brandName)}`;
+
+  return {
+    title: `${brandName} Disc Golf Discs | DiscNest`,
+    description: brandInfo.description,
+    keywords: brandInfo.keywords,
+    alternates: {
+      canonical,
+    },
+  };
+}
 
 async function getBrandDiscs(brandName: string): Promise<DiscType[]> {
   try {
@@ -81,7 +109,7 @@ async function getBrandDiscs(brandName: string): Promise<DiscType[]> {
   }
 }
 
-export default async function BrandPage({ params }: { params: Promise<{ brandName: string }> }) {
+export default async function BrandPage({ params }: { params: Promise<BrandParams> }) {
   const { brandName: brandNameParam } = await params;
   const brandName = decodeURIComponent(brandNameParam);
   const discs = await getBrandDiscs(brandName);
@@ -91,7 +119,6 @@ export default async function BrandPage({ params }: { params: Promise<{ brandNam
     keywords: [`${brandName} discs`, `${brandName} disc golf`]
   };
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
   const brandUrl = `${baseUrl}/catalog/brand/${encodeURIComponent(brandName)}`;
 
   const collectionSchema = {

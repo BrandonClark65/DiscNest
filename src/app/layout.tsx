@@ -24,7 +24,10 @@ const poppins = Poppins({
   preload: true, // Preload fonts for faster initial load
 });
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
+// Use the canonical production domain by default so metadata, icons, and
+// canonical URLs match what Google actually sees (https://www.discnest.com).
+// This helps avoid "Redirect error" reports when non-www URLs are crawled.
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.discnest.com';
 
 export const metadata: Metadata = {
   title: {
