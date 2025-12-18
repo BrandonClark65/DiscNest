@@ -9,7 +9,7 @@ type ChatHeaderProps = {
   thread: ThreadUI;
   currentUserId?: string;
   onBack: () => void;
-  onReportUser: (userId: string) => void;
+  onReportUser: (userId: string) => void; 
 };
 
 export default function ChatHeader({
@@ -23,9 +23,46 @@ export default function ChatHeader({
   const listing = thread.listingId;
   const request = thread.requestId;
 
-  // 🛠 FIXED: Detect valid IDs only
-  const hasListing = listing?._id && listing._id !== "unknown";
-  const hasRequest = request?._id && request._id !== "unknown";
+  // Safely extract string IDs even if raw ObjectIds or unexpected shapes slip through
+  const listingId =
+    listing && typeof listing === "object"
+      ? (() => {
+          const anyListing = listing as { _id?: unknown };
+          if (typeof anyListing._id === "string") return anyListing._id;
+          if (
+            anyListing._id &&
+            typeof (anyListing._id as { toString?: () => string }).toString ===
+              "function"
+          ) {
+            return (anyListing._id as { toString: () => string }).toString();
+          }
+          return null;
+        })()
+      : typeof listing === "string"
+      ? listing
+      : null;
+
+  const requestId =
+    request && typeof request === "object"
+      ? (() => {
+          const anyRequest = request as { _id?: unknown };
+          if (typeof anyRequest._id === "string") return anyRequest._id;
+          if (
+            anyRequest._id &&
+            typeof (anyRequest._id as { toString?: () => string }).toString ===
+              "function"
+          ) {
+            return (anyRequest._id as { toString: () => string }).toString();
+          }
+          return null;
+        })()
+      : typeof request === "string"
+      ? request
+      : null;
+
+  // Detect valid IDs only (ignore sentinel / unknowns)
+  const hasListing = !!listingId && listingId !== "unknown";
+  const hasRequest = !!requestId && requestId !== "unknown";
 
   // Title priority:
   // 1) Listing thread
@@ -39,9 +76,9 @@ export default function ChatHeader({
 
   // View buttons
   const viewUrl = hasListing
-    ? `/listing/${listing?._id}`
+    ? `/listing/${listingId}`
     : hasRequest
-    ? `/requests/${request?._id}`
+    ? `/requests/${requestId}`
     : null;
 
   const viewLabel = hasListing

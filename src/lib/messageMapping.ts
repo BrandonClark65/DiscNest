@@ -155,36 +155,62 @@ export function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
     -------------------------------- */
     listingId: (() => {
       const l = t.listingId;
-
-      if (!l) {
-        return {
-          _id: "unknown",
-          title: "Listing Unavailable",
-          imageUrls: [],
-        };
-      }
-
-      if (isPopulatedListing(l)) {
-        return {
-          _id: l._id.toString(),
-          title: l.title || "Listing",
-          imageUrls: l.imageUrls || [],
-        };
-      }
-
-      if (isObjectId(l)) {
-        return {
-          _id: l.toString(),
-          title: "",
-          imageUrls: [],
-        };
-      }
-
+    if (!l) {
       return {
-        _id: String(l),
+        _id: "unknown",
+        title: "Listing Unavailable",
+        imageUrls: [],
+      };
+    }
+
+    // Fully populated listing with ObjectId _id
+    if (isPopulatedListing(l)) {
+      return {
+        _id: l._id.toString(),
+        title: l.title || "Listing",
+        imageUrls: l.imageUrls || [],
+      };
+    }
+
+    // Raw ObjectId
+    if (isObjectId(l)) {
+      return {
+        _id: l.toString(),
         title: "",
         imageUrls: [],
       };
+    }
+
+    // Fallback: unknown object / primitive — try to safely unwrap _id if present
+    if (typeof l === "object" && l !== null && "_id" in l) {
+      const anyListing = l as { _id?: unknown; title?: unknown; imageUrls?: unknown };
+      const id =
+        typeof anyListing._id === "string"
+          ? anyListing._id
+          : anyListing._id &&
+            typeof (anyListing._id as { toString?: () => string }).toString ===
+              "function"
+          ? (anyListing._id as { toString: () => string }).toString()
+          : String(anyListing._id ?? "");
+
+      return {
+        _id: id,
+        title:
+          typeof anyListing.title === "string" && anyListing.title.length
+            ? anyListing.title
+            : "",
+        imageUrls: Array.isArray(anyListing.imageUrls)
+          ? (anyListing.imageUrls as string[])
+          : [],
+      };
+    }
+
+    // Last resort: primitive value
+    return {
+      _id: String(l),
+      title: "",
+      imageUrls: [],
+    };
     })(),
 
     /* -------------------------------
@@ -192,9 +218,9 @@ export function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
     -------------------------------- */
     requestId: (() => {
       const r = t.requestId;
-
       if (!r) return null;
 
+      // Fully populated request with ObjectId _id
       if (isPopulatedRequest(r)) {
         return {
           _id: r._id.toString(),
@@ -202,6 +228,7 @@ export function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
         };
       }
 
+      // Raw ObjectId
       if (isObjectId(r)) {
         return {
           _id: r.toString(),
@@ -209,6 +236,28 @@ export function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
         };
       }
 
+      // Fallback: unknown object / primitive — try to safely unwrap _id if present
+      if (typeof r === "object" && r !== null && "_id" in r) {
+        const anyRequest = r as { _id?: unknown; title?: unknown };
+        const id =
+          typeof anyRequest._id === "string"
+            ? anyRequest._id
+            : anyRequest._id &&
+              typeof (anyRequest._id as { toString?: () => string }).toString ===
+                "function"
+            ? (anyRequest._id as { toString: () => string }).toString()
+            : String(anyRequest._id ?? "");
+
+        return {
+          _id: id,
+          title:
+            typeof anyRequest.title === "string" && anyRequest.title.length
+              ? anyRequest.title
+              : "Disc Request",
+        };
+      }
+
+      // Last resort: primitive value
       return {
         _id: String(r),
         title: "Disc Request",

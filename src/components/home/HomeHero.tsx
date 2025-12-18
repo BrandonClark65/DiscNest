@@ -35,7 +35,7 @@ export default function HomeHero() {
             icon={<DiscIcon className="w-5 h-5" />}
             variant="accent"
           />
-          <SiteAnnouncement />
+          {/* <SiteAnnouncement /> */}
         </div>
       </motion.div>
 
