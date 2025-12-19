@@ -30,7 +30,8 @@ const shareBagHandler = async (req: Request, session: Session) => {
     }).select("_id");
   }
 
-  // ✅ Generate a new UUID if missing or conflicting
+  // ✅ Generate a new UUID if missing, null, or conflicting
+  // Note: Setting a new value will replace null, preventing duplicate key errors
   if (!user.shareableBagId || existingConflict) {
     user.shareableBagId = uuidv4();
     await user.save();
