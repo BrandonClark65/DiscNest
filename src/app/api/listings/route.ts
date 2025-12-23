@@ -195,6 +195,7 @@ const createListingHandler = async (req: Request, session: Session) => {
     state,
     pendingReview,
     createdAt: new Date(),
+    listingType: body.listingType || 'single', // default to single for backward compatibility
   };
 
   // Remove brand and plastic if they're empty strings (not valid enum values)

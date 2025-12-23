@@ -29,6 +29,7 @@ type Location = {
 
 export default function CreateListingForm({ user, onClose }: CreateListingFormProps) {
   const { trackEvent, trackConversion } = useAnalytics();
+  const [listingType, setListingType] = useState<'single' | 'group' | null>(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -144,10 +145,22 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       return;
     }
 
+    // Validate required fields for group listings
+    if (isGroupListing) {
+      if (!form.title.trim()) {
+        toast.error('Title is required for group listings.');
+        return;
+      }
+      if (!form.description.trim()) {
+        toast.error('Description is required for group listings.');
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
-      // Ensure location exists
+      // Ensure location exists for both single and group listings
       if (!form.location) {
         const location = await new Promise<Location | null>((resolve) => {
           if (!navigator.geolocation) return resolve(null);
@@ -160,15 +173,29 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         setForm((prev) => ({ ...prev, location }));
       }
 
+      // Prepare payload - exclude fields not applicable to group listings
+      const payload: Record<string, unknown> = {
+        ...form,
+        weight: form.weight ? Number(form.weight) : null, // convert to number
+        userId: user.id,
+        pendingReview: form.pendingReview,
+        listingType: listingType || 'single', // default to single for backward compatibility
+      };
+
+      // For group listings, exclude single-disc specific fields
+      // Note: location, city, and state are kept for group listings
+      if (isGroupListing) {
+        delete payload.condition;
+        delete payload.plastic;
+        delete payload.weight;
+        delete payload.color;
+        delete payload.price;
+      }
+
       const res = await fetch('/api/listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          weight: form.weight ? Number(form.weight) : null, // convert to number
-          userId: user.id,
-          pendingReview: form.pendingReview,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -278,6 +305,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
   }
 
   function resetForm() {
+    setListingType(null);
     setForm({
       title: '',
       description: '',
@@ -300,10 +328,68 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     setSelectedDisc('');
   }
 
+  // Show listing type selection screen if not selected
+  if (listingType === null) {
+    return (
+      <div className="space-y-4">
+        {onClose && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                onClose();
+              }}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              ✕ Close
+            </button>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">What would you like to list?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setListingType('single')}
+              className="p-6 border-2 border-[var(--muted)]/40 rounded-lg hover:border-[var(--primary)] hover:bg-[var(--muted)]/10 transition-all text-left"
+            >
+              <h3 className="text-lg font-semibold mb-2">Single Disc</h3>
+              <p className="text-sm text-[var(--foreground)]/70">
+                List a single disc with detailed information including plastic, weight, condition, and more.
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setListingType('group')}
+              className="p-6 border-2 border-[var(--muted)]/40 rounded-lg hover:border-[var(--primary)] hover:bg-[var(--muted)]/10 transition-all text-left"
+            >
+              <h3 className="text-lg font-semibold mb-2">Group of Discs</h3>
+              <p className="text-sm text-[var(--foreground)]/70">
+                List multiple discs together with a title, description, brand, and images.
+              </p>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // For group listings, show simplified form
+  const isGroupListing = listingType === 'group';
+
   return (
     <div className="space-y-4">
       {onClose && (
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+          <button
+            type="button"
+            onClick={() => setListingType(null)}
+            className="text-[var(--foreground)]/70 hover:text-[var(--foreground)]"
+          >
+            ← Back
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -318,8 +404,8 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Disc selector */}
-        {discs.length > 0 && (
+        {/* Disc selector - only for single listings */}
+        {!isGroupListing && discs.length > 0 && (
           <div>
             <label htmlFor="discSelect" className="block font-medium mb-1">
               Select a disc from your bag or shelf(optional)
@@ -340,10 +426,10 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           </div>
         )}
 
-        {/* Title, Description, Brand, Plastic, Weight, Condition, Type, Price */}
+        {/* Title - required for both */}
         <div>
           <label htmlFor="title" className="block font-medium mb-1">
-            Title
+            Title {isGroupListing && <span className="text-red-500">*</span>}
           </label>
           <input
             id="title"
@@ -355,12 +441,14 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           />
         </div>
 
+        {/* Description - required for group, optional for single */}
         <div>
           <label htmlFor="description" className="block font-medium mb-1">
-            Description
+            Description {isGroupListing && <span className="text-red-500">*</span>}
           </label>
           <textarea
             id="description"
+            required={isGroupListing}
             value={form.description}
             onChange={(e) => handleFieldChange('description', e.target.value)}
             className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
@@ -368,7 +456,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           />
         </div>
 
-        {/* Brand Picklist */}
+        {/* Brand Picklist - shown for both, optional */}
         <div>
           <label htmlFor="brand" className="block font-medium mb-1">
             Brand
@@ -388,65 +476,71 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           </select>
         </div>
 
-        {/* Plastic Picklist */}
-        <div>
-          <label htmlFor="plastic" className="block font-medium mb-1">
-            Plastic
-          </label>
-          <GroupedSelect
-            id="plastic"
-            value={form.plastic}
-            onChange={(val) => handleFieldChange('plastic', val)}
-            filterByBrand={isValidDiscBrand(form.brand) ? form.brand : ''}
-            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-            placeholder="Select plastic"
-          />
-        </div>
-        <div>
-          <label htmlFor="weight" className="block font-medium mb-1">
-            Weight (g)
-          </label>
-          <input
-            id="weight"
-            type="number"
-            value={form.weight}
-            onChange={(e) => handleFieldChange('weight', e.target.value)}
-            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-            placeholder="e.g. 175"
-          />
-        </div>
+        {/* Single listing only fields */}
+        {!isGroupListing && (
+          <>
+            {/* Plastic Picklist */}
+            <div>
+              <label htmlFor="plastic" className="block font-medium mb-1">
+                Plastic
+              </label>
+              <GroupedSelect
+                id="plastic"
+                value={form.plastic}
+                onChange={(val) => handleFieldChange('plastic', val)}
+                filterByBrand={isValidDiscBrand(form.brand) ? form.brand : ''}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+                placeholder="Select plastic"
+              />
+            </div>
+            <div>
+              <label htmlFor="weight" className="block font-medium mb-1">
+                Weight (g)
+              </label>
+              <input
+                id="weight"
+                type="number"
+                value={form.weight}
+                onChange={(e) => handleFieldChange('weight', e.target.value)}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+                placeholder="e.g. 175"
+              />
+            </div>
 
-        <div>
-          <label htmlFor="color" className="block font-medium mb-1">
-            Color (optional)
-          </label>
-          <input
-            id="color"
-            type="text"
-            value={form.color}
-            onChange={(e) => handleFieldChange('color', e.target.value)}
-            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-            placeholder="e.g. Red, Blue, Yellow"
-          />
-        </div>
+            <div>
+              <label htmlFor="color" className="block font-medium mb-1">
+                Color (optional)
+              </label>
+              <input
+                id="color"
+                type="text"
+                value={form.color}
+                onChange={(e) => handleFieldChange('color', e.target.value)}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+                placeholder="e.g. Red, Blue, Yellow"
+              />
+            </div>
 
-        <div>
-          <label htmlFor="condition" className="block font-medium mb-1">
-            Condition
-          </label>
-          <select
-            id="condition"
-            value={form.condition}
-            onChange={(e) => handleFieldChange('condition', e.target.value)}
-            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-          >
-            <option>New</option>
-            <option>Like New</option>
-            <option>Used</option>
-            <option>Worn</option>
-          </select>
-        </div>
+            <div>
+              <label htmlFor="condition" className="block font-medium mb-1">
+                Condition
+              </label>
+              <select
+                id="condition"
+                value={form.condition}
+                onChange={(e) => handleFieldChange('condition', e.target.value)}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+              >
+                <option>New</option>
+                <option>Like New</option>
+                <option>Used</option>
+                <option>Worn</option>
+              </select>
+            </div>
+          </>
+        )}
 
+        {/* Listing Type (Sell/Trade) - shown for both */}
         <div>
           <label htmlFor="type" className="block font-medium mb-1">
             Listing Type
@@ -462,7 +556,8 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           </select>
         </div>
 
-        {form.type === 'Sell' && (
+        {/* Price - only for single listings with Sell type */}
+        {!isGroupListing && form.type === 'Sell' && (
           <div>
             <label htmlFor="price" className="block font-medium mb-1">
               Price ($)
@@ -478,6 +573,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           </div>
         )}
 
+        {/* Location - shown for both single and group listings */}
         {useGeoLocation === false && (
           <div className="flex gap-2">
             <div className="flex-1">

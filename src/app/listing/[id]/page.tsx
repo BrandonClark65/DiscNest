@@ -239,61 +239,78 @@ export default function ListingPage() {
 
               {/* details */}
               <div className="space-y-2 text-[var(--foreground)]/90 text-sm sm:text-base">
-                <p>
-                  <span className="font-semibold text-[var(--foreground)]/60">
-                    Brand:
-                  </span>{' '}
-                  {listing.brand || '-'}
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--foreground)]/60">
-                    Plastic:
-                  </span>{' '}
-                  {listing.plastic || '-'}
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--foreground)]/60">
-                    Weight:
-                  </span>{' '}
-                  {listing.weight ? `${listing.weight}g` : '-'}
-                </p>
-                {listing.color && (
+                {listing.brand && (
                   <p>
                     <span className="font-semibold text-[var(--foreground)]/60">
-                      Color:
+                      Brand:
                     </span>{' '}
-                    {listing.color}
+                    {listing.brand}
                   </p>
                 )}
-                <p>
-                  <span className="font-semibold text-[var(--foreground)]/60">
-                    Condition:
-                  </span>{' '}
-                  {listing.condition}
-                </p>
+                
+                {/* Single listing only fields */}
+                {listing.listingType !== 'group' && (
+                  <>
+                    {listing.plastic && (
+                      <p>
+                        <span className="font-semibold text-[var(--foreground)]/60">
+                          Plastic:
+                        </span>{' '}
+                        {listing.plastic ? listing.plastic : 'N/A'}
+                      </p>
+                    )}
+                    {listing.weight && (
+                      <p>
+                        <span className="font-semibold text-[var(--foreground)]/60">
+                          Weight:
+                        </span>{' '}
+                        {listing.weight ? `${listing.weight}g` : 'N/A'}
+                      </p>
+                    )}
+                    {listing.color && (
+                      <p>
+                        <span className="font-semibold text-[var(--foreground)]/60">
+                          Color:
+                        </span>{' '}
+                        {listing.color}
+                      </p>
+                    )}
+                    {listing.condition && (
+                      <p>
+                        <span className="font-semibold text-[var(--foreground)]/60">
+                          Condition:
+                        </span>{' '}
+                        {listing.condition ? listing.condition : 'N/A'}
+                      </p>
+                    )}
+                    {listing.type === 'Sell' && listing.price !== undefined && (
+                      <p>
+                        <span className="font-semibold text-[var(--foreground)]/60">
+                          Price:
+                        </span>{' '}
+                        <span className="text-[var(--accent)] font-semibold">
+                          ${listing.price.toFixed(2)}
+                        </span>
+                      </p>
+                    )}
+                  </>
+                )}
+                
+                {/* Location - shown for both single and group listings */}
+                {(listing.city || listing.state) && (
+                  <p>
+                    <span className="font-semibold text-[var(--foreground)]/60">
+                      Location:
+                    </span>{' '}
+                    {listing.city || '-'}, {listing.state || '-'}
+                  </p>
+                )}
+                
                 <p>
                   <span className="font-semibold text-[var(--foreground)]/60">
                     Listing Type:
                   </span>{' '}
                   {listing.type}
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--foreground)]/60">
-                    Price:
-                  </span>{' '}
-                  {listing.price !== undefined ? (
-                    <span className="text-[var(--accent)] font-semibold">
-                      ${listing.price.toFixed(2)}
-                    </span>
-                  ) : (
-                    'Not listed'
-                  )}
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--foreground)]/60">
-                    Location:
-                  </span>{' '}
-                  {listing.city || '-'}, {listing.state || '-'}
                 </p>
               </div>
             </div>
@@ -321,6 +338,7 @@ export default function ListingPage() {
         </article>
 
         {/* ---------- MAP ---------- */}
+        {/* Show map for both single and group listings with location */}
         {listing.location?.coordinates && (
           <section className="h-72 sm:h-80 lg:h-96 rounded-2xl overflow-hidden shadow-md border border-[var(--muted)]/30" aria-label="Listing location map">
             <Map singleListing={listing} zoom={15} />

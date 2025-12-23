@@ -4,7 +4,8 @@ export type Listing = {
   title: string;
   description?: string;
   brand?: string;
-  condition: "New" | "Used - Like New" | "Used - Fair";
+  listingType?: "single" | "group";
+  condition?: "New" | "Like New" | "Used" | "Worn";
   type: "Sell" | "Trade";
   price?: number;
   imageUrls: string[];

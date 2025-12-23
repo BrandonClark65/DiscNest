@@ -37,20 +37,20 @@ export default function ConfirmModal({
       <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-xl">
         {/* HEADER */}
         <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xl font-semibold text-[var(--foreground)]">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             {title}
           </h2>
 
           <button
             onClick={onClose}
-            className="p-1 text-gray-600 hover:text-gray-900 dark:hover:text-white"
+            className="p-1 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             disabled={loading}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-sm text-[var(--foreground)]/70 mb-6">{message}</p>
+        <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">{message}</p>
 
         {/* ACTION BUTTONS */}
         <div className="flex justify-end gap-3">

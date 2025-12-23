@@ -50,7 +50,7 @@ export default function ListingCard({
 
         <Image
           src={imageSrc}
-          alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'}${listing.condition ? ` in ${listing.condition} condition` : ''}${listing.price !== undefined ? ` for $${listing.price.toFixed(2)}` : ''}`}
+          alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'}${listing.listingType !== 'group' && listing.condition ? ` in ${listing.condition} condition` : ''}${listing.listingType !== 'group' && listing.price !== undefined ? ` for $${listing.price.toFixed(2)}` : ''}`}
           fill
           priority={false}
           className={`object-cover transition-opacity duration-300 ${
@@ -80,21 +80,38 @@ export default function ListingCard({
           {listing.title}
         </h3>
 
-        <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
-          {listing.brand} • {listing.condition}
-        </p>
+        {listing.listingType !== 'group' ? (
+          <>
+            <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
+              {listing.brand ? `${listing.brand}${listing.condition ? ` • ${listing.condition}` : ''}` : listing.condition || ''}
+            </p>
 
-        {cityState && (
-          <p className="text-sm text-[var(--foreground)]/60 line-clamp-1">
-            {cityState}
-          </p>
+            {cityState && (
+              <p className="text-sm text-[var(--foreground)]/60 line-clamp-1">
+                {cityState}
+              </p>
+            )}
+
+            {listing.type === 'Sell' && (
+              <p className="text-base font-semibold mt-1 mb-3 text-[var(--foreground)]">
+                {listing.price !== undefined
+                  ? `$${listing.price.toFixed(2)}`
+                  : 'Price not listed'}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            {listing.brand && (
+              <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
+                {listing.brand}
+              </p>
+            )}
+            <p className="text-sm text-[var(--foreground)]/60 line-clamp-2 mt-1 mb-3">
+              {listing.description || ''}
+            </p>
+          </>
         )}
-
-        <p className="text-base font-semibold mt-1 mb-3 text-[var(--foreground)]">
-          {listing.price !== undefined
-            ? `$${listing.price.toFixed(2)}`
-            : 'Price not listed'}
-        </p>
 
         {/* ---------- ACTIONS ---------- */}
         <div className="mt-auto space-y-2 flex flex-col items-center">
