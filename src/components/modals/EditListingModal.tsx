@@ -151,7 +151,7 @@ export default function EditListingModal({
       const data = await res.json();
 
       // Track listing update event
-      trackEvent('listing_update', {
+      trackEvent('listing_edit', {
         listing_id: listing._id,
         listing_title: form.title,
       });
