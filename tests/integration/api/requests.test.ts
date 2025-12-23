@@ -454,3 +454,235 @@ describe("DELETE /api/requests/[id]", () => {
     expect(res.body.error).toBe("Request not found");
   });
 });
+
+describe("PATCH /api/requests/[id]", () => {
+  beforeAll(connectTestDb);
+  afterEach(async () => {
+    await resetTestDb();
+    resetAllMocks();
+  });
+  afterAll(closeTestDb);
+
+  test("requires authentication", async () => {
+    const user = await User.create({
+      name: "Requester",
+      email: `requester-patch-auth-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const discRequest = await DiscRequest.create({
+      userId: user._id,
+      title: "Looking for Destroyer",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockRejectedValueOnce(new UnauthorizedError("Unauthorized"));
+
+    const res = await request(app)
+      .patch(`/api/requests/${discRequest._id}`)
+      .send({
+        title: "Updated Title",
+      });
+
+    expect(res.status).toBe(401);
+  });
+
+  test("updates request when owner", async () => {
+    const user = await User.create({
+      name: "Requester",
+      email: `requester-patch-owner-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const discRequest = await DiscRequest.create({
+      userId: user._id,
+      title: "Original Title",
+      description: "Original description",
+      brand: "Innova",
+      plastic: "DX",
+      weight: 175,
+      color: "Red",
+      condition: "New",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString() },
+    });
+
+    const res = await request(app)
+      .patch(`/api/requests/${discRequest._id}`)
+      .send({
+        title: "Updated Title",
+        description: "Updated description",
+        brand: "Discraft",
+        plastic: "ESP",
+        weight: 177,
+        color: "Blue",
+        condition: "Like New",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.title).toBe("Updated Title");
+    expect(res.body.description).toBe("Updated description");
+    expect(res.body.brand).toBe("Discraft");
+    expect(res.body.plastic).toBe("ESP");
+    expect(res.body.weight).toBe(177);
+    expect(res.body.color).toBe("Blue");
+    expect(res.body.condition).toBe("Like New");
+
+    // Verify request was updated in database
+    const updatedRequest = await DiscRequest.findById(discRequest._id);
+    expect(updatedRequest?.title).toBe("Updated Title");
+    expect(updatedRequest?.description).toBe("Updated description");
+    expect(updatedRequest?.brand).toBe("Discraft");
+  });
+
+  test("updates request location", async () => {
+    const user = await User.create({
+      name: "Requester",
+      email: `requester-location-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const discRequest = await DiscRequest.create({
+      userId: user._id,
+      title: "Test Request",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString() },
+    });
+
+    const res = await request(app)
+      .patch(`/api/requests/${discRequest._id}`)
+      .send({
+        location: {
+          type: "Point",
+          coordinates: [-74.0060, 40.7128],
+        },
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.location.coordinates).toEqual([-74.0060, 40.7128]);
+
+    // Verify location was updated in database
+    const updatedRequest = await DiscRequest.findById(discRequest._id);
+    expect(updatedRequest?.location.coordinates).toEqual([-74.0060, 40.7128]);
+  });
+
+  test("allows partial updates", async () => {
+    const user = await User.create({
+      name: "Requester",
+      email: `requester-partial-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const discRequest = await DiscRequest.create({
+      userId: user._id,
+      title: "Original Title",
+      description: "Original description",
+      brand: "Innova",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString() },
+    });
+
+    const res = await request(app)
+      .patch(`/api/requests/${discRequest._id}`)
+      .send({
+        title: "Updated Title Only",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.title).toBe("Updated Title Only");
+    // Other fields should remain unchanged
+    expect(res.body.description).toBe("Original description");
+    expect(res.body.brand).toBe("Innova");
+  });
+
+  test("returns 403 when non-owner tries to update", async () => {
+    const owner = await User.create({
+      name: "Owner",
+      email: `owner-patch-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const otherUser = await User.create({
+      name: "Other User",
+      email: `other-patch-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const discRequest = await DiscRequest.create({
+      userId: owner._id,
+      title: "Original Title",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: otherUser._id.toString() },
+    });
+
+    const res = await request(app)
+      .patch(`/api/requests/${discRequest._id}`)
+      .send({
+        title: "Hacked Title",
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("Forbidden");
+
+    // Verify request was not updated
+    const unchangedRequest = await DiscRequest.findById(discRequest._id);
+    expect(unchangedRequest?.title).toBe("Original Title");
+  });
+
+  test("returns 404 for non-existent request", async () => {
+    const user = await User.create({
+      name: "Requester",
+      email: `requester-patch-404-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString() },
+    });
+
+    // Use a valid ObjectId format but non-existent ID
+    const fakeId = "507f1f77bcf86cd799439011";
+    const res = await request(app)
+      .patch(`/api/requests/${fakeId}`)
+      .send({
+        title: "Updated Title",
+      });
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe("Request not found");
+  });
+});

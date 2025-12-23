@@ -41,7 +41,7 @@ export const GET = withErrorHandling(
 );
 
 // ----------------------
-// PATCH: mark as sold
+// PATCH: update listing or mark as sold
 // ----------------------
 import type { Session } from "next-auth";
 
@@ -50,6 +50,8 @@ const patchListingHandler = async (
   session: Session,
   context?: { params?: Record<string, unknown> }
 ) => {
+  await connectToDatabase();
+
   if (!context?.params)
     return NextResponse.json({ error: "Missing params" }, { status: 400 });
 
@@ -57,10 +59,8 @@ const patchListingHandler = async (
   if (!id || typeof id !== "string")
     return NextResponse.json({ error: "Missing listing ID" }, { status: 400 });
 
-  const { action } = await req.json();
-  if (action !== "markSold")
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-
+  const body = await req.json();
+  
   const listing = await Listing.findById(id);
   if (!listing)
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
@@ -74,18 +74,71 @@ const patchListingHandler = async (
   if (listingUserId !== session.user.id)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // Update listing
-  listing.sold = true;
-  listing.markModified("sold");
+  // Handle "markSold" action
+  if (body.action === "markSold") {
+    listing.sold = true;
+    listing.markModified("sold");
+    await listing.save();
+
+    // Add system message to all threads connected to this listing
+    await addSystemMessageToThreads(
+      id,
+      "This listing has been marked as SOLD by the seller."
+    );
+
+    return NextResponse.json({ listing });
+  }
+
+  // Handle full update (no action field)
+  // Update allowed fields
+  const allowedFields = [
+    'title',
+    'description',
+    'brand',
+    'plastic',
+    'weight',
+    'color',
+    'condition',
+    'type',
+    'price',
+    'city',
+    'state',
+    'location',
+    'imageUrls',
+    'publicIds',
+    'listingType',
+  ];
+
+  allowedFields.forEach((field) => {
+    if (field in body) {
+      if (field === 'location' && body[field]) {
+        listing[field] = body[field];
+      } else if (field === 'imageUrls' || field === 'publicIds') {
+        listing[field] = body[field];
+      } else if (field === 'weight' && body[field] !== null && body[field] !== undefined) {
+        listing[field] = body[field];
+      } else if (field !== 'weight') {
+        listing[field] = body[field];
+      }
+    }
+  });
+
+  // For group listings, ensure single-disc fields are cleared
+  if (listing.listingType === 'group') {
+    listing.condition = undefined;
+    listing.plastic = undefined;
+    listing.weight = undefined;
+    listing.color = undefined;
+    listing.price = undefined;
+  }
+
   await listing.save();
 
-  // Add system message to all threads connected to this listing
-  await addSystemMessageToThreads(
-    id,
-    "This listing has been marked as SOLD by the seller."
-  );
+  const updatedListing = await Listing.findById(id).lean();
+  const listingResult = updatedListing as unknown as ListingType;
+  listingResult._id = listingResult._id.toString();
 
-  return NextResponse.json({ listing });
+  return NextResponse.json({ listing: listingResult });
 };
 
 export const PATCH = withErrorHandling(

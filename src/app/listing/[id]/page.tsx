@@ -6,15 +6,19 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import MessageSellerButton from '@/components/MessageSellerButton';
 import type { Listing } from '@/types/listing';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, Edit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ShareButton from '@/components/ui/ShareButton';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useAnalytics } from '@/lib/useAnalytics';
+import { useSession } from 'next-auth/react';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
-// Lazy load ReportModal for better performance
+// Lazy load modals for better performance
 const ReportModal = dynamic(() => import('@/components/modals/ReportModal'), {
+  ssr: false,
+});
+const EditListingModal = dynamic(() => import('@/components/modals/EditListingModal'), {
   ssr: false,
 });
 
@@ -22,6 +26,7 @@ export default function ListingPage() {
   const params = useParams();
   const listingId = params.id;
   const { trackEvent, trackPageView } = useAnalytics();
+  const { data: session } = useSession();
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,9 +34,14 @@ export default function ListingPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // NEW — Report modal state
+  // Modal and menu state
   const [reportOpen, setReportOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Check if current user is the owner
+  const currentUserId = session?.user ? (session.user as { id?: string }).id : undefined;
+  const isOwner = currentUserId && listing?.userId && currentUserId === listing.userId;
 
   // Track page view
   useEffect(() => {
@@ -220,15 +230,29 @@ export default function ListingPage() {
                       className="absolute right-0 top-10 w-40 bg-[var(--surface)] border border-[var(--muted)]/40
                                 shadow-lg rounded-xl p-1 z-20"
                     >
-                      <button
-                        onClick={() => {
-                          setMenuOpen(false);
-                          setReportOpen(true);
-                        }}
-                        className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-500/10 text-red-600"
-                      >
-                        Report User
-                      </button>
+                      {isOwner && (
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setEditOpen(true);
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-[var(--muted)]/20 text-[var(--foreground)] flex items-center gap-2"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit Listing
+                        </button>
+                      )}
+                      {!isOwner && (
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setReportOpen(true);
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-500/10 text-red-600"
+                        >
+                          Report User
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -353,6 +377,26 @@ export default function ListingPage() {
         reportedUserId={listing.userId}
         listingId={listing._id}
       />
+
+      {/* ---------- EDIT MODAL ---------- */}
+      {listing && (
+        <EditListingModal
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          listing={listing}
+          onSuccess={() => {
+            // Refresh the listing data
+            fetch(`/api/listings/${listingId}`)
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.listing) {
+                  setListing(data.listing as Listing);
+                }
+              })
+              .catch((err) => console.error('Failed to refresh listing:', err));
+          }}
+        />
+      )}
     </>
   );
 }

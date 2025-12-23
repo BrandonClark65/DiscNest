@@ -30,6 +30,80 @@ export const GET = withErrorHandling(
 );
 
 // ----------------------
+// PATCH: update request
+// ----------------------
+const patchRequestHandler = async (
+  req: Request,
+  session: Session,
+  context?: { params?: Record<string, unknown> }
+) => {
+  await connectToDatabase();
+
+  if (!context?.params)
+    return NextResponse.json({ error: "Missing params" }, { status: 400 });
+
+  const { id } = context.params;
+
+  if (!id || typeof id !== "string")
+    return NextResponse.json({ error: "Missing request ID" }, { status: 400 });
+
+  const request = await DiscRequest.findById(id);
+  if (!request)
+    return NextResponse.json({ error: "Request not found" }, { status: 404 });
+
+  // Ownership check
+  const requestUserId =
+    typeof request.userId === "string"
+      ? request.userId
+      : request.userId._id.toString();
+
+  if (requestUserId !== session.user.id)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const body = await req.json();
+
+  // Update allowed fields
+  const allowedFields = [
+    'title',
+    'description',
+    'brand',
+    'plastic',
+    'weight',
+    'color',
+    'condition',
+    'location',
+  ];
+
+  allowedFields.forEach((field) => {
+    if (field in body) {
+      if (field === 'location' && body[field]) {
+        request[field] = body[field];
+      } else if (field === 'weight' && body[field] !== null && body[field] !== undefined) {
+        request[field] = body[field];
+      } else if (field !== 'weight') {
+        request[field] = body[field];
+      }
+    }
+  });
+
+  await request.save();
+
+  const updatedRequest = await DiscRequest.findById(id)
+    .populate({
+      path: "userId",
+      select: "name avatarUrl username"
+    })
+    .lean();
+
+  return NextResponse.json(updatedRequest);
+};
+
+export const PATCH = withErrorHandling(
+  withUserAuth(patchRequestHandler) as (...args: unknown[]) => Promise<NextResponse>,
+  "/api/requests/[id]"
+);
+
+// ----------------------
 // DELETE: remove request
 // ----------------------
 const deleteRequestHandler = async (

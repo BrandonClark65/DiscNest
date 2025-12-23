@@ -52,6 +52,7 @@ vi.mock("@/components/ui/GradientButton", () => ({
 
 const reportModalMock = vi.fn((props?: any) => props);
 const confirmModalMock = vi.fn((props?: any) => props);
+const editRequestModalMock = vi.fn((props?: any) => props);
 
 vi.mock("@/components/modals/ReportModal", () => ({
   __esModule: true,
@@ -72,6 +73,20 @@ vi.mock("@/components/modals/ConfirmModal", () => ({
         </button>
         <button onClick={props.onClose} data-testid="cancel-button">
           {props.cancelLabel || "Cancel"}
+        </button>
+      </div>
+    ) : null;
+  },
+}));
+
+vi.mock("@/components/modals/EditRequestModal", () => ({
+  __esModule: true,
+  default: (props: any) => {
+    editRequestModalMock(props);
+    return props.open ? (
+      <div data-testid="edit-modal">
+        <button onClick={props.onClose} data-testid="edit-close-button">
+          Close
         </button>
       </div>
     ) : null;
@@ -110,6 +125,7 @@ describe("RequestDetail", () => {
     gradientButtonMock.mockClear();
     reportModalMock.mockClear();
     confirmModalMock.mockClear();
+    editRequestModalMock.mockClear();
     toastMocks.mockClear();
     toastMocks.success.mockClear();
     toastMocks.error.mockClear();
@@ -168,7 +184,7 @@ describe("RequestDetail", () => {
     expect(screen.getByTestId("report-open")).toBeInTheDocument();
   });
 
-  test("shows delete button in menu when user is owner", async () => {
+  test("shows edit and delete buttons in menu when user is owner", async () => {
     useSessionMock.mockReturnValue({
       data: { user: { id: "user-123", email: "owner@test.com" } },
     });
@@ -177,6 +193,7 @@ describe("RequestDetail", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "" }));
 
+    expect(screen.getByText(/Edit Request/i)).toBeInTheDocument();
     expect(screen.getByText(/Delete Request/i)).toBeInTheDocument();
     expect(screen.queryByText(/Report User/i)).not.toBeInTheDocument();
   });
@@ -272,6 +289,57 @@ describe("RequestDetail", () => {
 
     expect(toastMocks.error).toHaveBeenCalledWith("Failed to delete");
     expect(push).not.toHaveBeenCalled();
+  });
+
+  test("opens edit modal when edit button is clicked", async () => {
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-123", email: "owner@test.com" } },
+    });
+
+    render(<RequestDetail request={baseRequest} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "" }));
+    await userEvent.click(screen.getByText(/Edit Request/i));
+
+    expect(editRequestModalMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        open: true,
+        request: expect.objectContaining({
+          _id: "req1",
+          title: "Need a Buzzz",
+        }),
+      })
+    );
+    expect(screen.getByTestId("edit-modal")).toBeInTheDocument();
+  });
+
+  test("refreshes page when edit succeeds", async () => {
+    const reloadMock = vi.fn();
+    Object.defineProperty(window, "location", {
+      value: { reload: reloadMock },
+      writable: true,
+    });
+
+    useSessionMock.mockReturnValue({
+      data: { user: { id: "user-123", email: "owner@test.com" } },
+    });
+
+    render(<RequestDetail request={baseRequest} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "" }));
+    await userEvent.click(screen.getByText(/Edit Request/i));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("edit-modal")).toBeInTheDocument();
+    });
+
+    // Simulate onSuccess callback
+    const editProps = editRequestModalMock.mock.calls[editRequestModalMock.mock.calls.length - 1][0];
+    if (editProps.onSuccess) {
+      editProps.onSuccess();
+    }
+
+    expect(reloadMock).toHaveBeenCalled();
   });
 });
 
