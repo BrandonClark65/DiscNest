@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useMarketplaceData } from '@/hooks/useMarketplaceData';
 import MarketplaceHeader from '@/components/marketplace/MarketplaceHeader';
@@ -12,9 +11,11 @@ import MarketplacePagination from '@/components/marketplace/MarketplacePaginatio
 import CreateListingForm from '@/components/marketplace/CreateListingForm';
 import CreateDiscRequestForm from '@/components/marketplace/CreateDiscRequestForm';
 import RequestsTab from '@/components/marketplace/RequestsTab';
+import NearbyStoresBanner from '@/components/marketplace/NearbyStoresBanner';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 import type { ListingAdmin } from '@/types/listing';
+import { useEffect, useState } from 'react';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
@@ -56,6 +57,38 @@ export default function MarketplaceClient({
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [stores, setStores] = useState<Array<{
+    _id: string;
+    name?: string;
+    storeName?: string;
+    location?: { coordinates: [number, number] };
+    avatarUrl?: string;
+    bio?: string;
+    city?: string;
+    state?: string;
+  }>>([]);
+
+  // Fetch stores for map
+  useEffect(() => {
+    if (activeTab === 'market' && userLocation) {
+      const fetchStores = async () => {
+        try {
+          const res = await fetch(
+            `/api/stores?lat=${userLocation.lat}&lng=${userLocation.lng}&limit=50`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setStores(data.stores || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch stores:', error);
+        }
+      };
+      fetchStores();
+    } else {
+      setStores([]);
+    }
+  }, [activeTab, userLocation]);
 
   // Use server-fetched listings when on market tab and no filters/search/pagination are active
   // Once user interacts (filters, search, pagination), use client-fetched data
@@ -202,10 +235,15 @@ export default function MarketplaceClient({
                 Loading map...
               </p>
             ) : (
-              <Map listings={displayListings} />
+              <Map listings={displayListings} stores={stores} />
             )}
           </div>
         </section>
+      )}
+
+      {/* NEARBY STORES BANNER */}
+      {activeTab === 'market' && (
+        <NearbyStoresBanner userLocation={userLocation} />
       )}
 
       {/* REQUESTS TAB */}

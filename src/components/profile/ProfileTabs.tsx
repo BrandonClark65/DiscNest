@@ -1,8 +1,8 @@
 import clsx from 'clsx';
 
 type Props = {
-  activeTab: 'basic' | 'disc' | 'play';
-  setActiveTab: (tab: 'basic' | 'disc' | 'play') => void;
+  activeTab: 'basic' | 'disc' | 'play' | 'store';
+  setActiveTab: (tab: 'basic' | 'disc' | 'play' | 'store') => void;
 };
 
 export default function ProfileTabs({ activeTab, setActiveTab }: Props) {
@@ -10,6 +10,7 @@ export default function ProfileTabs({ activeTab, setActiveTab }: Props) {
     { key: 'basic', label: 'Basic Info' },
     { key: 'disc', label: 'Disc Golf Info' },
     { key: 'play', label: 'Play Style' },
+    { key: 'store', label: 'Store Settings' },
   ] as const;
 
   return (

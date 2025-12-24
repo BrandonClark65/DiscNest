@@ -51,4 +51,7 @@ export interface DiscNestUser {
   role?: string;
   moderationFlags?: number;
   lastFlaggedAt?: Date | null;
+
+  // ---- Store Fields ----
+  storeName?: string; // Unique store name for URL slug
 }

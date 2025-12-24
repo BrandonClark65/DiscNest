@@ -29,6 +29,7 @@ export default function ListingPage() {
   const { data: session } = useSession();
 
   const [listing, setListing] = useState<Listing | null>(null);
+  const [isStoreListing, setIsStoreListing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
@@ -59,6 +60,7 @@ export default function ListingPage() {
         if (!res.ok) throw new Error('Listing not found');
         const data = await res.json();
         setListing(data.listing as Listing);
+        setIsStoreListing(data.isStoreListing || false);
         
         // Track listing view event
         if (data.listing) {
@@ -365,7 +367,7 @@ export default function ListingPage() {
         {/* Show map for both single and group listings with location */}
         {listing.location?.coordinates && (
           <section className="h-72 sm:h-80 lg:h-96 rounded-2xl overflow-hidden shadow-md border border-[var(--muted)]/30" aria-label="Listing location map">
-            <Map singleListing={listing} zoom={15} />
+            <Map singleListing={listing} zoom={15} showExactLocations={isStoreListing} />
           </section>
         )}
       </motion.div>

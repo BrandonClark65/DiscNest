@@ -12,15 +12,17 @@ import ProfileTabs from '@/components/profile/ProfileTabs';
 import ProfileBasicTab from '@/components/profile/ProfileBasicTab';
 import ProfileDiscTab from '@/components/profile/ProfileDiscTab';
 import ProfilePlayTab from '@/components/profile/ProfilePlayTab';
+import ProfileStoreTab from '@/components/profile/ProfileStoreTab';
 
 type EditableUserFields = z.infer<typeof editableProfileSchema>;
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
-  const [profile, setProfile] = useState<Partial<EditableUserFields>>({});
+  const [profile, setProfile] = useState<Partial<EditableUserFields> & { role?: string }>({});
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'basic' | 'disc' | 'play'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'disc' | 'play' | 'store'>('basic');
   const [discCount, setDiscCount] = useState(0);
+  const [userRole, setUserRole] = useState<string>('user');
 
   // --- Fetch profile ---
   const fetchProfile = useCallback(() => {
@@ -31,9 +33,12 @@ export default function ProfilePage() {
         .then((data) => {
           if (!data.user) return;
           const userData = { ...data.user };
+          setUserRole(data.user.role || 'user');
+          // Keep location for store tab, but don't include in Zod parse
+          const locationData = userData.location;
           delete userData.location; // 🧩 prevent Zod from parsing this field
           const parsed = editableProfileSchema.parse(userData);
-          setProfile(parsed);
+          setProfile({ ...parsed, location: locationData, role: data.user.role });
           setDiscCount(data.user.discCount || 0);
         })
         .catch((err) => console.error('Error loading profile:', err));
@@ -128,6 +133,7 @@ export default function ProfilePage() {
         {activeTab === 'basic' && <ProfileBasicTab profile={profile} setProfile={setProfile} />}
         {activeTab === 'disc' && <ProfileDiscTab profile={profile} setProfile={setProfile} />}
         {activeTab === 'play' && <ProfilePlayTab profile={profile} setProfile={setProfile} />}
+        {activeTab === 'store' && <ProfileStoreTab profile={profile} setProfile={setProfile} userRole={userRole} />}
       </div>
 
       <div className="flex justify-center sm:justify-end">

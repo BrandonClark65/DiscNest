@@ -15,8 +15,11 @@ import type { Session } from "next-auth";
 const updateProfileHandler = async (req: Request, session: Session) => {
   const body = await req.json();
 
+  // Extract role separately (not in editableProfileSchema)
+  const { role, ...bodyWithoutRole } = body;
+
   // Validate with Zod
-  const parseResult = editableProfileSchema.safeParse(body);
+  const parseResult = editableProfileSchema.safeParse(bodyWithoutRole);
   if (!parseResult.success) {
     console.error("Zod validation error:", parseResult.error.flatten());
     return NextResponse.json(
@@ -45,9 +48,50 @@ const updateProfileHandler = async (req: Request, session: Session) => {
     skillLevel,
     playFrequency,
     preferredPlastics,
+    storeName,
   } = parseResult.data;
 
-  const safeBody = {
+  await connectToDatabase();
+
+  // Normalize storeName to lowercase and validate uniqueness if provided
+  const normalizedStoreName = storeName?.toLowerCase().trim();
+  if (normalizedStoreName) {
+    // Check if another user already has this storeName
+    const existingStore = await User.findOne({ 
+      storeName: normalizedStoreName,
+      _id: { $ne: session.user.id }
+    });
+    if (existingStore) {
+      return NextResponse.json(
+        { error: "Store name already taken" },
+        { status: 400 }
+      );
+    }
+  }
+
+  const safeBody: {
+    name?: string;
+    username?: string;
+    avatarUrl?: string;
+    bio?: string;
+    location?: { type: string; coordinates: [number, number] };
+    pdgaNumber?: number;
+    homeCourse?: string;
+    favoriteCourses?: string[];
+    maxDistanceFt?: number;
+    goals?: string;
+    dominantHand?: string;
+    throwStyle?: string;
+    favoriteBrands?: string[];
+    preferredDiscTypes?: string[];
+    stabilityPreference?: string;
+    armSpeed?: string;
+    skillLevel?: string;
+    playFrequency?: string;
+    preferredPlastics?: string[];
+    storeName?: string;
+    role?: string;
+  } = {
     name,
     username,
     avatarUrl,
@@ -67,9 +111,13 @@ const updateProfileHandler = async (req: Request, session: Session) => {
     skillLevel,
     playFrequency,
     preferredPlastics,
+    storeName: normalizedStoreName || undefined,
   };
 
-  await connectToDatabase();
+  // Only update role if provided and valid
+  if (role === 'user' || role === 'store') {
+    safeBody.role = role;
+  }
 
   const updatedUser = await User.findOneAndUpdate(
     { email: session.user.email },

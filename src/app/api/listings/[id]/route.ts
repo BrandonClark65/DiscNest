@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Listing from "@/models/Listing";
+import User from "@/models/User";
 import type { Listing as ListingType } from "@/types/listing";
 import { v2 as cloudinary } from "cloudinary";
 import { withUserAuth } from "@/lib/auth/withUserAuth";
@@ -32,7 +33,37 @@ const getListingHandler = async (
   const listing = listingDoc as unknown as ListingType;
   listing._id = listing._id.toString();
 
-  return NextResponse.json({ listing });
+  // If listing owner is a store with a location, use store's location for the map
+  const listingDocTyped = listingDoc as unknown as {
+    userId: { _id?: unknown; toString?: () => string } | string | { toString: () => string };
+  };
+  
+  let userId: string | null = null;
+  if (typeof listingDocTyped.userId === 'string') {
+    userId = listingDocTyped.userId;
+  } else if (listingDocTyped.userId && typeof listingDocTyped.userId === 'object') {
+    if ('_id' in listingDocTyped.userId && listingDocTyped.userId._id) {
+      userId = typeof listingDocTyped.userId._id === 'string' 
+        ? listingDocTyped.userId._id 
+        : (listingDocTyped.userId._id as { toString: () => string }).toString();
+    } else if ('toString' in listingDocTyped.userId) {
+      userId = listingDocTyped.userId.toString();
+    }
+  }
+
+  let isStoreListing = false;
+  if (userId) {
+    const user = await User.findById(userId).lean();
+    if (user && user.role === 'store' && user.location?.coordinates) {
+      // Override listing location with store location for display
+      listing.location = {
+        coordinates: user.location.coordinates as [number, number],
+      };
+      isStoreListing = true;
+    }
+  }
+
+  return NextResponse.json({ listing, isStoreListing });
 };
 
 export const GET = withErrorHandling(

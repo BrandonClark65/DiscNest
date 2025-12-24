@@ -201,7 +201,7 @@ app.use("/api", async (req, res) => {
         const part = parts[i];
         // Check if there's a [param] folder at this level
         // Try common dynamic route names: [id], [threadId], [listingId], etc.
-        const possibleParamNames = ["id", "threadId", "listingId", "requestId", "token"];
+        const possibleParamNames = ["id", "threadId", "listingId", "requestId", "token", "storeName"];
         let foundDynamic = false;
         
         for (const paramName of possibleParamNames) {
