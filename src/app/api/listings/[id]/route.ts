@@ -46,7 +46,7 @@ const getListingHandler = async (
       userId = typeof listingDocTyped.userId._id === 'string' 
         ? listingDocTyped.userId._id 
         : (listingDocTyped.userId._id as { toString: () => string }).toString();
-    } else if ('toString' in listingDocTyped.userId) {
+    } else if ('toString' in listingDocTyped.userId && typeof listingDocTyped.userId.toString === 'function') {
       userId = listingDocTyped.userId.toString();
     }
   }
