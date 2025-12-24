@@ -53,7 +53,10 @@ const getListingHandler = async (
 
   let isStoreListing = false;
   if (userId) {
-    const user = await User.findById(userId).lean();
+    const user = await User.findById(userId).lean() as {
+      role?: string;
+      location?: { coordinates?: [number, number] };
+    } | null;
     if (user && user.role === 'store' && user.location?.coordinates) {
       // Override listing location with store location for display
       listing.location = {
