@@ -8,6 +8,7 @@ import MarketplaceGrid from '@/components/marketplace/MarketplaceGrid';
 import type { ListingAdmin } from '@/types/listing';
 import { useAnalytics } from '@/lib/useAnalytics';
 import { MapPin, Store } from 'lucide-react';
+import UserRating from '@/components/ratings/UserRating';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
@@ -21,6 +22,8 @@ interface StorePageClientProps {
     bio?: string;
     city?: string;
     state?: string;
+    averageRating: number | null;
+    ratingCount: number;
   };
   initialListings: ListingAdmin[];
   initialListingCount: number;
@@ -84,17 +87,26 @@ export default function StorePageClient({
                   {store.bio}
                 </p>
               )}
-              {(store.city || store.state) && (
-                <div className="flex items-center gap-2 text-[var(--foreground)]/70">
-                  <MapPin className="w-4 h-4" />
-                  <span>
-                    {store.city || ''}
-                    {store.city && store.state ? ', ' : ''}
-                    {store.state || ''}
-                  </span>
-                </div>
-              )}
-              <p className="mt-4 text-sm text-[var(--foreground)]/60">
+              <div className="flex flex-wrap items-center gap-4 mb-4">
+                {store.averageRating !== null && store.ratingCount > 0 && (
+                  <UserRating
+                    averageRating={store.averageRating}
+                    ratingCount={store.ratingCount}
+                    size="lg"
+                  />
+                )}
+                {(store.city || store.state) && (
+                  <div className="flex items-center gap-2 text-[var(--foreground)]/70">
+                    <MapPin className="w-4 h-4" />
+                    <span>
+                      {store.city || ''}
+                      {store.city && store.state ? ', ' : ''}
+                      {store.state || ''}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-[var(--foreground)]/60">
                 {initialListingCount} active listing{initialListingCount !== 1 ? 's' : ''}
               </p>
             </div>

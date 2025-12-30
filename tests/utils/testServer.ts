@@ -196,15 +196,32 @@ app.use("/api", async (req, res) => {
     } else {
       // If exact path doesn't exist, try dynamic route pattern
       // e.g., /api/messages/abc123 -> messages/[threadId]/route.ts
+      // e.g., /api/users/abc123/ratings -> users/[userId]/ratings/route.ts
       const dynamicParts: string[] = [];
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         // Check if there's a [param] folder at this level
         // Try common dynamic route names: [id], [threadId], [listingId], etc.
-        const possibleParamNames = ["id", "threadId", "listingId", "requestId", "token", "storeName"];
+        // Order matters - more specific names first to avoid conflicts
+        // For ratings routes, prefer [userId] for GET, [id] for PATCH/DELETE
+        const method = req.method.toUpperCase();
+        let possibleParamNames: string[];
+        if (dynamicParts.includes("ratings")) {
+          // For ratings, check method-specific routes first
+          if (method === "GET") {
+            possibleParamNames = ["userId", "threadId", "listingId", "requestId", "storeName", "token", "id"];
+          } else {
+            // PATCH, DELETE, etc. should prefer [id]
+            possibleParamNames = ["id", "threadId", "listingId", "requestId", "storeName", "token", "userId"];
+          }
+        } else {
+          possibleParamNames = ["userId", "threadId", "listingId", "requestId", "storeName", "token", "id"];
+        }
         let foundDynamic = false;
         
+        // Check all possible dynamic routes and use the first one that exists
         for (const paramName of possibleParamNames) {
+          // Check if there's a route file at this dynamic segment
           const dynamicPath = path.join(
             process.cwd(),
             "src",
@@ -214,12 +231,35 @@ app.use("/api", async (req, res) => {
             `[${paramName}]`,
             "route.ts"
           );
+          
+          // Also check for nested routes (e.g., [userId]/ratings/route.ts)
+          const remainingParts = parts.slice(i + 1);
+          const nestedPath = path.join(
+            process.cwd(),
+            "src",
+            "app",
+            "api",
+            ...dynamicParts,
+            `[${paramName}]`,
+            ...remainingParts,
+            "route.ts"
+          );
+          
           // Check if file exists before trying to import
           if (existsSync(dynamicPath)) {
-            // Found dynamic route, extract param
+            // Found dynamic route at this level, extract param
             params[paramName] = part;
             dynamicParts.push(`[${paramName}]`);
             routeFile = dynamicPath;
+            foundDynamic = true;
+            break;
+          } else if (existsSync(nestedPath)) {
+            // Found nested route, extract param and continue
+            params[paramName] = part;
+            dynamicParts.push(`[${paramName}]`);
+            // Add remaining parts to dynamicParts
+            dynamicParts.push(...remainingParts);
+            routeFile = nestedPath;
             foundDynamic = true;
             break;
           }
@@ -228,6 +268,9 @@ app.use("/api", async (req, res) => {
         if (!foundDynamic) {
           // Not a dynamic route at this level, continue with exact path
           dynamicParts.push(part);
+        } else {
+          // Found a dynamic route, break out of loop
+          break;
         }
       }
       

@@ -1,12 +1,13 @@
 'use client';
 
-import type { Listing } from '@/types/listing';
+import type { Listing, ListingAdmin } from '@/types/listing';
 import Image from 'next/image';
 import { useState } from 'react';
 import GradientButton from '@/components/ui/GradientButton';
+import SellerRatingBadge from '@/components/ratings/SellerRatingBadge';
 
 type ListingCardProps = {
-  listing: Listing;
+  listing: Listing | ListingAdmin;
   isOwner?: boolean;
   onDelete?: () => void;
   onMarkSold?: () => void;
@@ -93,12 +94,37 @@ export default function ListingCard({
             )}
 
             {listing.type === 'Sell' && (
-              <p className="text-base font-semibold mt-1 mb-3 text-[var(--foreground)]">
+              <p className="text-base font-semibold mt-1 text-[var(--foreground)]">
                 {listing.price !== undefined
                   ? `$${listing.price.toFixed(2)}`
                   : 'Price not listed'}
               </p>
             )}
+
+            {/* Seller Rating */}
+            {(() => {
+              // Type guard to check if this is ListingAdmin with populated userId
+              if ('userId' in listing && typeof listing.userId === 'object' && listing.userId && '_id' in listing.userId) {
+                const seller = listing.userId as {
+                  _id: string;
+                  averageRating?: number | null;
+                  ratingCount?: number;
+                  username?: string;
+                };
+                return (
+                  <div className="mt-2 mb-3">
+                    <SellerRatingBadge
+                      averageRating={seller.averageRating ?? null}
+                      ratingCount={seller.ratingCount ?? 0}
+                      userId={seller._id}
+                      username={seller.username}
+                      showCount={false}
+                    />
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </>
         ) : (
           <>

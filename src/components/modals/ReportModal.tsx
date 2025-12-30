@@ -68,7 +68,7 @@ export default function ReportModal({
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-xl">
+      <div className="bg-[var(--surface)] w-full max-w-md rounded-xl p-6 border border-[var(--muted)]/30 shadow-xl">
 
         {/* HEADER */}
         <div className="flex justify-between items-start mb-4">
@@ -78,7 +78,7 @@ export default function ReportModal({
 
           <button
             onClick={onClose}
-            className="p-1 text-gray-600 hover:text-gray-900 dark:hover:text-white"
+            className="p-1 text-[var(--foreground)]/60 hover:text-[var(--foreground)] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -93,8 +93,9 @@ export default function ReportModal({
           placeholder="Optional: Describe the issue..."
           rows={4}
           className="
-            w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700
-            bg-gray-50 dark:bg-gray-800 text-sm text-[var(--foreground)]
+            w-full p-3 rounded-lg border border-[var(--muted)]/30
+            bg-[var(--surface)] text-sm text-[var(--foreground)]
+            placeholder:text-[var(--foreground)]/40
             focus:outline-none focus:ring-2 focus:ring-[var(--primary)]
           "
         />

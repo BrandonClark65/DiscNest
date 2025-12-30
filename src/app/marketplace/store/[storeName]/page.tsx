@@ -18,6 +18,8 @@ async function getStoreData(storeName: string): Promise<{
     bio?: string;
     city?: string;
     state?: string;
+    averageRating: number | null;
+    ratingCount: number;
   };
   listings: ListingType[];
   listingCount: number;
@@ -46,6 +48,8 @@ async function getStoreData(storeName: string): Promise<{
       bio?: string;
       city?: string;
       state?: string;
+      averageRating?: number | null;
+      ratingCount?: number;
     };
 
     const storeId = typeof storeDoc._id === 'string' 
@@ -137,6 +141,8 @@ async function getStoreData(storeName: string): Promise<{
         bio: storeDoc.bio,
         city: storeDoc.city,
         state: storeDoc.state,
+        averageRating: storeDoc.averageRating ?? null,
+        ratingCount: storeDoc.ratingCount ?? 0,
       },
       listings: formattedListings,
       listingCount: formattedListings.length,

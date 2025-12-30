@@ -27,6 +27,10 @@ export type ListingAdmin = Listing & {
     _id: string;
     name?: string;
     email?: string;
+    username?: string;
+    avatarUrl?: string;
+    averageRating?: number | null;
+    ratingCount?: number;
   };
 };
 

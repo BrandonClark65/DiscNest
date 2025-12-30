@@ -38,6 +38,54 @@ export default function useChatThread(
       if (!res.ok) throw new Error('Failed to fetch thread');
 
       const data: ThreadDB = await res.json();
+      
+      // Fix participants before mapping if they have invalid _id values
+      // This handles cases where ObjectIds weren't properly serialized
+      if (data.participants && Array.isArray(data.participants)) {
+        data.participants = data.participants.map((p: unknown) => {
+          // If it's already a string, use it
+          if (typeof p === 'string') {
+            return p;
+          }
+          
+          // If it's an object with _id
+          if (p && typeof p === 'object' && '_id' in p) {
+            const pObj = p as { _id: unknown; [key: string]: unknown };
+            const id = pObj._id;
+            
+            // If _id is a valid string, return the object as-is
+            if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) {
+              return p;
+            }
+            
+            // If _id is an object, try to extract the string ID
+            if (id && typeof id === 'object') {
+              // Try common ObjectId properties
+              const idObj = id as Record<string, unknown>;
+              if (typeof idObj.id === 'string' && /^[0-9a-fA-F]{24}$/.test(idObj.id)) {
+                return { ...pObj, _id: idObj.id };
+              }
+              if (typeof idObj.$oid === 'string' && /^[0-9a-fA-F]{24}$/.test(idObj.$oid)) {
+                return { ...pObj, _id: idObj.$oid };
+              }
+              // Try toString if available
+              if ('toString' in id && typeof (id as { toString: () => string }).toString === 'function') {
+                try {
+                  const idStr = (id as { toString: () => string }).toString();
+                  if (idStr !== '[object Object]' && /^[0-9a-fA-F]{24}$/.test(idStr)) {
+                    return { ...pObj, _id: idStr };
+                  }
+                } catch (e) {
+                  // Ignore
+                }
+              }
+            }
+          }
+          
+          return p;
+        }) as typeof data.participants;
+      }
+      
       setThread(mapThreadDBtoUI(data));
     } catch (err) {
       console.error(err);

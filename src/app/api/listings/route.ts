@@ -125,24 +125,61 @@ const getListingsHandler = async (req: Request) => {
       .lean()) as unknown as ListingDocument[];
   }
 
-  // Populate user names
+  // Populate user names and rating data
   const userIds = listings.map((l) => l.userId);
-  const users = await User.find({ _id: { $in: userIds } }, { _id: 1, name: 1 });
-  const userMap = Object.fromEntries(users.map((u) => [u._id.toString(), u.name]));
+  const users = await User.find({ _id: { $in: userIds } })
+    .select('_id name username avatarUrl averageRating ratingCount')
+    .lean();
+  const userMap: Record<string, {
+    name?: string;
+    username?: string;
+    avatarUrl?: string;
+    averageRating?: number | null;
+    ratingCount?: number;
+  }> = {};
+  users.forEach((user) => {
+    const userDoc = user as { 
+      _id: { toString: () => string } | string;
+      name?: string;
+      username?: string;
+      avatarUrl?: string;
+      averageRating?: number | null;
+      ratingCount?: number;
+    };
+    const userId = typeof userDoc._id === 'string' ? userDoc._id : userDoc._id.toString();
+    userMap[userId] = {
+      name: userDoc.name,
+      username: userDoc.username,
+      avatarUrl: userDoc.avatarUrl,
+      averageRating: userDoc.averageRating ?? null,
+      ratingCount: userDoc.ratingCount ?? 0,
+    };
+  });
 
-  listings = listings.map((l) => ({
-    ...l,
-    userId: { _id: l.userId, name: userMap[l.userId?.toString() ?? ""] || "Unknown" },
-    location: l.location?.coordinates
-      ? {
-          ...l.location,
-          coordinates: [
-            l.location.coordinates[0] + (Math.random() - 0.5) * 0.02,
-            l.location.coordinates[1] + (Math.random() - 0.5) * 0.02,
-          ],
-        }
-      : l.location,
-  }));
+  listings = listings.map((l) => {
+    const userIdStr = l.userId?.toString() ?? "";
+    const userInfo = userMap[userIdStr] || { name: "Unknown" };
+    return {
+      ...l,
+      userId: {
+        _id: userIdStr,
+        name: userInfo.name || "Unknown",
+        username: userInfo.username,
+        avatarUrl: userInfo.avatarUrl,
+        averageRating: userInfo.averageRating ?? null,
+        ratingCount: userInfo.ratingCount ?? 0,
+      },
+      location: l.location?.coordinates
+        ? {
+            ...l.location,
+            coordinates: [
+              l.location.coordinates[0] + (Math.random() - 0.5) * 0.02,
+              l.location.coordinates[1] + (Math.random() - 0.5) * 0.02,
+            ],
+          }
+        : l.location,
+    };
+  });
 
   const totalPages = Math.ceil(totalCount / limit);
 

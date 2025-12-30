@@ -52,21 +52,52 @@ const getListingHandler = async (
   }
 
   let isStoreListing = false;
+  let sellerData: {
+    _id: string;
+    name?: string;
+    username?: string;
+    avatarUrl?: string;
+    averageRating?: number | null;
+    ratingCount?: number;
+  } | null = null;
+
   if (userId) {
-    const user = await User.findById(userId).lean() as {
+    const user = await User.findById(userId)
+      .select('name username avatarUrl role location averageRating ratingCount')
+      .lean() as {
+      _id: { toString: () => string } | string;
+      name?: string;
+      username?: string;
+      avatarUrl?: string;
       role?: string;
       location?: { coordinates?: [number, number] };
+      averageRating?: number | null;
+      ratingCount?: number;
     } | null;
-    if (user && user.role === 'store' && user.location?.coordinates) {
-      // Override listing location with store location for display
-      listing.location = {
-        coordinates: user.location.coordinates as [number, number],
+
+    if (user) {
+      const userIdStr = typeof user._id === 'string' ? user._id : user._id.toString();
+      
+      sellerData = {
+        _id: userIdStr,
+        name: user.name,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+        averageRating: user.averageRating ?? null,
+        ratingCount: user.ratingCount ?? 0,
       };
-      isStoreListing = true;
+
+      if (user.role === 'store' && user.location?.coordinates) {
+        // Override listing location with store location for display
+        listing.location = {
+          coordinates: user.location.coordinates as [number, number],
+        };
+        isStoreListing = true;
+      }
     }
   }
 
-  return NextResponse.json({ listing, isStoreListing });
+  return NextResponse.json({ listing, isStoreListing, seller: sellerData });
 };
 
 export const GET = withErrorHandling(

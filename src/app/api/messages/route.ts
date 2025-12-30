@@ -44,18 +44,26 @@ const createThreadHandler = async (req: Request) => {
   if (!recipientId)
     return NextResponse.json({ error: "Recipient is required" }, { status: 400 });
 
-  if (!listingId && !requestId)
-    return NextResponse.json(
-      { error: "Either listingId or requestId is required" },
-      { status: 400 }
-    );
-
   // --- Find existing thread
-  const existing = await MessageThread.findOne({
+  // If listingId or requestId is provided, look for thread with that context
+  // Otherwise, look for a general conversation thread (no listingId or requestId)
+  const threadQuery: Record<string, unknown> = {
     participants: { $all: [senderId, recipientId] },
-    ...(listingId ? { listingId } : {}),
-    ...(requestId ? { requestId } : {}),
-  });
+  };
+
+  if (listingId) {
+    threadQuery.listingId = listingId;
+  } else if (requestId) {
+    threadQuery.requestId = requestId;
+  } else {
+    // For general conversations, find threads where listingId and requestId are null or don't exist
+    threadQuery.$and = [
+      { $or: [{ listingId: null }, { listingId: { $exists: false } }] },
+      { $or: [{ requestId: null }, { requestId: { $exists: false } }] },
+    ];
+  }
+
+  const existing = await MessageThread.findOne(threadQuery);
 
   if (existing) {
     const populated = await MessageThread.findById(existing._id)

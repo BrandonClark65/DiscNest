@@ -61,20 +61,21 @@ export default function ChatHeader({
       : null;
 
   // Detect valid IDs only (ignore sentinel / unknowns)
-  const hasListing = !!listingId && listingId !== "unknown";
-  const hasRequest = !!requestId && requestId !== "unknown";
+  // Also ensure listing/request objects exist (not just null/undefined)
+  const hasListing = !!listing && !!listingId && listingId !== "unknown";
+  const hasRequest = !!request && !!requestId && requestId !== "unknown";
 
   // Title priority:
   // 1) Listing thread
   // 2) Request thread
   // 3) Fallback to generic conversation
   const headerTitle = hasListing
-    ? listing?.title || "Listing"
+    ? (typeof listing === "object" && listing?.title ? listing.title : "Listing")
     : hasRequest
-    ? `Request: ${request?.title}`
+    ? `Request: ${typeof request === "object" && request?.title ? request.title : "Request"}`
     : "Conversation";
 
-  // View buttons
+  // View buttons - only show if there's a valid listing or request
   const viewUrl = hasListing
     ? `/listing/${listingId}`
     : hasRequest

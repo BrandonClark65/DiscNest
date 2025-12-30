@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import MessageSellerButton from '@/components/MessageSellerButton';
+import SellerInfo from '@/components/listing/SellerInfo';
 import type { Listing } from '@/types/listing';
 import { MoreVertical, Edit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,6 +31,14 @@ export default function ListingPage() {
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [isStoreListing, setIsStoreListing] = useState(false);
+  const [seller, setSeller] = useState<{
+    _id: string;
+    name?: string;
+    username?: string;
+    avatarUrl?: string;
+    averageRating?: number | null;
+    ratingCount?: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
@@ -61,6 +70,7 @@ export default function ListingPage() {
         const data = await res.json();
         setListing(data.listing as Listing);
         setIsStoreListing(data.isStoreListing || false);
+        setSeller(data.seller || null);
         
         // Track listing view event
         if (data.listing) {
@@ -341,13 +351,22 @@ export default function ListingPage() {
               </div>
             </div>
 
-            {/* ---------- MESSAGE + REPORT ---------- */}
+            {/* ---------- SELLER INFO ---------- */}
+            {seller && (
+              <div className="mt-6">
+                <SellerInfo seller={seller} listingId={listing._id} />
+              </div>
+            )}
+
+            {/* ---------- MESSAGE + REPORT (Mobile) ---------- */}
             <div className="mt-6">
               <div className="hidden sm:block">
-                <MessageSellerButton
-                  sellerId={listing.userId}
-                  listingId={listing._id}
-                />
+                {!seller && (
+                  <MessageSellerButton
+                    sellerId={listing.userId}
+                    listingId={listing._id}
+                  />
+                )}
               </div>
 
               {/* Mobile sticky footer */}

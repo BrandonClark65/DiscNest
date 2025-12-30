@@ -15,7 +15,7 @@ const ChatModal = dynamic(() => import('@/components/modals/ChatModal'), {
 
 type MessageSellerButtonProps = {
   sellerId: string;
-  listingId: string;
+  listingId?: string;
 };
 
 export default function MessageSellerButton({
@@ -50,6 +50,7 @@ export default function MessageSellerButton({
 
       if (!res.ok) {
         console.error('Error creating or finding thread:', data.error);
+        toast.error(data.error || 'Failed to start conversation');
         return;
       }
 

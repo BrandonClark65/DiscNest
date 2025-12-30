@@ -80,6 +80,10 @@ const UserSchema = new mongoose.Schema(
     shareableBagId: { type: String, unique: true, sparse: true },
     bagVisibility: { type: String, enum: ["private", "public"], default: "private" },
     discCount: { type: Number, default: 0 },
+
+    // ---- Ratings ----
+    averageRating: { type: Number, default: null }, // null if no ratings yet
+    ratingCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
