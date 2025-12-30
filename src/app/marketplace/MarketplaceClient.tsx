@@ -229,13 +229,22 @@ export default function MarketplaceClient({
       {/* MAP */}
       {activeTab === 'market' && (
         <section className="mb-10" aria-label="Listings map">
-          <div className="h-64 sm:h-80 md:h-96 rounded-lg overflow-hidden shadow-lg border border-[var(--muted)]/20">
-            {!userLocation ? (
-              <p className="flex items-center justify-center h-full text-foreground/60 italic">
-                Loading map...
-              </p>
-            ) : (
-              <Map listings={displayListings} stores={stores} />
+          <div className="h-64 sm:h-80 md:h-96 rounded-lg overflow-hidden shadow-lg border border-[var(--muted)]/20 relative">
+            <Map 
+              listings={displayListings} 
+              stores={stores} 
+              defaultCenter={userLocation ? undefined : [39.8283, -98.5795]} // Center of US
+              defaultZoom={userLocation ? undefined : 4} // Zoomed out to show US
+            />
+            {!userLocation && (
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-[var(--background)]/95 backdrop-blur-sm border border-[var(--muted)]/40 rounded-lg px-4 py-2 shadow-lg z-[1000] max-w-md text-center">
+                <p className="text-sm text-[var(--foreground)]">
+                  <strong>Allow location access</strong> to see listings near you
+                </p>
+                <p className="text-xs text-[var(--foreground)]/70 mt-1">
+                  Listings are still visible on the map below
+                </p>
+              </div>
             )}
           </div>
         </section>

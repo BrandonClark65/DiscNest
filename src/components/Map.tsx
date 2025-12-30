@@ -41,13 +41,24 @@ type MapProps = {
   stores?: Store[];
   zoom?: number;
   showExactLocations?: boolean; // If true, show listings as exact markers instead of obfuscated circles
+  defaultCenter?: [number, number]; // Default center when no user location is available
+  defaultZoom?: number; // Default zoom when no user location is available
 };
 
-export default function Map({ listings = [], singleListing, stores = [], zoom = 13, showExactLocations = false }: MapProps) {
+export default function Map({ 
+  listings = [], 
+  singleListing, 
+  stores = [], 
+  zoom = 13, 
+  showExactLocations = false,
+  defaultCenter,
+  defaultZoom
+}: MapProps) {
   const [center, setCenter] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [ready, setReady] = useState(false);
+  const [usingDefaultCenter, setUsingDefaultCenter] = useState(false);
 
   // ✅ Ensure client-side mount before using leaflet
   useEffect(() => {
@@ -80,23 +91,37 @@ export default function Map({ listings = [], singleListing, stores = [], zoom = 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setCenter([pos.coords.latitude, pos.coords.longitude]);
+          setUsingDefaultCenter(false);
           setLoading(false);
         },
         () => {
-          if (listings[0]?.location?.coordinates) {
+          // Geolocation denied or failed
+          if (defaultCenter) {
+            setCenter(defaultCenter);
+            setUsingDefaultCenter(true);
+          } else if (listings[0]?.location?.coordinates) {
             const [lng, lat] = listings[0].location.coordinates;
             setCenter([lat, lng]);
+            setUsingDefaultCenter(false);
           } else {
             setCenter([37.7749, -122.4194]); // fallback to SF
+            setUsingDefaultCenter(false);
           }
           setLoading(false);
         }
       );
     } else {
-      setCenter([37.7749, -122.4194]);
+      // Geolocation not supported
+      if (defaultCenter) {
+        setCenter(defaultCenter);
+        setUsingDefaultCenter(true);
+      } else {
+        setCenter([37.7749, -122.4194]);
+        setUsingDefaultCenter(false);
+      }
       setLoading(false);
     }
-  }, [mounted, center, listings, singleListing, stores]);
+  }, [mounted, center, listings, singleListing, stores, defaultCenter]);
 
   const obfuscatedMarkers = useMemo(() => {
     if (showExactLocations) {
@@ -141,7 +166,7 @@ export default function Map({ listings = [], singleListing, stores = [], zoom = 
         <MapContainer
           key={center.join(',')} // 🧱 Forces remount cleanly after hot reload
           center={center}
-          zoom={zoom}
+          zoom={usingDefaultCenter && defaultZoom !== undefined ? defaultZoom : zoom}
           scrollWheelZoom
           className="w-full h-full"
           style={{ height: '100%', width: '100%' }}

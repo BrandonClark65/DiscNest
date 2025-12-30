@@ -15,6 +15,21 @@ function isValidDiscBrand(brand: string | undefined | null): brand is DiscBrand 
 import { useAnalytics } from '@/lib/useAnalytics';
 import GroupedSelect from '@/components/ui/GroupedSelect';
 import Image from 'next/image';
+import { MapPin } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the clickable map component to avoid SSR issues
+const ClickableMap = dynamic(
+  () => import('@/components/profile/ClickableMap'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full bg-[var(--surface)] text-[var(--foreground)]/70">
+        Loading map...
+      </div>
+    ),
+  }
+);
 
 
 type CreateListingFormProps = {
@@ -40,8 +55,6 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     condition: 'Like New',
     type: 'Sell',
     price: 0,
-    city: '',
-    state: '',
     location: null as Location | null,
     imageUrls: [] as string[],
     publicIds: [] as string[],
@@ -60,23 +73,37 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
   const [selectedDisc, setSelectedDisc] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [useGeoLocation, setUseGeoLocation] = useState<boolean | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Detect if geolocation is available
+  // Initialize location from form if available
+  useEffect(() => {
+    if (form.location?.coordinates && Array.isArray(form.location.coordinates) && form.location.coordinates.length === 2) {
+      const [lng, lat] = form.location.coordinates;
+      if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
+        setLocation({ lat, lng });
+      }
+    }
+  }, []);
+
+  // Try to get current location on mount
   useEffect(() => {
     if (!navigator.geolocation) {
-      setUseGeoLocation(false);
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setUseGeoLocation(true);
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setLocation({ lat, lng });
         setForm((prev) => ({
           ...prev,
-          location: { type: 'Point', coordinates: [pos.coords.longitude, pos.coords.latitude] },
+          location: { type: 'Point', coordinates: [lng, lat] },
         }));
       },
-      () => setUseGeoLocation(false)
+      () => {
+        // Geolocation denied or failed - user will need to set manually
+      }
     );
   }, []);
 
@@ -137,6 +164,61 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     }
   }
 
+  // Get current location
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        handleLocationSet(latitude, longitude);
+      },
+      (error) => {
+        setLocationError('Failed to get your location. Please set it manually on the map.');
+        console.error('Geolocation error:', error);
+      }
+    );
+  };
+
+  // Handle location being set (from map click or geolocation)
+  const handleLocationSet = (lat: number, lng: number) => {
+    setLocation({ lat, lng });
+    setLocationError(null);
+    setForm((prev) => ({
+      ...prev,
+      location: {
+        type: 'Point',
+        coordinates: [lng, lat],
+      },
+    }));
+  };
+
+  // Handle manual coordinate input
+  const handleManualLocation = (field: 'lat' | 'lng', value: string) => {
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return;
+
+    if (field === 'lat') {
+      const newLocation = { lat: numValue, lng: location?.lng || 0 };
+      if (location?.lng !== undefined) {
+        handleLocationSet(newLocation.lat, newLocation.lng);
+      } else {
+        setLocation(newLocation);
+      }
+    } else {
+      const newLocation = { lat: location?.lat || 0, lng: numValue };
+      if (location?.lat !== undefined) {
+        handleLocationSet(newLocation.lat, newLocation.lng);
+      } else {
+        setLocation(newLocation);
+      }
+    }
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -157,21 +239,15 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       }
     }
 
+    // Validate location is set
+    if (!form.location || !form.location.coordinates || form.location.coordinates.length !== 2) {
+      toast.error('Please set a location for your listing. Click on the map or use the "Get Location" button.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      // Ensure location exists for both single and group listings
-      if (!form.location) {
-        const location = await new Promise<Location | null>((resolve) => {
-          if (!navigator.geolocation) return resolve(null);
-          navigator.geolocation.getCurrentPosition(
-            (pos) =>
-              resolve({ type: 'Point', coordinates: [pos.coords.longitude, pos.coords.latitude] }),
-            () => resolve(null)
-          );
-        });
-        setForm((prev) => ({ ...prev, location }));
-      }
 
       // Prepare payload - exclude fields not applicable to group listings
       const payload: Record<string, unknown> = {
@@ -180,10 +256,13 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         userId: user.id,
         pendingReview: form.pendingReview,
         listingType: listingType || 'single', // default to single for backward compatibility
+        // Remove city and state - they will be reverse geocoded from location coordinates
+        city: undefined,
+        state: undefined,
       };
 
       // For group listings, exclude single-disc specific fields
-      // Note: location, city, and state are kept for group listings
+      // Note: location is kept for group listings
       if (isGroupListing) {
         delete payload.condition;
         delete payload.plastic;
@@ -214,7 +293,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         listing_type: form.type,
         listing_price: form.price,
         listing_condition: form.condition,
-        listing_location: form.city && form.state ? `${form.city}, ${form.state}` : undefined,
+        listing_location: form.location?.coordinates ? `Lat: ${form.location.coordinates[1]}, Lng: ${form.location.coordinates[0]}` : undefined,
       });
 
       // Track as conversion if it's a sell listing with price
@@ -316,8 +395,6 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       condition: 'Like New',
       type: 'Sell',
       price: 0,
-      city: '',
-      state: '',
       location: null,
       imageUrls: [],
       publicIds: [],
@@ -326,6 +403,8 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     });
     setTouchedFields({ title: false, brand: false, plastic: false, weight: false });
     setSelectedDisc('');
+    setLocation(null);
+    setLocationError(null);
   }
 
   // Show listing type selection screen if not selected
@@ -573,37 +652,78 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           </div>
         )}
 
-        {/* Location - shown for both single and group listings */}
-        {useGeoLocation === false && (
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label htmlFor="city" className="block font-medium mb-1">
-                City
-              </label>
-              <input
-                id="city"
-                type="text"
-                required
-                value={form.city}
-                onChange={(e) => handleFieldChange('city', e.target.value)}
-                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-              />
+        {/* Location - required for both single and group listings */}
+        <div>
+          <label className="block font-medium mb-2">
+            Listing Location <span className="text-red-500">*</span>
+          </label>
+          <p className="text-sm text-[var(--foreground)]/60 mb-3">
+            Your listing location is required and will be used to display on the marketplace map. City and state will be automatically determined from your location.
+          </p>
+          
+          <button
+            type="button"
+            onClick={handleGetLocation}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-[var(--background)] rounded-lg hover:bg-[var(--primary)]/90 transition-colors mb-4"
+          >
+            <MapPin className="w-4 h-4" />
+            {location ? 'Update Location' : 'Get My Location'}
+          </button>
+
+          {locationError && (
+            <p className="text-sm text-red-500 mb-2">{locationError}</p>
+          )}
+
+          {location && location.lat !== undefined && location.lng !== undefined ? (
+            <div className="mt-4 space-y-3">
+              <div>
+                <p className="text-sm text-[var(--foreground)]/80 mb-2">
+                  Click on the map to set your listing location, or edit coordinates manually:
+                </p>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="text-xs text-[var(--foreground)]/60 mb-1 block">Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={location.lat}
+                      onChange={(e) => handleManualLocation('lat', e.target.value)}
+                      className="w-full px-2 py-1 text-sm bg-[var(--background)] border border-[var(--muted)]/40 rounded"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs text-[var(--foreground)]/60 mb-1 block">Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={location.lng}
+                      onChange={(e) => handleManualLocation('lng', e.target.value)}
+                      className="w-full px-2 py-1 text-sm bg-[var(--background)] border border-[var(--muted)]/40 rounded"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="h-64 rounded-lg overflow-hidden border border-[var(--muted)]/30">
+                <ClickableMap
+                  location={location}
+                  onLocationClick={handleLocationSet}
+                />
+              </div>
             </div>
-            <div className="flex-1">
-              <label htmlFor="state" className="block font-medium mb-1">
-                State
-              </label>
-              <input
-                id="state"
-                type="text"
-                required
-                value={form.state}
-                onChange={(e) => handleFieldChange('state', e.target.value)}
-                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-              />
+          ) : (
+            <div className="mt-4">
+              <p className="text-sm text-[var(--foreground)]/70 mb-3">
+                Please click &quot;Get My Location&quot; above or set your location on the map below:
+              </p>
+              <div className="h-64 rounded-lg overflow-hidden border border-[var(--muted)]/30">
+                <ClickableMap
+                  location={null}
+                  onLocationClick={handleLocationSet}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Image Upload & Gallery */}
         <div>
