@@ -187,6 +187,13 @@ const envVars: EnvVar[] = [
       return true;
     },
   },
+
+  // Optional - eBay API
+  {
+    name: 'EBAY_APP_ID',
+    required: false,
+    description: 'eBay Finding API App ID (Client ID). Optional - if not provided, the eBay price research feature will generate search URLs instead of using the API',
+  },
 ];
 
 /**
@@ -321,6 +328,7 @@ export const env = {
   googleClientId: () => process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: () => process.env.GOOGLE_CLIENT_SECRET,
   gaMeasurementId: () => process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+  ebayAppId: () => process.env.EBAY_APP_ID,
   
   // Node environment
   nodeEnv: () => process.env.NODE_ENV || 'development',

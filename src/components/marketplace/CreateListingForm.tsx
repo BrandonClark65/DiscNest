@@ -17,6 +17,7 @@ import GroupedSelect from '@/components/ui/GroupedSelect';
 import Image from 'next/image';
 import { MapPin } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import EbayPriceResearch from '@/components/marketplace/EbayPriceResearch';
 
 // Dynamically import the clickable map component to avoid SSR issues
 const ClickableMap = dynamic(
@@ -637,19 +638,30 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
 
         {/* Price - only for single listings with Sell type */}
         {!isGroupListing && form.type === 'Sell' && (
-          <div>
-            <label htmlFor="price" className="block font-medium mb-1">
-              Price ($)
-            </label>
-            <input
-              id="price"
-              type="number"
-              required={form.type === 'Sell'}
-              value={form.price}
-              onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
-              className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+          <>
+            <div>
+              <label htmlFor="price" className="block font-medium mb-1">
+                Price ($)
+              </label>
+              <input
+                id="price"
+                type="number"
+                required={form.type === 'Sell'}
+                value={form.price}
+                onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+              />
+            </div>
+            
+            {/* eBay Price Research Tool */}
+            <EbayPriceResearch
+              title={form.title}
+              brand={form.brand}
+              plastic={form.plastic}
+              condition={form.condition}
+              onPriceSelect={(price) => handleFieldChange('price', price)}
             />
-          </div>
+          </>
         )}
 
         {/* Location - required for both single and group listings */}
