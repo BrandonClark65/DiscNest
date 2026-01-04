@@ -1,12 +1,13 @@
 'use client';
 
-import type { Listing } from '@/types/listing';
+import type { Listing, ListingAdmin } from '@/types/listing';
 import Image from 'next/image';
 import { useState } from 'react';
 import GradientButton from '@/components/ui/GradientButton';
+import SellerRatingBadge from '@/components/ratings/SellerRatingBadge';
 
 type ListingCardProps = {
-  listing: Listing;
+  listing: Listing | ListingAdmin;
   isOwner?: boolean;
   onDelete?: () => void;
   onMarkSold?: () => void;
@@ -50,7 +51,7 @@ export default function ListingCard({
 
         <Image
           src={imageSrc}
-          alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'}${listing.condition ? ` in ${listing.condition} condition` : ''}${listing.price !== undefined ? ` for $${listing.price.toFixed(2)}` : ''}`}
+          alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'}${listing.listingType !== 'group' && listing.condition ? ` in ${listing.condition} condition` : ''}${listing.listingType !== 'group' && listing.price !== undefined ? ` for $${listing.price.toFixed(2)}` : ''}`}
           fill
           priority={false}
           className={`object-cover transition-opacity duration-300 ${
@@ -80,21 +81,63 @@ export default function ListingCard({
           {listing.title}
         </h3>
 
-        <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
-          {listing.brand} • {listing.condition}
-        </p>
+        {listing.listingType !== 'group' ? (
+          <>
+            <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
+              {listing.brand ? `${listing.brand}${listing.condition ? ` • ${listing.condition}` : ''}` : listing.condition || ''}
+            </p>
 
-        {cityState && (
-          <p className="text-sm text-[var(--foreground)]/60 line-clamp-1">
-            {cityState}
-          </p>
+            {cityState && (
+              <p className="text-sm text-[var(--foreground)]/60 line-clamp-1">
+                {cityState}
+              </p>
+            )}
+
+            {listing.type === 'Sell' && (
+              <p className="text-base font-semibold mt-1 text-[var(--foreground)]">
+                {listing.price !== undefined
+                  ? `$${listing.price.toFixed(2)}`
+                  : 'Price not listed'}
+              </p>
+            )}
+
+            {/* Seller Rating */}
+            {(() => {
+              // Type guard to check if this is ListingAdmin with populated userId
+              if ('userId' in listing && typeof listing.userId === 'object' && listing.userId && '_id' in listing.userId) {
+                const seller = listing.userId as {
+                  _id: string;
+                  averageRating?: number | null;
+                  ratingCount?: number;
+                  username?: string;
+                };
+                return (
+                  <div className="mt-2 mb-3">
+                    <SellerRatingBadge
+                      averageRating={seller.averageRating ?? null}
+                      ratingCount={seller.ratingCount ?? 0}
+                      userId={seller._id}
+                      username={seller.username}
+                      showCount={false}
+                    />
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </>
+        ) : (
+          <>
+            {listing.brand && (
+              <p className="text-sm text-[var(--foreground)]/70 line-clamp-1">
+                {listing.brand}
+              </p>
+            )}
+            <p className="text-sm text-[var(--foreground)]/60 line-clamp-2 mt-1 mb-3">
+              {listing.description || ''}
+            </p>
+          </>
         )}
-
-        <p className="text-base font-semibold mt-1 mb-3 text-[var(--foreground)]">
-          {listing.price !== undefined
-            ? `$${listing.price.toFixed(2)}`
-            : 'Price not listed'}
-        </p>
 
         {/* ---------- ACTIONS ---------- */}
         <div className="mt-auto space-y-2 flex flex-col items-center">

@@ -56,7 +56,7 @@ export default function PendingListingsTab() {
                     >
                       <Image
                         src={url}
-                        alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'}${listing.condition ? ` in ${listing.condition} condition` : ''}`}
+                        alt={`${listing.title} - ${listing.brand || ''} ${listing.type || 'disc golf disc'}${listing.listingType !== 'group' && listing.condition ? ` in ${listing.condition} condition` : ''}`}
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 160px"
@@ -72,10 +72,15 @@ export default function PendingListingsTab() {
               <div className="flex-1 space-y-1 text-sm sm:text-base">
                 <p><strong>Title:</strong> {listing.title}</p>
                 <p><strong>User:</strong> {listing.userId?.name} ({listing.userId?.email})</p>
-                <p><strong>Brand:</strong> {listing.brand || '-'}</p>
-                <p><strong>Plastic:</strong> {listing.plastic || '-'}</p>
-                <p><strong>Condition:</strong> {listing.condition}</p>
-                <p><strong>Price:</strong> {listing.price ? `$${listing.price.toFixed(2)}` : 'Not listed'}</p>
+                <p><strong>Listing Type:</strong> {listing.listingType === 'group' ? 'Group of Discs' : 'Single Disc'}</p>
+                {listing.brand && <p><strong>Brand:</strong> {listing.brand}</p>}
+                {listing.listingType !== 'group' && (
+                  <>
+                    {listing.plastic && <p><strong>Plastic:</strong> {listing.plastic}</p>}
+                    {listing.condition && <p><strong>Condition:</strong> {listing.condition}</p>}
+                    {listing.type === 'Sell' && <p><strong>Price:</strong> {listing.price ? `$${listing.price.toFixed(2)}` : 'Not listed'}</p>}
+                  </>
+                )}
                 <p><strong>Submitted:</strong> {listing.createdAt ? new Date(listing.createdAt).toLocaleString() : '-'}</p>
               </div>
             </div>

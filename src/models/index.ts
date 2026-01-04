@@ -7,5 +7,6 @@ import "./MessageThread";
 import "./FlaggedMessage";
 import "./UserReport";
 import "./ErrorLog";
+import "./Rating";
 
 export {};

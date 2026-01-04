@@ -12,15 +12,35 @@ import ProfileTabs from '@/components/profile/ProfileTabs';
 import ProfileBasicTab from '@/components/profile/ProfileBasicTab';
 import ProfileDiscTab from '@/components/profile/ProfileDiscTab';
 import ProfilePlayTab from '@/components/profile/ProfilePlayTab';
+import ProfileStoreTab from '@/components/profile/ProfileStoreTab';
+import UserRating from '@/components/ratings/UserRating';
+import RatingsList from '@/components/ratings/RatingsList';
 
 type EditableUserFields = z.infer<typeof editableProfileSchema>;
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
-  const [profile, setProfile] = useState<Partial<EditableUserFields>>({});
+  const [profile, setProfile] = useState<Partial<EditableUserFields> & { role?: string }>({});
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'basic' | 'disc' | 'play'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'disc' | 'play' | 'store'>('basic');
   const [discCount, setDiscCount] = useState(0);
+  const [userRole, setUserRole] = useState<string>('user');
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [ratings, setRatings] = useState<Array<{
+    _id: string;
+    rating: number;
+    review?: string;
+    createdAt: string;
+    rater: {
+      _id: string;
+      name?: string;
+      username?: string;
+      avatarUrl?: string;
+    } | null;
+  }>>([]);
+  const [ratingsPage, setRatingsPage] = useState(1);
+  const [ratingsTotalPages, setRatingsTotalPages] = useState(1);
 
   // --- Fetch profile ---
   const fetchProfile = useCallback(() => {
@@ -31,18 +51,47 @@ export default function ProfilePage() {
         .then((data) => {
           if (!data.user) return;
           const userData = { ...data.user };
+          setUserRole(data.user.role || 'user');
+          // Keep location for store tab, but don't include in Zod parse
+          const locationData = userData.location;
           delete userData.location; // 🧩 prevent Zod from parsing this field
           const parsed = editableProfileSchema.parse(userData);
-          setProfile(parsed);
+          setProfile({ ...parsed, location: locationData, role: data.user.role });
           setDiscCount(data.user.discCount || 0);
+          setAverageRating(data.user.averageRating ?? null);
+          setRatingCount(data.user.ratingCount || 0);
         })
         .catch((err) => console.error('Error loading profile:', err));
     }
   }, [status]);
 
+  // --- Fetch ratings ---
+  const fetchRatings = useCallback(() => {
+    if (status === 'authenticated' && session?.user) {
+      const userId = (session.user as { id?: string }).id;
+      if (!userId) return;
+
+      fetch(`/api/users/${userId}/ratings?page=${ratingsPage}&limit=10`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ratings) {
+            setRatings(data.ratings);
+            setAverageRating(data.averageRating ?? null);
+            setRatingCount(data.ratingCount || 0);
+            setRatingsTotalPages(data.pagination?.totalPages || 1);
+          }
+        })
+        .catch((err) => console.error('Error loading ratings:', err));
+    }
+  }, [status, session, ratingsPage]);
+
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  useEffect(() => {
+    fetchRatings();
+  }, [fetchRatings]);
 
 
   const handleSave = async () => {
@@ -120,6 +169,31 @@ export default function ProfilePage() {
         onAvatarUpdate={fetchProfile}
       />
 
+      {/* User Rating */}
+      <div className="bg-[var(--surface)] p-5 rounded-2xl shadow-md border border-[var(--muted)]/30">
+        <UserRating
+          averageRating={averageRating}
+          ratingCount={ratingCount}
+          size="md"
+        />
+      </div>
+
+      {/* Ratings List */}
+      {ratingCount > 0 && (
+        <div className="bg-[var(--surface)] p-5 rounded-2xl shadow-md border border-[var(--muted)]/30">
+          <RatingsList
+            ratings={ratings}
+            averageRating={averageRating}
+            ratingCount={ratingCount}
+            currentPage={ratingsPage}
+            totalPages={ratingsTotalPages}
+            onPageChange={(page) => {
+              setRatingsPage(page);
+            }}
+          />
+        </div>
+      )}
+
       <ProfileProgress percent={completionPercent} />
 
       <ProfileTabs activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -128,6 +202,7 @@ export default function ProfilePage() {
         {activeTab === 'basic' && <ProfileBasicTab profile={profile} setProfile={setProfile} />}
         {activeTab === 'disc' && <ProfileDiscTab profile={profile} setProfile={setProfile} />}
         {activeTab === 'play' && <ProfilePlayTab profile={profile} setProfile={setProfile} />}
+        {activeTab === 'store' && <ProfileStoreTab profile={profile} setProfile={setProfile} userRole={userRole} />}
       </div>
 
       <div className="flex justify-center sm:justify-end">

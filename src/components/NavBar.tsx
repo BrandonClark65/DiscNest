@@ -19,12 +19,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
 import NavLogo from '@/components/NavLogo';
+import useUnreadMessages from '@/hooks/useUnreadMessages';
 
 export default function NavBar() {
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
+  const hasUnreadMessages = useUnreadMessages();
 
   const toggleMenu = () => setMenuOpen((p) => !p);
   const toggleDropdown = () => setDropdownOpen((p) => !p);
@@ -95,10 +97,13 @@ export default function NavBar() {
           {status === 'authenticated' && (
             <Link
               href="/messages"
-              className="ml-2 flex items-center justify-center bg-gradient-brand text-white rounded-full p-2 hover:scale-105 transition-transform shadow-md"
+              className="ml-2 relative flex items-center justify-center bg-gradient-brand text-white rounded-full p-2 hover:scale-105 transition-transform shadow-md"
               title="Messages"
             >
               <MessageCircle size={20} />
+              {hasUnreadMessages && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+              )}
             </Link>
           )}
 
@@ -216,9 +221,20 @@ export default function NavBar() {
                 <Link
                   href="/messages"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 w-full text-foreground hover:text-accent"
+                  className="flex items-center gap-2 w-full text-foreground hover:text-accent relative"
                 >
-                  <MessageCircle size={18} /> Messages
+                  <div className="relative">
+                    <MessageCircle size={18} />
+                    {hasUnreadMessages && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-surface" />
+                    )}
+                  </div>
+                  Messages
+                  {hasUnreadMessages && (
+                    <span className="ml-auto text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                      New
+                    </span>
+                  )}
                 </Link>
               )}
 

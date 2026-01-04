@@ -51,19 +51,36 @@ async function getMarketplaceListings(): Promise<{ listings: ListingType[]; tota
       .limit(limit)
       .lean();
 
-    // Populate user names
+    // Populate user names and rating data
     const userIds = listings.map((l) => l.userId);
-    const users = await User.find({ _id: { $in: userIds } }, { _id: 1, name: 1 }).lean();
-    const userMap = Object.fromEntries(
-      users.map((u) => {
-        const userDoc = u as unknown as {
-          _id: { toString: () => string } | string;
-          name?: string;
-        };
-        const userId = typeof userDoc._id === 'string' ? userDoc._id : userDoc._id.toString();
-        return [userId, userDoc.name || 'Unknown'];
-      })
-    );
+    const users = await User.find({ _id: { $in: userIds } })
+      .select('_id name username avatarUrl averageRating ratingCount')
+      .lean();
+    const userMap: Record<string, {
+      name?: string;
+      username?: string;
+      avatarUrl?: string;
+      averageRating?: number | null;
+      ratingCount?: number;
+    }> = {};
+    users.forEach((u) => {
+      const userDoc = u as unknown as {
+        _id: { toString: () => string } | string;
+        name?: string;
+        username?: string;
+        avatarUrl?: string;
+        averageRating?: number | null;
+        ratingCount?: number;
+      };
+      const userId = typeof userDoc._id === 'string' ? userDoc._id : userDoc._id.toString();
+      userMap[userId] = {
+        name: userDoc.name,
+        username: userDoc.username,
+        avatarUrl: userDoc.avatarUrl,
+        averageRating: userDoc.averageRating ?? null,
+        ratingCount: userDoc.ratingCount ?? 0,
+      };
+    });
 
     // Format listings to match ListingType
     const formattedListings = listings.map((l) => {
@@ -98,11 +115,16 @@ async function getMarketplaceListings(): Promise<{ listings: ListingType[]; tota
         : listingDoc.userId;
       const userIdString = typeof userId === 'string' ? userId : (userId as { toString: () => string })?.toString() || '';
       
+      const userInfo = userMap[userIdString] || { name: 'Unknown' };
       return {
         _id: listingId,
         userId: {
           _id: userIdString,
-          name: userMap[userIdString] || 'Unknown',
+          name: userInfo.name || 'Unknown',
+          username: userInfo.username,
+          avatarUrl: userInfo.avatarUrl,
+          averageRating: userInfo.averageRating ?? null,
+          ratingCount: userInfo.ratingCount ?? 0,
         },
         title: listingDoc.title,
         description: listingDoc.description,

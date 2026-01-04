@@ -28,7 +28,9 @@ export default function ErrorsTab() {
     try {
       const res = await fetch('/api/admin/errors');
       const data = await res.json();
-      setErrorLogs(data.logs || []);
+      // Ensure logs are properly typed
+      const logs = (data.logs || []) as ErrorLog[];
+      setErrorLogs(logs);
     } catch (err) {
       console.error(err);
     }

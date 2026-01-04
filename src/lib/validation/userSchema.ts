@@ -50,6 +50,9 @@ export const userSchema = z.object({
   role: z.string().optional(),
   moderationFlags: z.number().optional(),
   lastFlaggedAt: z.date().nullable().optional(),
+
+  // Store fields
+  storeName: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/, "Store name must be 3-50 characters, lowercase alphanumeric with hyphens only").optional(),
 });
 
 export const editableProfileSchema = userSchema.pick({
@@ -72,6 +75,7 @@ export const editableProfileSchema = userSchema.pick({
   skillLevel: true,
   playFrequency: true,
   preferredPlastics: true,
+  storeName: true,
 });
 
 export type UserSchema = z.infer<typeof userSchema>;

@@ -11,10 +11,12 @@ const ListingSchema = new Schema({
   brand: { type: String, enum: DiscBrands, required: false },
   plastic: { type: String, enum: DiscPlastics, required: false },
 
+  listingType: { type: String, enum: ["single", "group"], default: "single" },
+
   condition: { 
     type: String, 
     enum: ["New", "Like New", "Used", "Worn"], 
-    required: true 
+    required: false 
   },
 
   type: { type: String, enum: ["Sell", "Trade"], required: true },

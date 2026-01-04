@@ -15,6 +15,22 @@ function isValidDiscBrand(brand: string | undefined | null): brand is DiscBrand 
 import { useAnalytics } from '@/lib/useAnalytics';
 import GroupedSelect from '@/components/ui/GroupedSelect';
 import Image from 'next/image';
+import { MapPin } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import EbayPriceResearch from '@/components/marketplace/EbayPriceResearch';
+
+// Dynamically import the clickable map component to avoid SSR issues
+const ClickableMap = dynamic(
+  () => import('@/components/profile/ClickableMap'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full bg-[var(--surface)] text-[var(--foreground)]/70">
+        Loading map...
+      </div>
+    ),
+  }
+);
 
 
 type CreateListingFormProps = {
@@ -29,6 +45,7 @@ type Location = {
 
 export default function CreateListingForm({ user, onClose }: CreateListingFormProps) {
   const { trackEvent, trackConversion } = useAnalytics();
+  const [listingType, setListingType] = useState<'single' | 'group' | null>(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -39,8 +56,6 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     condition: 'Like New',
     type: 'Sell',
     price: 0,
-    city: '',
-    state: '',
     location: null as Location | null,
     imageUrls: [] as string[],
     publicIds: [] as string[],
@@ -59,23 +74,37 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
   const [selectedDisc, setSelectedDisc] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [useGeoLocation, setUseGeoLocation] = useState<boolean | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Detect if geolocation is available
+  // Initialize location from form if available
+  useEffect(() => {
+    if (form.location?.coordinates && Array.isArray(form.location.coordinates) && form.location.coordinates.length === 2) {
+      const [lng, lat] = form.location.coordinates;
+      if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
+        setLocation({ lat, lng });
+      }
+    }
+  }, []);
+
+  // Try to get current location on mount
   useEffect(() => {
     if (!navigator.geolocation) {
-      setUseGeoLocation(false);
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setUseGeoLocation(true);
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setLocation({ lat, lng });
         setForm((prev) => ({
           ...prev,
-          location: { type: 'Point', coordinates: [pos.coords.longitude, pos.coords.latitude] },
+          location: { type: 'Point', coordinates: [lng, lat] },
         }));
       },
-      () => setUseGeoLocation(false)
+      () => {
+        // Geolocation denied or failed - user will need to set manually
+      }
     );
   }, []);
 
@@ -136,6 +165,61 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     }
   }
 
+  // Get current location
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        handleLocationSet(latitude, longitude);
+      },
+      (error) => {
+        setLocationError('Failed to get your location. Please set it manually on the map.');
+        console.error('Geolocation error:', error);
+      }
+    );
+  };
+
+  // Handle location being set (from map click or geolocation)
+  const handleLocationSet = (lat: number, lng: number) => {
+    setLocation({ lat, lng });
+    setLocationError(null);
+    setForm((prev) => ({
+      ...prev,
+      location: {
+        type: 'Point',
+        coordinates: [lng, lat],
+      },
+    }));
+  };
+
+  // Handle manual coordinate input
+  const handleManualLocation = (field: 'lat' | 'lng', value: string) => {
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return;
+
+    if (field === 'lat') {
+      const newLocation = { lat: numValue, lng: location?.lng || 0 };
+      if (location?.lng !== undefined) {
+        handleLocationSet(newLocation.lat, newLocation.lng);
+      } else {
+        setLocation(newLocation);
+      }
+    } else {
+      const newLocation = { lat: location?.lat || 0, lng: numValue };
+      if (location?.lat !== undefined) {
+        handleLocationSet(newLocation.lat, newLocation.lng);
+      } else {
+        setLocation(newLocation);
+      }
+    }
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -144,31 +228,54 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       return;
     }
 
+    // Validate required fields for group listings
+    if (isGroupListing) {
+      if (!form.title.trim()) {
+        toast.error('Title is required for group listings.');
+        return;
+      }
+      if (!form.description.trim()) {
+        toast.error('Description is required for group listings.');
+        return;
+      }
+    }
+
+    // Validate location is set
+    if (!form.location || !form.location.coordinates || form.location.coordinates.length !== 2) {
+      toast.error('Please set a location for your listing. Click on the map or use the "Get Location" button.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      // Ensure location exists
-      if (!form.location) {
-        const location = await new Promise<Location | null>((resolve) => {
-          if (!navigator.geolocation) return resolve(null);
-          navigator.geolocation.getCurrentPosition(
-            (pos) =>
-              resolve({ type: 'Point', coordinates: [pos.coords.longitude, pos.coords.latitude] }),
-            () => resolve(null)
-          );
-        });
-        setForm((prev) => ({ ...prev, location }));
+
+      // Prepare payload - exclude fields not applicable to group listings
+      const payload: Record<string, unknown> = {
+        ...form,
+        weight: form.weight ? Number(form.weight) : null, // convert to number
+        userId: user.id,
+        pendingReview: form.pendingReview,
+        listingType: listingType || 'single', // default to single for backward compatibility
+        // Remove city and state - they will be reverse geocoded from location coordinates
+        city: undefined,
+        state: undefined,
+      };
+
+      // For group listings, exclude single-disc specific fields
+      // Note: location is kept for group listings
+      if (isGroupListing) {
+        delete payload.condition;
+        delete payload.plastic;
+        delete payload.weight;
+        delete payload.color;
+        delete payload.price;
       }
 
       const res = await fetch('/api/listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          weight: form.weight ? Number(form.weight) : null, // convert to number
-          userId: user.id,
-          pendingReview: form.pendingReview,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -187,7 +294,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
         listing_type: form.type,
         listing_price: form.price,
         listing_condition: form.condition,
-        listing_location: form.city && form.state ? `${form.city}, ${form.state}` : undefined,
+        listing_location: form.location?.coordinates ? `Lat: ${form.location.coordinates[1]}, Lng: ${form.location.coordinates[0]}` : undefined,
       });
 
       // Track as conversion if it's a sell listing with price
@@ -278,6 +385,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
   }
 
   function resetForm() {
+    setListingType(null);
     setForm({
       title: '',
       description: '',
@@ -288,8 +396,6 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       condition: 'Like New',
       type: 'Sell',
       price: 0,
-      city: '',
-      state: '',
       location: null,
       imageUrls: [],
       publicIds: [],
@@ -298,12 +404,72 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
     });
     setTouchedFields({ title: false, brand: false, plastic: false, weight: false });
     setSelectedDisc('');
+    setLocation(null);
+    setLocationError(null);
   }
+
+  // Show listing type selection screen if not selected
+  if (listingType === null) {
+    return (
+      <div className="space-y-4">
+        {onClose && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                onClose();
+              }}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              ✕ Close
+            </button>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">What would you like to list?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setListingType('single')}
+              className="p-6 border-2 border-[var(--muted)]/40 rounded-lg hover:border-[var(--primary)] hover:bg-[var(--muted)]/10 transition-all text-left"
+            >
+              <h3 className="text-lg font-semibold mb-2">Single Disc</h3>
+              <p className="text-sm text-[var(--foreground)]/70">
+                List a single disc with detailed information including plastic, weight, condition, and more.
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setListingType('group')}
+              className="p-6 border-2 border-[var(--muted)]/40 rounded-lg hover:border-[var(--primary)] hover:bg-[var(--muted)]/10 transition-all text-left"
+            >
+              <h3 className="text-lg font-semibold mb-2">Group of Discs</h3>
+              <p className="text-sm text-[var(--foreground)]/70">
+                List multiple discs together with a title, description, brand, and images.
+              </p>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // For group listings, show simplified form
+  const isGroupListing = listingType === 'group';
 
   return (
     <div className="space-y-4">
       {onClose && (
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+          <button
+            type="button"
+            onClick={() => setListingType(null)}
+            className="text-[var(--foreground)]/70 hover:text-[var(--foreground)]"
+          >
+            ← Back
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -318,8 +484,8 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Disc selector */}
-        {discs.length > 0 && (
+        {/* Disc selector - only for single listings */}
+        {!isGroupListing && discs.length > 0 && (
           <div>
             <label htmlFor="discSelect" className="block font-medium mb-1">
               Select a disc from your bag or shelf(optional)
@@ -340,10 +506,10 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           </div>
         )}
 
-        {/* Title, Description, Brand, Plastic, Weight, Condition, Type, Price */}
+        {/* Title - required for both */}
         <div>
           <label htmlFor="title" className="block font-medium mb-1">
-            Title
+            Title {isGroupListing && <span className="text-red-500">*</span>}
           </label>
           <input
             id="title"
@@ -355,12 +521,14 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           />
         </div>
 
+        {/* Description - required for group, optional for single */}
         <div>
           <label htmlFor="description" className="block font-medium mb-1">
-            Description
+            Description {isGroupListing && <span className="text-red-500">*</span>}
           </label>
           <textarea
             id="description"
+            required={isGroupListing}
             value={form.description}
             onChange={(e) => handleFieldChange('description', e.target.value)}
             className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
@@ -368,7 +536,7 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           />
         </div>
 
-        {/* Brand Picklist */}
+        {/* Brand Picklist - shown for both, optional */}
         <div>
           <label htmlFor="brand" className="block font-medium mb-1">
             Brand
@@ -388,65 +556,71 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           </select>
         </div>
 
-        {/* Plastic Picklist */}
-        <div>
-          <label htmlFor="plastic" className="block font-medium mb-1">
-            Plastic
-          </label>
-          <GroupedSelect
-            id="plastic"
-            value={form.plastic}
-            onChange={(val) => handleFieldChange('plastic', val)}
-            filterByBrand={isValidDiscBrand(form.brand) ? form.brand : ''}
-            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-            placeholder="Select plastic"
-          />
-        </div>
-        <div>
-          <label htmlFor="weight" className="block font-medium mb-1">
-            Weight (g)
-          </label>
-          <input
-            id="weight"
-            type="number"
-            value={form.weight}
-            onChange={(e) => handleFieldChange('weight', e.target.value)}
-            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-            placeholder="e.g. 175"
-          />
-        </div>
+        {/* Single listing only fields */}
+        {!isGroupListing && (
+          <>
+            {/* Plastic Picklist */}
+            <div>
+              <label htmlFor="plastic" className="block font-medium mb-1">
+                Plastic
+              </label>
+              <GroupedSelect
+                id="plastic"
+                value={form.plastic}
+                onChange={(val) => handleFieldChange('plastic', val)}
+                filterByBrand={isValidDiscBrand(form.brand) ? form.brand : ''}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+                placeholder="Select plastic"
+              />
+            </div>
+            <div>
+              <label htmlFor="weight" className="block font-medium mb-1">
+                Weight (g)
+              </label>
+              <input
+                id="weight"
+                type="number"
+                value={form.weight}
+                onChange={(e) => handleFieldChange('weight', e.target.value)}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+                placeholder="e.g. 175"
+              />
+            </div>
 
-        <div>
-          <label htmlFor="color" className="block font-medium mb-1">
-            Color (optional)
-          </label>
-          <input
-            id="color"
-            type="text"
-            value={form.color}
-            onChange={(e) => handleFieldChange('color', e.target.value)}
-            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-            placeholder="e.g. Red, Blue, Yellow"
-          />
-        </div>
+            <div>
+              <label htmlFor="color" className="block font-medium mb-1">
+                Color (optional)
+              </label>
+              <input
+                id="color"
+                type="text"
+                value={form.color}
+                onChange={(e) => handleFieldChange('color', e.target.value)}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+                placeholder="e.g. Red, Blue, Yellow"
+              />
+            </div>
 
-        <div>
-          <label htmlFor="condition" className="block font-medium mb-1">
-            Condition
-          </label>
-          <select
-            id="condition"
-            value={form.condition}
-            onChange={(e) => handleFieldChange('condition', e.target.value)}
-            className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-          >
-            <option>New</option>
-            <option>Like New</option>
-            <option>Used</option>
-            <option>Worn</option>
-          </select>
-        </div>
+            <div>
+              <label htmlFor="condition" className="block font-medium mb-1">
+                Condition
+              </label>
+              <select
+                id="condition"
+                value={form.condition}
+                onChange={(e) => handleFieldChange('condition', e.target.value)}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+              >
+                <option>New</option>
+                <option>Like New</option>
+                <option>Used</option>
+                <option>Worn</option>
+              </select>
+            </div>
+          </>
+        )}
 
+        {/* Listing Type (Sell/Trade) - shown for both */}
         <div>
           <label htmlFor="type" className="block font-medium mb-1">
             Listing Type
@@ -462,52 +636,106 @@ export default function CreateListingForm({ user, onClose }: CreateListingFormPr
           </select>
         </div>
 
-        {form.type === 'Sell' && (
-          <div>
-            <label htmlFor="price" className="block font-medium mb-1">
-              Price ($)
-            </label>
-            <input
-              id="price"
-              type="number"
-              required={form.type === 'Sell'}
-              value={form.price}
-              onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
-              className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+        {/* Price - only for single listings with Sell type */}
+        {!isGroupListing && form.type === 'Sell' && (
+          <>
+            <div>
+              <label htmlFor="price" className="block font-medium mb-1">
+                Price ($)
+              </label>
+              <input
+                id="price"
+                type="number"
+                required={form.type === 'Sell'}
+                value={form.price}
+                onChange={(e) => handleFieldChange('price', parseFloat(e.target.value))}
+                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
+              />
+            </div>
+            
+            {/* eBay Price Research Tool */}
+            <EbayPriceResearch
+              title={form.title}
+              brand={form.brand}
+              plastic={form.plastic}
+              condition={form.condition}
+              onPriceSelect={(price) => handleFieldChange('price', price)}
             />
-          </div>
+          </>
         )}
 
-        {useGeoLocation === false && (
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label htmlFor="city" className="block font-medium mb-1">
-                City
-              </label>
-              <input
-                id="city"
-                type="text"
-                required
-                value={form.city}
-                onChange={(e) => handleFieldChange('city', e.target.value)}
-                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-              />
+        {/* Location - required for both single and group listings */}
+        <div>
+          <label className="block font-medium mb-2">
+            Listing Location <span className="text-red-500">*</span>
+          </label>
+          <p className="text-sm text-[var(--foreground)]/60 mb-3">
+            Your listing location is required and will be used to display on the marketplace map. City and state will be automatically determined from your location.
+          </p>
+          
+          <button
+            type="button"
+            onClick={handleGetLocation}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-[var(--background)] rounded-lg hover:bg-[var(--primary)]/90 transition-colors mb-4"
+          >
+            <MapPin className="w-4 h-4" />
+            {location ? 'Update Location' : 'Get My Location'}
+          </button>
+
+          {locationError && (
+            <p className="text-sm text-red-500 mb-2">{locationError}</p>
+          )}
+
+          {location && location.lat !== undefined && location.lng !== undefined ? (
+            <div className="mt-4 space-y-3">
+              <div>
+                <p className="text-sm text-[var(--foreground)]/80 mb-2">
+                  Click on the map to set your listing location, or edit coordinates manually:
+                </p>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="text-xs text-[var(--foreground)]/60 mb-1 block">Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={location.lat}
+                      onChange={(e) => handleManualLocation('lat', e.target.value)}
+                      className="w-full px-2 py-1 text-sm bg-[var(--background)] border border-[var(--muted)]/40 rounded"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs text-[var(--foreground)]/60 mb-1 block">Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={location.lng}
+                      onChange={(e) => handleManualLocation('lng', e.target.value)}
+                      className="w-full px-2 py-1 text-sm bg-[var(--background)] border border-[var(--muted)]/40 rounded"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="h-64 rounded-lg overflow-hidden border border-[var(--muted)]/30">
+                <ClickableMap
+                  location={location}
+                  onLocationClick={handleLocationSet}
+                />
+              </div>
             </div>
-            <div className="flex-1">
-              <label htmlFor="state" className="block font-medium mb-1">
-                State
-              </label>
-              <input
-                id="state"
-                type="text"
-                required
-                value={form.state}
-                onChange={(e) => handleFieldChange('state', e.target.value)}
-                className="bg-[var(--background)] border border-[var(--muted)]/40 px-3 py-2 rounded w-full"
-              />
+          ) : (
+            <div className="mt-4">
+              <p className="text-sm text-[var(--foreground)]/70 mb-3">
+                Please click &quot;Get My Location&quot; above or set your location on the map below:
+              </p>
+              <div className="h-64 rounded-lg overflow-hidden border border-[var(--muted)]/30">
+                <ClickableMap
+                  location={null}
+                  onLocationClick={handleLocationSet}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Image Upload & Gallery */}
         <div>

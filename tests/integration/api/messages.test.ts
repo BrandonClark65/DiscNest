@@ -126,7 +126,7 @@ describe("POST /api/messages", () => {
     expect(res.body.error).toBe("Recipient is required");
   });
 
-  test("requires listingId or requestId", async () => {
+  test("allows creating general conversation without listingId or requestId", async () => {
     const user1 = await User.create({
       name: "User 1",
       email: "user1@test.com",
@@ -145,10 +145,17 @@ describe("POST /api/messages", () => {
 
     const res = await request(app)
       .post("/api/messages")
-      .send({ recipientId: user2._id.toString() });
+      .send({ 
+        recipientId: user2._id.toString(),
+        content: "Hello, general conversation",
+      });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe("Either listingId or requestId is required");
+    expect(res.status).toBe(200);
+    expect(res.body.participants).toHaveLength(2);
+    expect(res.body.listingId).toBeFalsy();
+    expect(res.body.requestId).toBeFalsy();
+    expect(res.body.messages).toHaveLength(1);
+    expect(res.body.messages[0].content).toBe("Hello, general conversation");
   });
 
   test("creates new thread with listing", async () => {
@@ -231,5 +238,39 @@ describe("POST /api/messages", () => {
 
     expect(res.status).toBe(200);
     expect(res.body._id).toBe(existingThread._id.toString());
+  });
+
+  test("returns existing general conversation thread if already exists", async () => {
+    const user1 = await User.create({
+      name: "User 1",
+      email: "user1@test.com",
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const user2 = await User.create({
+      name: "User 2",
+      email: "user2@test.com",
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const existingThread = await MessageThread.create({
+      participants: [user1._id, user2._id],
+      messages: [],
+    });
+
+    mockRequireUser.mockResolvedValueOnce(createMockSession(user1));
+
+    const res = await request(app)
+      .post("/api/messages")
+      .send({
+        recipientId: user2._id.toString(),
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body._id).toBe(existingThread._id.toString());
+    expect(res.body.listingId).toBeFalsy();
+    expect(res.body.requestId).toBeFalsy();
   });
 });

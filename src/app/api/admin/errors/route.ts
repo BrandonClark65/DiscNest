@@ -11,9 +11,44 @@ export const GET = withAdminAuth(async () => {
     const logs = await ErrorLog.find()
       .populate("userId", "name email")
       .sort({ createdAt: -1 })
-      .limit(200);
+      .limit(200)
+      .lean();
 
-    return NextResponse.json({ logs });
+    // Transform logs to ensure proper typing
+    const transformedLogs = logs.map((log) => {
+      const logDoc = log as unknown as {
+        _id: { toString: () => string } | string;
+        message: string;
+        route?: string;
+        severity: 'low' | 'medium' | 'high' | 'critical';
+        source: 'client' | 'server';
+        userId?: {
+          name?: string;
+          email?: string;
+        } | { toString: () => string } | string;
+        createdAt: Date | string;
+        resolved?: boolean;
+        metadata?: Record<string, unknown>;
+        stack?: string;
+      };
+      
+      return {
+        _id: typeof logDoc._id === "string" ? logDoc._id : logDoc._id.toString(),
+        message: logDoc.message,
+        route: logDoc.route,
+        severity: logDoc.severity,
+        source: logDoc.source,
+        userId: logDoc.userId && typeof logDoc.userId === "object" && "name" in logDoc.userId
+          ? logDoc.userId
+          : undefined,
+        createdAt: logDoc.createdAt instanceof Date ? logDoc.createdAt.toISOString() : logDoc.createdAt,
+        resolved: logDoc.resolved,
+        metadata: logDoc.metadata,
+        stack: logDoc.stack,
+      };
+    });
+
+    return NextResponse.json({ logs: transformedLogs });
   } catch (err) {
     console.error("Failed to fetch error logs:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

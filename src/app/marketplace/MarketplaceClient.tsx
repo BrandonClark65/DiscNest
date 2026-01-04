@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useMarketplaceData } from '@/hooks/useMarketplaceData';
 import MarketplaceHeader from '@/components/marketplace/MarketplaceHeader';
@@ -12,9 +11,11 @@ import MarketplacePagination from '@/components/marketplace/MarketplacePaginatio
 import CreateListingForm from '@/components/marketplace/CreateListingForm';
 import CreateDiscRequestForm from '@/components/marketplace/CreateDiscRequestForm';
 import RequestsTab from '@/components/marketplace/RequestsTab';
+import NearbyStoresBanner from '@/components/marketplace/NearbyStoresBanner';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 import type { ListingAdmin } from '@/types/listing';
+import { useEffect, useState } from 'react';
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false });
 
@@ -56,6 +57,38 @@ export default function MarketplaceClient({
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [stores, setStores] = useState<Array<{
+    _id: string;
+    name?: string;
+    storeName?: string;
+    location?: { coordinates: [number, number] };
+    avatarUrl?: string;
+    bio?: string;
+    city?: string;
+    state?: string;
+  }>>([]);
+
+  // Fetch stores for map
+  useEffect(() => {
+    if (activeTab === 'market' && userLocation) {
+      const fetchStores = async () => {
+        try {
+          const res = await fetch(
+            `/api/stores?lat=${userLocation.lat}&lng=${userLocation.lng}&limit=50`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setStores(data.stores || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch stores:', error);
+        }
+      };
+      fetchStores();
+    } else {
+      setStores([]);
+    }
+  }, [activeTab, userLocation]);
 
   // Use server-fetched listings when on market tab and no filters/search/pagination are active
   // Once user interacts (filters, search, pagination), use client-fetched data
@@ -196,16 +229,30 @@ export default function MarketplaceClient({
       {/* MAP */}
       {activeTab === 'market' && (
         <section className="mb-10" aria-label="Listings map">
-          <div className="h-64 sm:h-80 md:h-96 rounded-lg overflow-hidden shadow-lg border border-[var(--muted)]/20">
-            {!userLocation ? (
-              <p className="flex items-center justify-center h-full text-foreground/60 italic">
-                Loading map...
-              </p>
-            ) : (
-              <Map listings={displayListings} />
+          <div className="h-64 sm:h-80 md:h-96 rounded-lg overflow-hidden shadow-lg border border-[var(--muted)]/20 relative">
+            <Map 
+              listings={displayListings} 
+              stores={stores} 
+              defaultCenter={userLocation ? undefined : [39.8283, -98.5795]} // Center of US
+              defaultZoom={userLocation ? undefined : 4} // Zoomed out to show US
+            />
+            {!userLocation && (
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-[var(--background)]/95 backdrop-blur-sm border border-[var(--muted)]/40 rounded-lg px-4 py-2 shadow-lg z-[1000] max-w-md text-center">
+                <p className="text-sm text-[var(--foreground)]">
+                  <strong>Allow location access</strong> to see listings near you
+                </p>
+                <p className="text-xs text-[var(--foreground)]/70 mt-1">
+                  Listings are still visible on the map below
+                </p>
+              </div>
             )}
           </div>
         </section>
+      )}
+
+      {/* NEARBY STORES BANNER */}
+      {activeTab === 'market' && (
+        <NearbyStoresBanner userLocation={userLocation} />
       )}
 
       {/* REQUESTS TAB */}

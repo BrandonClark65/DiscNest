@@ -4,7 +4,8 @@ export type Listing = {
   title: string;
   description?: string;
   brand?: string;
-  condition: "New" | "Used - Like New" | "Used - Fair";
+  listingType?: "single" | "group";
+  condition?: "New" | "Like New" | "Used" | "Worn";
   type: "Sell" | "Trade";
   price?: number;
   imageUrls: string[];
@@ -26,6 +27,10 @@ export type ListingAdmin = Listing & {
     _id: string;
     name?: string;
     email?: string;
+    username?: string;
+    avatarUrl?: string;
+    averageRating?: number | null;
+    ratingCount?: number;
   };
 };
 

@@ -1,0 +1,7 @@
+export const RATING_CONFIG = {
+  MIN_MESSAGES_FOR_RATING: 3,
+  MIN_RATING: 1,
+  MAX_RATING: 5,
+  MAX_REVIEW_LENGTH: 500,
+} as const;
+

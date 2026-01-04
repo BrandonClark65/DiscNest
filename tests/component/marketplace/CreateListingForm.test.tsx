@@ -97,6 +97,11 @@ describe("CreateListingForm", () => {
       expect(fetchMock).toHaveBeenCalledWith(bagUrl);
     });
 
+    // First, select "Single Disc" to proceed to the form
+    const singleDiscButton = await screen.findByRole("button", { name: /Single Disc/i });
+    await userEvent.click(singleDiscButton);
+
+    // Now the form should be visible
     const discSelect = await screen.findByLabelText(/Select a disc from your bag/i);
     await userEvent.selectOptions(discSelect, "disc-1");
 
@@ -119,6 +124,11 @@ describe("CreateListingForm", () => {
       expect(fetchMock).toHaveBeenCalledWith(bagUrl);
     });
 
+    // First, select "Single Disc" to proceed to the form
+    const singleDiscButton = await screen.findByRole("button", { name: /Single Disc/i });
+    await userEvent.click(singleDiscButton);
+
+    // Now the form should be visible
     await userEvent.type(screen.getByLabelText(/Title/i), "New Listing");
     await userEvent.type(screen.getByLabelText(/Description/i), "Great disc");
     await userEvent.type(screen.getByLabelText(/Weight/i), "173");
@@ -145,6 +155,7 @@ describe("CreateListingForm", () => {
         weight: 173,
         userId: defaultUser.id,
         price: 40,
+        listingType: "single",
       });
     });
 

@@ -226,7 +226,7 @@ describe("PATCH /api/listings/[id]", () => {
     expect(res.body.error).toBe("Listing not found");
   });
 
-  test("returns 400 for invalid action", async () => {
+  test("ignores invalid action and performs full update when other fields are provided", async () => {
     const user = await User.create({
       name: "Seller",
       email: `seller-invalid-${Date.now()}@test.com`,
@@ -250,12 +250,220 @@ describe("PATCH /api/listings/[id]", () => {
       user: { id: user._id.toString() },
     });
 
+    // Invalid action is ignored, update proceeds with provided fields
     const res = await request(app)
       .patch(`/api/listings/${listing._id}`)
-      .send({ action: "invalidAction" });
+      .send({ action: "invalidAction", title: "Updated Title" });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe("Invalid action");
+    expect(res.status).toBe(200);
+    expect(res.body.listing.title).toBe("Updated Title");
+  });
+
+  test("updates listing when owner", async () => {
+    const user = await User.create({
+      name: "Seller",
+      email: `seller-update-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const listing = await Listing.create({
+      title: "Original Title",
+      description: "Original description",
+      brand: "Innova",
+      plastic: "DX",
+      weight: 175,
+      color: "Red",
+      condition: "New",
+      type: "Sell",
+      price: 20,
+      city: "Los Angeles",
+      state: "CA",
+      userId: user._id,
+      listingType: "single",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString() },
+    });
+
+    const res = await request(app)
+      .patch(`/api/listings/${listing._id}`)
+      .send({
+        title: "Updated Title",
+        description: "Updated description",
+        brand: "Discraft",
+        plastic: "ESP",
+        weight: 177,
+        color: "Blue",
+        condition: "Like New",
+        type: "Trade",
+        price: 25,
+        city: "San Francisco",
+        state: "CA",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.listing).toBeDefined();
+    expect(res.body.listing.title).toBe("Updated Title");
+    expect(res.body.listing.description).toBe("Updated description");
+    expect(res.body.listing.brand).toBe("Discraft");
+    expect(res.body.listing.plastic).toBe("ESP");
+    expect(res.body.listing.weight).toBe(177);
+    expect(res.body.listing.color).toBe("Blue");
+    expect(res.body.listing.condition).toBe("Like New");
+    expect(res.body.listing.type).toBe("Trade");
+    expect(res.body.listing.price).toBe(25);
+    expect(res.body.listing.city).toBe("San Francisco");
+    expect(res.body.listing.state).toBe("CA");
+
+    // Verify listing was updated in database
+    const updatedListing = await Listing.findById(listing._id);
+    expect(updatedListing?.title).toBe("Updated Title");
+    expect(updatedListing?.description).toBe("Updated description");
+    expect(updatedListing?.brand).toBe("Discraft");
+  });
+
+  test("updates group listing correctly (excludes single-disc fields)", async () => {
+    const user = await User.create({
+      name: "Seller",
+      email: `seller-group-update-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const listing = await Listing.create({
+      title: "Group Listing",
+      description: "Multiple discs",
+      brand: "Innova",
+      type: "Sell",
+      userId: user._id,
+      listingType: "group",
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString() },
+    });
+
+    const res = await request(app)
+      .patch(`/api/listings/${listing._id}`)
+      .send({
+        title: "Updated Group Listing",
+        description: "Updated description",
+        brand: "Discraft",
+        // Try to set single-disc fields (should be ignored/cleared)
+        plastic: "ESP",
+        weight: 177,
+        color: "Blue",
+        condition: "Like New",
+        price: 25,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.listing.title).toBe("Updated Group Listing");
+    expect(res.body.listing.description).toBe("Updated description");
+    expect(res.body.listing.brand).toBe("Discraft");
+
+    // Verify single-disc fields are cleared for group listings
+    // Mongoose converts undefined to null when saving
+    const updatedListing = await Listing.findById(listing._id);
+    expect(updatedListing?.plastic == null).toBe(true); // null or undefined
+    expect(updatedListing?.weight == null).toBe(true); // null or undefined
+    expect(updatedListing?.color == null).toBe(true); // null or undefined
+    expect(updatedListing?.condition == null).toBe(true); // null or undefined
+    expect(updatedListing?.price == null).toBe(true); // null or undefined
+  });
+
+  test("updates listing images", async () => {
+    const user = await User.create({
+      name: "Seller",
+      email: `seller-images-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const listing = await Listing.create({
+      title: "Test Disc",
+      brand: "Innova",
+      type: "Sell",
+      condition: "New",
+      userId: user._id,
+      imageUrls: ["https://example.com/image1.jpg"],
+      publicIds: ["publicId1"],
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString() },
+    });
+
+    const res = await request(app)
+      .patch(`/api/listings/${listing._id}`)
+      .send({
+        imageUrls: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
+        publicIds: ["publicId1", "publicId2"],
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.listing.imageUrls).toHaveLength(2);
+    expect(res.body.listing.imageUrls).toContain("https://example.com/image2.jpg");
+    expect(res.body.listing.publicIds).toHaveLength(2);
+  });
+
+  test("returns 403 when non-owner tries to update", async () => {
+    const owner = await User.create({
+      name: "Owner",
+      email: `owner-update-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const otherUser = await User.create({
+      name: "Other User",
+      email: `other-update-${Date.now()}@test.com`,
+      password: "hashed",
+      shareableBagId: `bag-${Date.now()}-${Math.random()}`,
+    });
+
+    const listing = await Listing.create({
+      title: "Test Disc",
+      brand: "Innova",
+      type: "Sell",
+      condition: "New",
+      userId: owner._id,
+      location: {
+        type: "Point",
+        coordinates: [-118, 34],
+      },
+    });
+
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: otherUser._id.toString() },
+    });
+
+    const res = await request(app)
+      .patch(`/api/listings/${listing._id}`)
+      .send({
+        title: "Hacked Title",
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("Forbidden");
+
+    // Verify listing was not updated
+    const unchangedListing = await Listing.findById(listing._id);
+    expect(unchangedListing?.title).toBe("Test Disc");
   });
 });
 

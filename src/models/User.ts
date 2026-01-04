@@ -70,6 +70,9 @@ const UserSchema = new mongoose.Schema(
     moderationFlags: { type: Number, default: 0 },
     lastFlaggedAt: Date,
 
+    // ---- Store Fields ----
+    storeName: { type: String, unique: true, sparse: true }, // Unique store name for URL slug
+
     // ---- Discs ----
     discShelf: [{ type: mongoose.Schema.Types.ObjectId, ref: "Disc" }],
     bag: [{ type: mongoose.Schema.Types.ObjectId, ref: "Disc" }],
@@ -77,8 +80,23 @@ const UserSchema = new mongoose.Schema(
     shareableBagId: { type: String, unique: true, sparse: true },
     bagVisibility: { type: String, enum: ["private", "public"], default: "private" },
     discCount: { type: Number, default: 0 },
+
+    // ---- Ratings ----
+    averageRating: { type: Number, default: null }, // null if no ratings yet
+    ratingCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
+
+// Pre-save hook: remove location if it doesn't have valid coordinates
+UserSchema.pre("save", function (next) {
+  if (this.location && (!this.location.coordinates || this.location.coordinates.length !== 2)) {
+    this.location = undefined;
+  }
+  next();
+});
+
+// Create geo index for location queries
+UserSchema.index({ location: "2dsphere" });
 
 export default mongoose.models.User || mongoose.model("User", UserSchema);

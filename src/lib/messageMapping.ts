@@ -144,8 +144,60 @@ export function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
       }
 
       // Fallback (string or unknown)
+      // If String(p) would produce "[object Object]", try to extract _id from the object
+      if (p && typeof p === 'object' && '_id' in p) {
+        const pObj = p as { _id: unknown };
+        const id = pObj._id;
+        
+        // Try to extract the ID properly
+        if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) {
+          return {
+            _id: id,
+            name: "Unknown",
+          };
+        }
+        
+        if (id && typeof id === 'object') {
+          // Try toHexString for Mongoose ObjectId
+          if ('toHexString' in id && typeof (id as { toHexString: () => string }).toHexString === 'function') {
+            try {
+              const hexStr = (id as { toHexString: () => string }).toHexString();
+              if (/^[0-9a-fA-F]{24}$/.test(hexStr)) {
+                return {
+                  _id: hexStr,
+                  name: "Unknown",
+                };
+              }
+            } catch (e) {
+              // Continue to toString
+            }
+          }
+          
+          // Try toString
+          if ('toString' in id && typeof (id as { toString: () => string }).toString === 'function') {
+            try {
+              const idStr = (id as { toString: () => string }).toString();
+              if (idStr !== '[object Object]' && /^[0-9a-fA-F]{24}$/.test(idStr)) {
+                return {
+                  _id: idStr,
+                  name: "Unknown",
+                };
+              }
+            } catch (e) {
+              // Continue
+            }
+          }
+        }
+      }
+      
+      // Last resort: String conversion (but log a warning)
+      const strId = String(p);
+      if (strId === '[object Object]') {
+        console.warn('[messageMapping] Failed to extract participant ID, got "[object Object]"', p);
+      }
+      
       return {
-        _id: String(p),
+        _id: strId,
         name: "Unknown",
       };
     }),
