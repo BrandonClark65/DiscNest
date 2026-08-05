@@ -11,6 +11,13 @@ export default defineConfig({
     globals: true,
     setupFiles: "./tests/setup.ts",
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    // The integration suite starts a mongodb-memory-server per test file, and
+    // a cold `mongod` regularly takes longer than vitest's 5s default. That
+    // showed up as widespread, wandering failures: the first test in a file
+    // times out, then the rest of the file returns 500s because the connection
+    // never came up. The tests were fine; the budget was too tight.
+    testTimeout: 30000,
+    hookTimeout: 60000,
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json", "lcov"],
