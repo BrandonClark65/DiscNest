@@ -21,6 +21,11 @@ export default function Footer() {
                   Marketplace
                 </Link>
               </li>
+              <li>
+                <Link href="/handicap" className="hover:text-primary transition-colors">
+                  Handicap Calculator
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

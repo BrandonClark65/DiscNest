@@ -13,13 +13,14 @@ setupStandardMocks();
 setupCloudinaryMocks();
 setupMessageMocks();
 
+beforeAll(connectTestDb);
+afterAll(closeTestDb);
+
 describe("GET /api/listings/[id]", () => {
-  beforeAll(connectTestDb);
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
     resetAllMocks();
   });
-  afterAll(closeTestDb);
 
   test("returns listing by ID", async () => {
     const user = await User.create({
@@ -71,12 +72,10 @@ describe("GET /api/listings/[id]", () => {
 });
 
 describe("PATCH /api/listings/[id]", () => {
-  beforeAll(connectTestDb);
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
     resetAllMocks();
   });
-  afterAll(closeTestDb);
 
   test("requires authentication", async () => {
     const user = await User.create({
@@ -468,12 +467,10 @@ describe("PATCH /api/listings/[id]", () => {
 });
 
 describe("DELETE /api/listings/[id]", () => {
-  beforeAll(connectTestDb);
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
     resetAllMocks();
   });
-  afterAll(closeTestDb);
 
   test("requires authentication", async () => {
     const user = await User.create({

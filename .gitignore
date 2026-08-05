@@ -44,6 +44,9 @@ next-env.d.ts
 
 /secrets/google-vision.json
 
+# local agent notes (not shared)
+CLAUDE.md
+
 # Playwright
 node_modules/
 /test-results/

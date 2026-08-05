@@ -16,7 +16,10 @@ Allow: /catalog
 Allow: /marketplace
 Allow: /listing/
 Allow: /share/
+Allow: /handicap
 
 # Sitemap
-Sitemap: https://discnest.com/sitemap.xml
+# Must use the canonical www host - middleware 301s the non-www form, and a
+# redirecting sitemap URL gets flagged in Google Search Console.
+Sitemap: https://www.discnest.com/sitemap.xml
 

@@ -14,6 +14,7 @@ import {
   Home,
   ChevronDown,
   MessageCircle,
+  Target,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
@@ -36,6 +37,7 @@ export default function NavBar() {
     { href: '/marketplace', label: 'Marketplace', icon: Store },
     { href: '/gear', label: 'Bag Builder', icon: ShoppingBag },
     { href: '/catalog', label: 'Catalog', icon: Disc },
+    { href: '/handicap', label: 'Handicap', icon: Target },
   ];
 
   return (
