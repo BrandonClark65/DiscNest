@@ -12,8 +12,8 @@ setupStandardMocks();
 
 describe("Listings API - Rating Integration", () => {
   beforeAll(connectTestDb);
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
     resetAllMocks();
   });
   afterAll(closeTestDb);

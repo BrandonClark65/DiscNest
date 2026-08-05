@@ -13,13 +13,14 @@ import mongoose from "mongoose";
 setupStandardMocks();
 setupMessageMocks();
 
+beforeAll(connectTestDb);
+afterAll(closeTestDb);
+
 describe("POST /api/ratings", () => {
-  beforeAll(connectTestDb);
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
     resetAllMocks();
   });
-  afterAll(closeTestDb);
 
   test("requires authentication", async () => {
     const { UnauthorizedError } = await import("@/lib/errors/UnauthorizedError");
@@ -180,12 +181,10 @@ describe("POST /api/ratings", () => {
 });
 
 describe("PATCH /api/ratings/[id]", () => {
-  beforeAll(connectTestDb);
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
     resetAllMocks();
   });
-  afterAll(closeTestDb);
 
   test("updates own rating", async () => {
     const seller = await User.create({
@@ -279,12 +278,10 @@ describe("PATCH /api/ratings/[id]", () => {
 });
 
 describe("DELETE /api/ratings/[id]", () => {
-  beforeAll(connectTestDb);
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
     resetAllMocks();
   });
-  afterAll(closeTestDb);
 
   test("deletes own rating", async () => {
     const seller = await User.create({
@@ -373,12 +370,10 @@ describe("DELETE /api/ratings/[id]", () => {
 });
 
 describe("GET /api/users/[userId]/ratings", () => {
-  beforeAll(connectTestDb);
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
     resetAllMocks();
   });
-  afterAll(closeTestDb);
 
   test("returns user's ratings with pagination", async () => {
     const user = await User.create({

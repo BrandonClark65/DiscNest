@@ -25,8 +25,8 @@ describe("Rating Utils", () => {
   beforeAll(async () => {
     await connectTestDb();
   });
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
   });
   afterAll(closeTestDb);
 
