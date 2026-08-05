@@ -13,8 +13,8 @@ setupMessageMocks();
 
 describe("Messages Page - Rating Prompt Integration", () => {
   beforeAll(connectTestDb);
-  afterEach(() => {
-    resetTestDb();
+  afterEach(async () => {
+    await resetTestDb();
     resetAllMocks();
   });
   afterAll(closeTestDb);
