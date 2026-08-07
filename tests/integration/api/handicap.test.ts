@@ -179,6 +179,71 @@ describe("/api/handicap/rounds auto-snapshot behaviour", () => {
     expect(await HandicapSnapshot.countDocuments({ userId: USER_A })).toBe(first);
   });
 
+  test("a backfill writes one snapshot for the day, not one per round", async () => {
+    // The bug this guards: entering a season in one sitting produced a snapshot
+    // per round, all stamped today, which made the progress chart unreadable.
+    for (let i = 1; i <= 12; i += 1) {
+      authAs(USER_A);
+      const res = await request(app)
+        .post("/api/handicap/rounds")
+        .send({
+          source: "pdga",
+          date: `2026-0${i < 10 ? "1" : "2"}-${String((i % 28) + 1).padStart(2, "0")}`,
+          holes: 18,
+          providedRating: 880 + i * 5,
+        });
+      expect(res.status).toBe(201);
+    }
+
+    // Twelve rounds, each shifting the rating, but only one auto snapshot row.
+    const autoCount = await HandicapSnapshot.countDocuments({
+      userId: USER_A,
+      trigger: "auto",
+    });
+    expect(autoCount).toBe(1);
+  });
+
+  test("the day's single auto snapshot tracks the latest rating", async () => {
+    for (let i = 1; i <= 4; i += 1) await seedRound(USER_A, 900, i);
+
+    authAs(USER_A);
+    await request(app)
+      .post("/api/handicap/rounds")
+      .send({ source: "pdga", date: "2026-01-10", holes: 18, providedRating: 900 });
+
+    authAs(USER_A);
+    const second = await request(app)
+      .post("/api/handicap/rounds")
+      .send({ source: "pdga", date: "2026-01-11", holes: 18, providedRating: 1050 });
+
+    const snapshots = await HandicapSnapshot.find({
+      userId: USER_A,
+      trigger: "auto",
+    }).lean<{ rating: number }[]>();
+
+    expect(snapshots).toHaveLength(1);
+    expect(snapshots[0].rating).toBe(second.body.handicap.rating);
+  });
+
+  test("manual snapshots are not collapsed into the daily auto snapshot", async () => {
+    for (let i = 1; i <= 4; i += 1) await seedRound(USER_A, 900, i);
+
+    authAs(USER_A);
+    await request(app)
+      .post("/api/handicap/rounds")
+      .send({ source: "pdga", date: "2026-01-10", holes: 18, providedRating: 900 });
+
+    authAs(USER_A);
+    await request(app).post("/api/handicap/snapshots").send({ note: "milestone" });
+
+    expect(
+      await HandicapSnapshot.countDocuments({ userId: USER_A, trigger: "auto" })
+    ).toBe(1);
+    expect(
+      await HandicapSnapshot.countDocuments({ userId: USER_A, trigger: "manual" })
+    ).toBe(1);
+  });
+
   test("a bad round can still lift the rating by clearing a small-sample penalty", async () => {
     // With 4 rounds the WHS table applies a -1.0 stroke penalty; at 5 rounds it
     // does not. So a fifth round - even a poor one - raises the number. This is

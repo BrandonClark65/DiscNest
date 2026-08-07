@@ -149,12 +149,33 @@ export async function recalculateAndSnapshot(
     return { result, snapshotCreated: false };
   }
 
+  // Auto snapshots are capped at one per day and updated in place.
+  //
+  // Without this, backfilling twenty rounds writes ~twenty rows, because the
+  // rating shifts on nearly every insert. The progress chart no longer reads
+  // these rows - it derives its curve from the rounds themselves - but they
+  // still feed the WHS 365-day high used by the soft/hard caps, so they are
+  // kept rather than dropped.
   if (trigger === "auto") {
-    const latest = await HandicapSnapshot.findOne({ userId })
-      .sort({ createdAt: -1 })
-      .lean<{ rating: number } | null>();
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
-    if (latest && latest.rating === result.rating) {
+    const today = await HandicapSnapshot.findOne({
+      userId,
+      trigger: "auto",
+      createdAt: { $gte: startOfDay },
+    }).sort({ createdAt: -1 });
+
+    if (today) {
+      if (today.rating === result.rating) {
+        return { result, snapshotCreated: false };
+      }
+      today.rating = result.rating;
+      today.handicapThrows = result.handicapThrows;
+      today.targetRating = result.targetRating;
+      today.sampleSize = result.sampleSize;
+      today.provisional = result.provisional;
+      await today.save();
       return { result, snapshotCreated: false };
     }
   }

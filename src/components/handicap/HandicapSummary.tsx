@@ -24,6 +24,14 @@ export default function HandicapSummary({
   const rounds = result?.sampleSize ?? 0;
   const needed = MIN_ROUNDS_PROVISIONAL - rounds;
 
+  // Deliberately unsigned. In golf a "+" handicap means BETTER than scratch, so
+  // showing "+8" for a player who is eight throws worse reads as exactly the
+  // opposite of what it means. Spell the direction out instead.
+  const throws = result?.handicapThrows ?? 0;
+  const throwsMagnitude = Math.abs(throws);
+  const throwsLabel =
+    throws < 0 ? 'Throws given back' : 'Throws received';
+
   if (!result || result.rating == null) {
     return (
       <div className={cardClass}>
@@ -73,11 +81,10 @@ export default function HandicapSummary({
         </div>
         <div>
           <div className="text-4xl font-heading font-bold text-[var(--foreground)]">
-            {result.handicapThrows != null && result.handicapThrows > 0 ? '+' : ''}
-            {result.handicapThrows}
+            {throwsMagnitude}
           </div>
           <div className="text-xs uppercase tracking-wide text-[var(--foreground)]/60 mt-1">
-            Handicap (throws)
+            {throwsLabel}
           </div>
         </div>
       </div>
