@@ -9,6 +9,7 @@ import {
   exceptionalAdjustment,
   courseHandicap,
   computeHandicap,
+  ratingHistory,
   type ScoredRound,
 } from "@/lib/handicap/handicapUtils";
 import {
@@ -251,6 +252,64 @@ describe("courseHandicap", () => {
 
   test("honours a non-scratch league target", () => {
     expect(courseHandicap(850, { ppt: 10 }, 900, 1).unrounded).toBeCloseTo(5, 5);
+  });
+});
+
+describe("ratingHistory", () => {
+  const on = (day: number, rating: number): ScoredRound => ({
+    rating,
+    date: new Date(2026, 2, day),
+    holes: 18,
+  });
+
+  test("returns nothing below the minimum round count", () => {
+    expect(ratingHistory([on(1, 900), on(2, 900)])).toEqual([]);
+  });
+
+  test("starts producing points once the minimum is reached", () => {
+    const points = ratingHistory([on(1, 900), on(2, 900), on(3, 900)]);
+    expect(points).toHaveLength(1);
+    expect(points[0].sampleSize).toBe(3);
+  });
+
+  test("uses the date the round was played, not the order it was entered", () => {
+    // Entered newest-first, as the UI would after a backfill.
+    const points = ratingHistory([on(5, 950), on(4, 940), on(3, 930), on(2, 920)]);
+    const dates = points.map((p) => new Date(p.date).getDate());
+    expect(dates).toEqual([...dates].sort((a, b) => a - b));
+    expect(dates[dates.length - 1]).toBe(5);
+  });
+
+  test("each point reflects only the rounds played up to that date", () => {
+    // A brilliant final round must not retroactively lift earlier points.
+    const points = ratingHistory([on(1, 900), on(2, 900), on(3, 900), on(4, 1100)]);
+    expect(points[0].rating).toBeLessThan(points[points.length - 1].rating);
+  });
+
+  test("collapses multiple rounds on one day into that day's final rating", () => {
+    const sameDay: ScoredRound[] = [
+      on(1, 900),
+      on(2, 900),
+      { rating: 900, date: new Date(2026, 2, 3), holes: 18 },
+      { rating: 1000, date: new Date(2026, 2, 3), holes: 18 },
+    ];
+    const points = ratingHistory(sameDay);
+    const days = points.map((p) => p.date.slice(0, 10));
+    expect(new Set(days).size).toBe(days.length);
+  });
+
+  test("a backfill entered in one sitting still spans the real dates", () => {
+    // The bug this replaced: twenty snapshots all stamped today.
+    const season = Array.from({ length: 20 }, (_, i) => on(i + 1, 900 + i));
+    const points = ratingHistory(season);
+    const uniqueDays = new Set(points.map((p) => p.date.slice(0, 10)));
+    expect(uniqueDays.size).toBeGreaterThan(1);
+  });
+
+  test("marks points provisional until the record is established", () => {
+    const points = ratingHistory(Array.from({ length: 10 }, (_, i) => on(i + 1, 900)));
+    expect(points[0].provisional).toBe(true);
+    expect(points[points.length - 1].provisional).toBe(false);
   });
 });
 
