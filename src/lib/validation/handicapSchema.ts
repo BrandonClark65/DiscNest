@@ -1,5 +1,6 @@
 // src/lib/validation/handicapSchema.ts
 import { z } from "zod";
+import { parseDateKey } from "@/lib/dateOnly";
 import {
   ROUND_TYPES,
   MIN_HOLES,
@@ -12,11 +13,25 @@ import {
   RATING_CEILING,
 } from "@/app/constants/handicapConfig";
 
+/**
+ * The date a round was played, normalized to midnight UTC.
+ *
+ * `z.coerce.date()` happened to produce midnight UTC for the `YYYY-MM-DD` the
+ * form sends, but only by accident of how JS parses date-only strings, and it
+ * kept the time of day on anything else. Normalizing explicitly makes the
+ * calendar-day convention a guarantee readers can rely on, at the one point every
+ * write path - POST and PUT alike - already goes through.
+ */
+const roundDate = z
+  .union([z.string(), z.number(), z.date()])
+  .transform(parseDateKey)
+  .refine((date) => !Number.isNaN(date.getTime()), { message: "Invalid date" });
+
 /** Fields every round carries, whatever its source. */
 const baseRound = {
   courseName: z.string().trim().max(120).optional(),
   layoutName: z.string().trim().max(120).optional(),
-  date: z.coerce.date(),
+  date: roundDate,
   holes: z.number().int().min(MIN_HOLES).max(MAX_HOLES).default(18),
   roundType: z.enum(ROUND_TYPES).default("casual"),
   completed: z.boolean().default(true),

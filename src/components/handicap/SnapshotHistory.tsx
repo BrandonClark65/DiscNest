@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import GradientButton from '@/components/ui/GradientButton';
 import type { RatingPoint } from '@/lib/handicap/handicapUtils';
+import { formatDateKey, toDateKey, localDateKey } from '@/lib/dateOnly';
 
 // chart.js requires scales and elements to be registered per component
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -51,15 +52,19 @@ export default function SnapshotHistory({
   // so backfilling a season shows the real progression instead of a stack of
   // points on today's date.
   const labels = history.map((p) =>
-    new Date(p.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    formatDateKey(p.date, { month: 'short', day: 'numeric' })
   );
 
-  // Milestones are matched to the nearest curve point by day.
+  // Milestones are matched to the nearest curve point by day. The two sides are
+  // read in different zones on purpose: a curve point is a calendar day stored
+  // as midnight UTC, while `createdAt` is a real instant, so the day it belongs
+  // to is the viewer's day - otherwise an evening save west of UTC matches the
+  // following day's round, or no round at all.
   const milestoneByIndex = new Map<number, Snapshot>();
   for (const snapshot of snapshots) {
     if (snapshot.trigger !== 'manual') continue;
-    const day = new Date(snapshot.createdAt).toISOString().slice(0, 10);
-    const idx = history.findIndex((p) => p.date.slice(0, 10) === day);
+    const day = localDateKey(new Date(snapshot.createdAt));
+    const idx = history.findIndex((p) => toDateKey(p.date) === day);
     if (idx >= 0) milestoneByIndex.set(idx, snapshot);
   }
 

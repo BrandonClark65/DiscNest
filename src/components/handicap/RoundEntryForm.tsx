@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import GradientButton from '@/components/ui/GradientButton';
 import toast from 'react-hot-toast';
+import { localDateKey } from '@/lib/dateOnly';
 import {
   ROUND_SOURCES,
   ROUND_TYPES,
@@ -30,7 +31,7 @@ const emptyForm = (): RoundFormValues => ({
   source: 'pdga',
   courseName: '',
   layoutName: '',
-  date: new Date().toISOString().slice(0, 10),
+  date: localDateKey(),
   holes: 18,
   score: '',
   ssa: '',
