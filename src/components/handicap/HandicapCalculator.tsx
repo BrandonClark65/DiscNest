@@ -10,6 +10,7 @@ import RoundsList, { type DisplayRound } from './RoundsList';
 import SnapshotHistory, { type Snapshot } from './SnapshotHistory';
 import {
   computeHandicap,
+  ratingHistory,
   roundRating,
   type ScoredRound,
   type HandicapResult,
@@ -25,6 +26,50 @@ const cardClass =
   'bg-[var(--surface)] p-5 rounded-2xl shadow-md border border-[var(--muted)]/30';
 
 /**
+ * Logged-out rounds live in localStorage, not just React state.
+ *
+ * Signing in navigates away from this page, which destroys component state - so
+ * without this a visitor who enters ten rounds and then clicks "Log in to save"
+ * loses every one of them at exactly the moment they tried to keep them.
+ */
+const PENDING_KEY = 'discnest:handicap:pending-rounds';
+
+/**
+ * A locally-held round keeps the original payload so it can be POSTed later.
+ * Rounds loaded from the API have no payload - they are already saved.
+ */
+type LocalRound = DisplayRound & { payload?: Record<string, unknown> };
+
+function loadPending(): LocalRound[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(PENDING_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePending(rounds: LocalRound[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(PENDING_KEY, JSON.stringify(rounds));
+  } catch {
+    // Private browsing or a full quota - the in-memory rounds still work.
+  }
+}
+
+function clearPending() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(PENDING_KEY);
+  } catch {
+    // Nothing to do.
+  }
+}
+
+/**
  * The calculator works fully logged out, holding rounds in local state, and
  * switches to the API once the visitor signs in. Both paths call the same
  * computeHandicap, so the numbers never disagree.
@@ -33,12 +78,17 @@ export default function HandicapCalculator() {
   const { data: session, status } = useSession();
   const loggedIn = Boolean(session?.user);
 
-  const [rounds, setRounds] = useState<DisplayRound[]>([]);
+  const [rounds, setRounds] = useState<LocalRound[]>([]);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [serverResult, setServerResult] = useState<HandicapResult | null>(null);
   const [targetRating, setTargetRating] = useState(SCRATCH_RATING);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Rounds entered before signing in, waiting to be claimed by an account.
+  const [pending, setPending] = useState<LocalRound[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   // ---- data loading (logged in only) ------------------------------------
   const fetchRounds = useCallback(async () => {
@@ -69,6 +119,65 @@ export default function HandicapCalculator() {
     if (loggedIn) fetchRounds();
   }, [loggedIn, fetchRounds]);
 
+  // ---- pending (logged-out) rounds ---------------------------------------
+  // Hydrate once on mount. Runs in an effect rather than useState's initializer
+  // so the server-rendered markup and the first client render agree.
+  useEffect(() => {
+    if (status === 'loading') return;
+    const stored = loadPending();
+    if (loggedIn) {
+      // Signed in with rounds left over from before - offer to claim them.
+      if (stored.length > 0) setPending(stored);
+    } else if (stored.length > 0) {
+      setRounds(stored);
+    }
+    setHydrated(true);
+  }, [status, loggedIn]);
+
+  // Persist every change while logged out, so navigating to /login is safe.
+  useEffect(() => {
+    if (!hydrated || loggedIn) return;
+    if (rounds.length > 0) savePending(rounds);
+    else clearPending();
+  }, [rounds, hydrated, loggedIn]);
+
+  /** Save rounds entered before signing in into the now-authenticated account. */
+  const handleClaimPending = async () => {
+    setImporting(true);
+    let saved = 0;
+    try {
+      for (const round of pending) {
+        if (!round.payload) continue;
+        const res = await fetch('/api/handicap/rounds', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(round.payload),
+        });
+        if (res.ok) saved += 1;
+      }
+
+      if (saved === pending.length) {
+        toast.success(`Saved ${saved} round${saved === 1 ? '' : 's'} to your account.`);
+      } else {
+        toast.error(`Saved ${saved} of ${pending.length} rounds. Please re-check the rest.`);
+      }
+
+      clearPending();
+      setPending([]);
+      await fetchRounds();
+    } catch {
+      toast.error('Could not save your rounds. They are still here - try again.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleDiscardPending = () => {
+    clearPending();
+    setPending([]);
+    toast.success('Discarded the unsaved rounds.');
+  };
+
   // ---- local computation -------------------------------------------------
   // Logged out we compute in the browser. Logged in we still recompute
   // locally so changing the target rating updates instantly, without a
@@ -91,10 +200,26 @@ export default function HandicapCalculator() {
       ? serverResult
       : localResult;
 
+  // The progress curve is derived from the rounds themselves, so it is correct
+  // the moment a backfill finishes - no snapshot rows required.
+  const history = useMemo(
+    () =>
+      ratingHistory(
+        rounds.map((r) => ({
+          rating: r.computedRating,
+          date: r.date,
+          holes: r.holes,
+          estimated: r.estimated,
+        }))
+      ),
+    [rounds]
+  );
+
   // ---- mutations ---------------------------------------------------------
   const handleAddRound = async (payload: Record<string, unknown>): Promise<boolean> => {
     if (!loggedIn) {
-      // Rate it in the browser and keep it in local state only.
+      // Rate it in the browser and persist locally. The original payload rides
+      // along so the round can be replayed to the API after signing in.
       try {
         const rated = roundRating({
           source: payload.source as RoundSource,
@@ -116,6 +241,7 @@ export default function HandicapCalculator() {
               computedRating: rated.rating,
               estimated: rated.estimated,
               roundType: payload.roundType as string,
+              payload,
             },
             ...prev,
           ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -187,6 +313,34 @@ export default function HandicapCalculator() {
 
   return (
     <div className="space-y-6">
+      {loggedIn && pending.length > 0 && (
+        <div className="bg-[var(--primary)]/10 p-5 rounded-2xl border border-[var(--primary)]/30">
+          <h2 className="font-heading text-lg font-semibold text-[var(--foreground)] mb-1">
+            You have {pending.length} unsaved round{pending.length === 1 ? '' : 's'}
+          </h2>
+          <p className="text-sm text-[var(--foreground)]/75 mb-4">
+            These were entered before you signed in. Save them to your account so they
+            count toward your handicap.
+          </p>
+          <div className="flex gap-3 flex-wrap">
+            <GradientButton
+              label={importing ? 'Saving...' : `Save ${pending.length} to my account`}
+              variant="primary"
+              onClick={handleClaimPending}
+              className="px-5 py-2 text-sm"
+              disabled={importing}
+            />
+            <GradientButton
+              label="Discard"
+              variant="muted"
+              onClick={handleDiscardPending}
+              className="px-5 py-2 text-sm"
+              disabled={importing}
+            />
+          </div>
+        </div>
+      )}
+
       <HandicapSummary
         result={result}
         targetRating={targetRating}
@@ -214,6 +368,7 @@ export default function HandicapCalculator() {
 
       {loggedIn ? (
         <SnapshotHistory
+          history={history}
           snapshots={snapshots}
           onSave={handleSaveSnapshot}
           saving={saving}
@@ -226,9 +381,9 @@ export default function HandicapCalculator() {
               Save your progress
             </h2>
             <p className="text-[var(--foreground)]/70 mb-4">
-              Your rounds are only in this browser tab right now. Create a free account
-              and DiscNest will store them, recalculate your handicap as you add rounds,
-              and chart your progress over time.
+              {rounds.length > 0
+                ? `Your ${rounds.length} round${rounds.length === 1 ? '' : 's'} are saved in this browser, so signing in won't lose them — we'll offer to move them to your account. Create a free account and DiscNest will recalculate your handicap as you add rounds and chart your progress over time.`
+                : 'Create a free account and DiscNest will store your rounds, recalculate your handicap as you add them, and chart your progress over time.'}
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <GradientButton label="Sign up free" href="/signup" variant="primary" className="px-5 py-2" />

@@ -353,6 +353,62 @@ export function courseHandicap(
 // Orchestration
 // ---------------------------------------------------------------------------
 
+/** One point on the rating-over-time curve. */
+export interface RatingPoint {
+  /** ISO date of the round that produced this rating. */
+  date: string;
+  rating: number;
+  provisional: boolean;
+  sampleSize: number;
+}
+
+/**
+ * Rating history, computed as of each round's own date.
+ *
+ * Charting saved snapshots instead of this produces a useless picture when a
+ * player backfills their history: twenty rounds entered in one sitting become
+ * twenty points all stamped today. Recomputing per round date yields the actual
+ * progression across the months they were played.
+ *
+ * Only rounds from MIN_ROUNDS_PROVISIONAL onward yield a point, since below
+ * that we refuse to show a rating at all.
+ */
+export function ratingHistory(rounds: ScoredRound[]): RatingPoint[] {
+  const chronological = [...rounds].sort((a, b) => toTime(a.date) - toTime(b.date));
+  const points: RatingPoint[] = [];
+
+  for (let i = 0; i < chronological.length; i += 1) {
+    // Everything played up to and including this round.
+    const soFar = chronological.slice(0, i + 1);
+    const result = playerRating(soFar);
+    if (!result) continue;
+
+    const date = new Date(toTime(chronological[i].date)).toISOString();
+
+    // Several rounds on one day collapse to that day's final rating, so a
+    // tournament or a double-header does not spike the line.
+    const last = points[points.length - 1];
+    if (last && last.date.slice(0, 10) === date.slice(0, 10)) {
+      points[points.length - 1] = {
+        date,
+        rating: result.rating,
+        provisional: result.provisional,
+        sampleSize: result.sampleSize,
+      };
+      continue;
+    }
+
+    points.push({
+      date,
+      rating: result.rating,
+      provisional: result.provisional,
+      sampleSize: result.sampleSize,
+    });
+  }
+
+  return points;
+}
+
 export interface ComputeOptions {
   targetRating?: number;
   allowance?: number;

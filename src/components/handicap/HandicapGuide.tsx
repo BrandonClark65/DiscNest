@@ -17,7 +17,7 @@ export const HANDICAP_FAQ: { question: string; answer: string }[] = [
   {
     question: 'What is a good disc golf handicap?',
     answer:
-      'On the 1000-point scale, recreational players typically sit between 700 and 850, intermediate players between 850 and 925, advanced players between 925 and 975, and touring professionals above 1000. Expressed as throws against a scratch (1000) target, that is roughly +15 or more for a recreational player, +8 to +15 for intermediate, +3 to +8 for advanced, and 0 or better for a professional.',
+      'On the 1000-point scale, recreational players typically sit between 700 and 850, intermediate players between 850 and 925, advanced players between 925 and 975, and touring professionals above 1000. Expressed as throws against a scratch (1000) target, a recreational player receives about 15 or more throws, an intermediate player 8 to 15, an advanced player 3 to 8, and a professional receives none — a player rated above 1000 gives throws back instead.',
   },
   {
     question: 'How many rounds do I need before my handicap is accurate?',
@@ -189,33 +189,39 @@ export default function HandicapGuide() {
               <tr className="text-left border-b border-[var(--muted)]/30">
                 <th className="py-2 pr-4 font-medium">Skill level</th>
                 <th className="py-2 pr-4 font-medium">Rating</th>
-                <th className="py-2 font-medium">Handicap vs scratch</th>
+                <th className="py-2 font-medium">Throws received vs scratch</th>
               </tr>
             </thead>
             <tbody>
               <tr className="border-b border-[var(--muted)]/15">
                 <td className="py-2 pr-4">Recreational</td>
                 <td className="py-2 pr-4">700–850</td>
-                <td className="py-2">+15 or more</td>
+                <td className="py-2">15 or more</td>
               </tr>
               <tr className="border-b border-[var(--muted)]/15">
                 <td className="py-2 pr-4">Intermediate</td>
                 <td className="py-2 pr-4">850–925</td>
-                <td className="py-2">+8 to +15</td>
+                <td className="py-2">8 to 15</td>
               </tr>
               <tr className="border-b border-[var(--muted)]/15">
                 <td className="py-2 pr-4">Advanced</td>
                 <td className="py-2 pr-4">925–975</td>
-                <td className="py-2">+3 to +8</td>
+                <td className="py-2">3 to 8</td>
               </tr>
               <tr>
                 <td className="py-2 pr-4">Professional</td>
                 <td className="py-2 pr-4">1000+</td>
-                <td className="py-2">0 or better</td>
+                <td className="py-2">None — gives throws back</td>
               </tr>
             </tbody>
           </table>
         </div>
+        <p className="mt-3 text-sm text-[var(--foreground)]/70">
+          Note that we don&apos;t use golf&apos;s plus-handicap notation. In golf a
+          &ldquo;+2&rdquo; handicap means a player <em>better</em> than scratch, which
+          trips up most disc golfers. We just say whether you receive throws or give
+          them back.
+        </p>
       </section>
 
       <section>
