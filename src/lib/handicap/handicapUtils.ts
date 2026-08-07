@@ -43,6 +43,7 @@ import {
   RATING_CEILING,
   type RoundSource,
 } from '@/app/constants/handicapConfig';
+import { toDateKey } from '@/lib/dateOnly';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -386,9 +387,10 @@ export function ratingHistory(rounds: ScoredRound[]): RatingPoint[] {
     const date = new Date(toTime(chronological[i].date)).toISOString();
 
     // Several rounds on one day collapse to that day's final rating, so a
-    // tournament or a double-header does not spike the line.
+    // tournament or a double-header does not spike the line. Both sides are read
+    // in UTC, the zone round dates are stored in - see `@/lib/dateOnly`.
     const last = points[points.length - 1];
-    if (last && last.date.slice(0, 10) === date.slice(0, 10)) {
+    if (last && toDateKey(last.date) === toDateKey(date)) {
       points[points.length - 1] = {
         date,
         rating: result.rating,
