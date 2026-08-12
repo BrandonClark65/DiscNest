@@ -4,6 +4,7 @@ import app from "../../utils/testServer";
 import { connectTestDb, resetTestDb, closeTestDb } from "../../utils/testDb";
 import HandicapRound from "@/models/HandicapRound";
 import HandicapSnapshot from "@/models/HandicapSnapshot";
+import User from "@/models/User";
 import {
   setupStandardMocks,
   mockRequireUser,
@@ -384,5 +385,61 @@ describe("/api/handicap/snapshots", () => {
     expect(res.status).toBe(200);
     expect(res.body.snapshots).toHaveLength(1);
     expect(res.body.snapshots[0].rating).toBe(950);
+  });
+});
+
+describe("/api/handicap/share", () => {
+  test("requires authentication", async () => {
+    const { UnauthorizedError } = await import("@/lib/errors/UnauthorizedError");
+    mockRequireUser.mockRejectedValueOnce(new UnauthorizedError("Unauthorized"));
+
+    const res = await request(app).post("/api/handicap/share");
+    expect(res.status).toBe(401);
+  });
+
+  test("returns 404 when the user no longer exists", async () => {
+    authAs(USER_A);
+
+    const res = await request(app).post("/api/handicap/share");
+    expect(res.status).toBe(404);
+  });
+
+  test("creates a share id and persists it", async () => {
+    const user = await User.create({ name: "Sharer", email: "sharer@test.com" });
+    mockRequireUser.mockResolvedValueOnce({
+      user: { id: user._id.toString(), email: "sharer@test.com" },
+    } as never);
+
+    const res = await request(app)
+      .post("/api/handicap/share")
+      .set("origin", "http://localhost:3000");
+
+    expect(res.status).toBe(200);
+    expect(res.body.shareUrl).toBe(
+      `http://localhost:3000/share/handicap/${res.body.shareableHandicapId}`
+    );
+
+    const saved = await User.findById(user._id);
+    expect(saved?.shareableHandicapId).toBe(res.body.shareableHandicapId);
+  });
+
+  test("reuses the existing share id so old links keep working", async () => {
+    const user = await User.create({
+      name: "Sharer",
+      email: "sharer@test.com",
+      shareableHandicapId: "already-shared-123",
+    });
+
+    for (let i = 0; i < 2; i += 1) {
+      mockRequireUser.mockResolvedValueOnce({
+        user: { id: user._id.toString(), email: "sharer@test.com" },
+      } as never);
+    }
+
+    const first = await request(app).post("/api/handicap/share");
+    const second = await request(app).post("/api/handicap/share");
+
+    expect(first.body.shareableHandicapId).toBe("already-shared-123");
+    expect(second.body.shareableHandicapId).toBe("already-shared-123");
   });
 });

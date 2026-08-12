@@ -81,6 +81,10 @@ const UserSchema = new mongoose.Schema(
     bagVisibility: { type: String, enum: ["private", "public"], default: "private" },
     discCount: { type: Number, default: 0 },
 
+    // ---- Handicap ----
+    // Unguessable id backing /share/handicap/<id>. Created on first share.
+    shareableHandicapId: { type: String, unique: true, sparse: true },
+
     // ---- Ratings ----
     averageRating: { type: Number, default: null }, // null if no ratings yet
     ratingCount: { type: Number, default: 0 },
