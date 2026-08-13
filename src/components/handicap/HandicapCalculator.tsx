@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import GradientButton from '@/components/ui/GradientButton';
+import ShareButton from '@/components/ui/ShareButton';
 import RoundEntryForm from './RoundEntryForm';
 import HandicapSummary from './HandicapSummary';
 import RoundsList, { type DisplayRound } from './RoundsList';
@@ -216,6 +217,42 @@ export default function HandicapCalculator() {
     [rounds]
   );
 
+  // ---- sharing -----------------------------------------------------------
+  // Two links, depending on who is looking. A signed-in player with a rating
+  // shares their own /share/handicap page; anyone else shares the calculator.
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [pageUrl, setPageUrl] = useState('https://www.discnest.com/handicap');
+
+  useEffect(() => {
+    setPageUrl(`${window.location.origin}/handicap`);
+  }, []);
+
+  const canShareHandicap = loggedIn && result.rating != null;
+
+  useEffect(() => {
+    if (!canShareHandicap) {
+      // Signing out must not leave the previous account's link on screen.
+      setShareUrl(null);
+      return;
+    }
+    if (shareUrl) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/handicap/share', { method: 'POST' });
+        if (!res.ok) throw new Error('Failed to create share link');
+        const data = await res.json();
+        if (!cancelled) setShareUrl(data.shareUrl);
+      } catch {
+        // Sharing is a nicety - stay quiet and fall back to the page link.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canShareHandicap, shareUrl]);
+
   // ---- mutations ---------------------------------------------------------
   const handleAddRound = async (payload: Record<string, unknown>): Promise<boolean> => {
     if (!loggedIn) {
@@ -343,6 +380,24 @@ export default function HandicapCalculator() {
           </div>
         </div>
       )}
+
+      <div className="flex justify-end">
+        {shareUrl ? (
+          <ShareButton
+            title="My disc golf handicap"
+            text={`My DiscNest rating is ${result.rating} — see my rounds and handicap.`}
+            url={shareUrl}
+            label="Share my handicap"
+          />
+        ) : (
+          <ShareButton
+            title="Disc golf handicap calculator"
+            text="Work out your disc golf handicap free on DiscNest."
+            url={pageUrl}
+            label="Share calculator"
+          />
+        )}
+      </div>
 
       <HandicapSummary
         result={result}
