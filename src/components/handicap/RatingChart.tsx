@@ -12,6 +12,7 @@ import {
   Legend,
 } from 'chart.js';
 import type { RatingPoint } from '@/lib/handicap/handicapUtils';
+import { formatDateKey, toDateKey, localDateKey } from '@/lib/dateOnly';
 
 // chart.js requires scales and elements to be registered per component
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -42,14 +43,17 @@ export default function RatingChart({
   // The curve is driven by when rounds were PLAYED, not when they were entered,
   // so backfilling a season shows the real progression instead of a stack of
   // points on today's date.
-  const labels = history.map((p) =>
-    new Date(p.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-  );
+  const labels = history.map((p) => formatDateKey(p.date, { month: 'short', day: 'numeric' }));
 
+  // Milestones are matched to the nearest curve point by day. The two sides are
+  // read in different zones on purpose: a curve point is a calendar day stored
+  // as midnight UTC, while `createdAt` is a real instant, so the day it belongs
+  // to is the viewer's day - otherwise an evening save west of UTC matches the
+  // following day's round, or no round at all.
   const milestoneByIndex = new Map<number, ChartMilestone>();
   for (const milestone of milestones) {
-    const day = new Date(milestone.createdAt).toISOString().slice(0, 10);
-    const idx = history.findIndex((p) => p.date.slice(0, 10) === day);
+    const day = localDateKey(new Date(milestone.createdAt));
+    const idx = history.findIndex((p) => toDateKey(p.date) === day);
     if (idx >= 0) milestoneByIndex.set(idx, milestone);
   }
 

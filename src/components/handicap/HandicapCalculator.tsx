@@ -22,6 +22,7 @@ import {
   PTS_PER_THROW_STD,
   type RoundSource,
 } from '@/app/constants/handicapConfig';
+import { parseDateKey } from '@/lib/dateOnly';
 
 const cardClass =
   'bg-[var(--surface)] p-5 rounded-2xl shadow-md border border-[var(--muted)]/30';
@@ -273,7 +274,9 @@ export default function HandicapCalculator() {
               source: payload.source as string,
               courseName: payload.courseName as string | undefined,
               layoutName: payload.layoutName as string | undefined,
-              date: new Date(payload.date as string).toISOString(),
+              // Same normalization the API applies, so a round entered logged
+              // out reads back identically once it is claimed into an account.
+              date: parseDateKey(payload.date as string).toISOString(),
               holes: payload.holes as number,
               computedRating: rated.rating,
               estimated: rated.estimated,

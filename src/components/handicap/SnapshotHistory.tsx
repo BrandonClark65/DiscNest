@@ -35,7 +35,8 @@ export default function SnapshotHistory({
   canSave,
 }: SnapshotHistoryProps) {
   // Auto snapshots exist only to feed the WHS 365-day high; the chart marks the
-  // ones the player deliberately saved.
+  // ones the player deliberately saved. The day-matching against the curve lives
+  // in RatingChart, which is the side that knows how curve points are stored.
   const milestones = snapshots
     .filter((s) => s.trigger === 'manual')
     .map((s) => ({ createdAt: s.createdAt, note: s.note }));

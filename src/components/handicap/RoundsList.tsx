@@ -2,12 +2,14 @@
 
 import { Trash2, Star } from 'lucide-react';
 import { SOURCE_META, type RoundSource } from '@/app/constants/handicapConfig';
+import { formatDateKey } from '@/lib/dateOnly';
 
 export interface DisplayRound {
   _id?: string;
   source: string;
   courseName?: string;
   layoutName?: string;
+  /** Midnight UTC of the day played - see `@/lib/dateOnly`. */
   date: string;
   holes: number;
   computedRating: number;
@@ -86,7 +88,7 @@ export default function RoundsList({
                           aria-label="Counting toward your rating"
                         />
                       )}
-                      {new Date(round.date).toLocaleDateString()}
+                      {formatDateKey(round.date)}
                     </span>
                   </td>
                   <td className="py-2 pr-3 text-[var(--foreground)]">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Info, TrendingUp } from 'lucide-react';
 import type { HandicapResult } from '@/lib/handicap/handicapUtils';
 import {
@@ -23,6 +24,25 @@ export default function HandicapSummary({
 }: HandicapSummaryProps) {
   const rounds = result?.sampleSize ?? 0;
   const needed = MIN_ROUNDS_PROVISIONAL - rounds;
+
+  // The field is edited as a string so an empty box stays empty. Feeding
+  // Number('') back as 0 would re-render the input as "0", and the next
+  // keystroke would land after it - the "0900" leading zero seen when deleting
+  // digits one at a time on a phone keyboard.
+  const [draft, setDraft] = useState(String(targetRating));
+
+  useEffect(() => {
+    if (Number(draft) !== targetRating) setDraft(String(targetRating));
+    // Only resync when the value owned by the parent actually changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetRating]);
+
+  const handleTargetRatingChange = (value: string) => {
+    setDraft(value);
+    if (value.trim() === '') return;
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) onTargetRatingChange(parsed);
+  };
 
   // Deliberately unsigned. In golf a "+" handicap means BETTER than scratch, so
   // showing "+8" for a player who is eight throws worse reads as exactly the
@@ -100,8 +120,10 @@ export default function HandicapSummary({
           id="targetRating"
           type="number"
           step="10"
-          value={targetRating}
-          onChange={(e) => onTargetRatingChange(Number(e.target.value))}
+          inputMode="numeric"
+          value={draft}
+          onChange={(e) => handleTargetRatingChange(e.target.value)}
+          onBlur={() => setDraft(String(targetRating))}
           className="w-40 px-3 py-2 border border-[var(--muted)]/40 rounded-lg bg-[var(--surface)] text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
         <p className="mt-1 text-xs text-[var(--foreground)]/60">
