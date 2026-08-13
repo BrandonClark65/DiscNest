@@ -21,19 +21,31 @@ export default function ShareButton({
 }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, text, url });
-      } catch (err) {
-        console.error('Share failed:', err);
-      }
-    } else {
+  /** Clipboard fallback, used on desktop and whenever the share sheet fails. */
+  const copyLink = async () => {
+    try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       toast.success('Link copied!');
       setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // No clipboard access (insecure origin, or the user denied it).
+      toast.error('Could not copy the link.');
     }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        return;
+      } catch (err) {
+        // Dismissing the share sheet is a normal outcome, not a failure - only
+        // fall back to copying when the sheet itself couldn't handle it.
+        if (err instanceof Error && err.name === 'AbortError') return;
+      }
+    }
+    await copyLink();
   };
 
   return (

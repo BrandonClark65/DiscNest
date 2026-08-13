@@ -22,6 +22,10 @@ interface RoundsListProps {
   /** Indices (into `rounds`) that currently feed the rating. */
   countedIndices: number[];
   onDelete?: (round: DisplayRound, index: number) => void;
+  /** Overridden by the public share page, which is not addressing the owner. */
+  title?: string;
+  caption?: string;
+  emptyMessage?: string;
 }
 
 const cardClass =
@@ -31,6 +35,9 @@ export default function RoundsList({
   rounds,
   countedIndices,
   onDelete,
+  title = 'Your rounds',
+  caption = 'A star marks the rounds currently counting toward your rating.',
+  emptyMessage = 'No rounds yet — add one above to get started.',
 }: RoundsListProps) {
   const counted = new Set(countedIndices);
 
@@ -38,11 +45,9 @@ export default function RoundsList({
     return (
       <div className={cardClass}>
         <h2 className="font-heading text-xl font-semibold text-[var(--foreground)] mb-2">
-          Your rounds
+          {title}
         </h2>
-        <p className="text-muted italic text-[var(--foreground)]/70">
-          No rounds yet — add one above to get started.
-        </p>
+        <p className="text-muted italic text-[var(--foreground)]/70">{emptyMessage}</p>
       </div>
     );
   }
@@ -50,11 +55,9 @@ export default function RoundsList({
   return (
     <div className={cardClass}>
       <h2 className="font-heading text-xl font-semibold text-[var(--foreground)] mb-1">
-        Your rounds
+        {title}
       </h2>
-      <p className="text-xs text-[var(--foreground)]/60 mb-4">
-        A star marks the rounds currently counting toward your rating.
-      </p>
+      <p className="text-xs text-[var(--foreground)]/60 mb-4">{caption}</p>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
