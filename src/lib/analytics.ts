@@ -41,7 +41,8 @@ export type GA4EventName =
   | 'contact_form_submit'
   | 'admin_action'
   | 'pro_comparison_view'
-  | 'pro_comparison_select';
+  | 'pro_comparison_select'
+  | 'share_pro_handicap';
 
 // GA4 Event Parameters
 export interface GA4EventParams {

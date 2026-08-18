@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Info, Trophy } from 'lucide-react';
+import Link from 'next/link';
+import { Info, Trophy, ArrowRight } from 'lucide-react';
 import { throwsFromPro } from '@/lib/handicap/proComparison';
 import { PTS_PER_THROW_STD } from '@/app/constants/handicapConfig';
 import { trackEvent } from '@/lib/analytics';
@@ -188,6 +189,23 @@ export default function ProComparison({ playerRating, ppt = PTS_PER_THROW_STD }:
               )}
             </div>
           )}
+
+          {/* Full experience + sharing lives on the dedicated page */}
+          <div className="mt-4">
+            <Link
+              href={
+                selectedSlug
+                  ? `/handicap/pros?vs=${encodeURIComponent(selectedSlug)}${
+                      effectiveRating != null ? `&r=${effectiveRating}` : ''
+                    }`
+                  : '/handicap/pros'
+              }
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--primary)] hover:underline"
+            >
+              Compare all pros and share your result
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
 
           {/* Honesty + freshness */}
           <div className="mt-4 space-y-2">

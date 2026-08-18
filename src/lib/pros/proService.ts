@@ -1,0 +1,72 @@
+import { connectToDatabase } from "@/lib/mongodb";
+import ProPlayer from "@/models/ProPlayer";
+
+/** A pro serialized for the client and share surfaces. Display-safe only. */
+export interface SerializedPro {
+  id: string;
+  slug: string;
+  name: string;
+  division: string;
+  rating: number;
+  previousRating: number | null;
+  ratingUpdatedAt: string | null;
+  lastSyncedAt: string | null;
+  blurb: string | null;
+  featured: boolean;
+  history: Array<{ rating: number; effectiveDate: string }>;
+}
+
+type ProDoc = {
+  _id: { toString(): string };
+  slug: string;
+  name: string;
+  division: string;
+  rating: number;
+  previousRating?: number;
+  ratingUpdatedAt?: Date;
+  lastSyncedAt?: Date;
+  blurb?: string;
+  featured?: boolean;
+  history?: Array<{ rating: number; effectiveDate: Date }>;
+};
+
+function serialize(doc: ProDoc): SerializedPro {
+  return {
+    id: doc._id.toString(),
+    slug: doc.slug,
+    name: doc.name,
+    division: doc.division,
+    rating: doc.rating,
+    previousRating: doc.previousRating ?? null,
+    ratingUpdatedAt: doc.ratingUpdatedAt
+      ? new Date(doc.ratingUpdatedAt).toISOString()
+      : null,
+    lastSyncedAt: doc.lastSyncedAt ? new Date(doc.lastSyncedAt).toISOString() : null,
+    blurb: doc.blurb ?? null,
+    featured: doc.featured ?? false,
+    history: (doc.history ?? []).map((h) => ({
+      rating: h.rating,
+      effectiveDate: new Date(h.effectiveDate).toISOString(),
+    })),
+  };
+}
+
+/**
+ * All active pros in display order. Shared by the /api/pros route, the
+ * /handicap/pros page, and the OG image route so the query and the safe-field
+ * projection live in exactly one place.
+ */
+export async function getActivePros(): Promise<SerializedPro[]> {
+  await connectToDatabase();
+  const docs = await ProPlayer.find({ active: true })
+    .sort({ displayOrder: 1, name: 1 })
+    .lean<ProDoc[]>();
+  return docs.map(serialize);
+}
+
+/** A single active pro by slug, or null. Used by share links and the OG image. */
+export async function getProBySlug(slug: string): Promise<SerializedPro | null> {
+  await connectToDatabase();
+  const doc = await ProPlayer.findOne({ slug, active: true }).lean<ProDoc | null>();
+  return doc ? serialize(doc) : null;
+}
