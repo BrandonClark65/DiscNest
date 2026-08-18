@@ -9,6 +9,7 @@ import RoundEntryForm from './RoundEntryForm';
 import HandicapSummary from './HandicapSummary';
 import RoundsList, { type DisplayRound } from './RoundsList';
 import SnapshotHistory, { type Snapshot } from './SnapshotHistory';
+import ProComparison from './ProComparison';
 import {
   computeHandicap,
   ratingHistory,
@@ -404,6 +405,9 @@ export default function HandicapCalculator() {
         targetRating={targetRating}
         onTargetRatingChange={setTargetRating}
       />
+
+      <ProComparison playerRating={result.rating} />
+
 
       <div className={cardClass}>
         <h2 className="font-heading text-xl font-semibold text-[var(--foreground)] mb-4">

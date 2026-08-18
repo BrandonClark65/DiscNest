@@ -105,6 +105,16 @@ export const EXCEPTIONAL_ADJ_2 = 2.0 * PTS_PER_THROW_STD;
 /** WHS Appendix C: individual stroke play allowance. */
 export const DEFAULT_ALLOWANCE = 0.95;
 
+/**
+ * Allowance used for the "throws you'd get from a pro" comparison.
+ *
+ * Deliberately 1.0, not DEFAULT_ALLOWANCE. The 0.95 allowance exists to keep a
+ * competitive field equitable; this is a headline comparison, not a match, so
+ * shaving 5% off "you'd get 12 throws from McBeth" only makes the number look
+ * wrong. Kept as its own constant so the choice is visible rather than implied.
+ */
+export const PRO_COMPARISON_ALLOWANCE = 1.0;
+
 /** Accepted hole counts for a submitted round. */
 export const MIN_HOLES = 6;
 export const MAX_HOLES = 36;
