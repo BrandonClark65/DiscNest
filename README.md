@@ -1,208 +1,130 @@
-# 🥏 DiscNest
+# DiscNest
 
-**DiscNest** is a private web platform for disc golf enthusiasts to **buy, sell, and manage discs**.  
-It provides an easy way for users to post listings, message sellers, and manage their personal bag of discs — all within a clean, modern interface.
+DiscNest is a disc golf toolkit built with Next.js. It helps players manage the discs they own, look up any disc in a searchable catalog, and calculate a rating and handicap from the rounds they play.
 
-This project is built with **Next.js 14 (App Router)**, **TypeScript**, **MongoDB**, and **NextAuth** for authentication.  
-It also includes image moderation and compression tools for safe, optimized uploads.
+This repository is public as a portfolio project. It shows how I approach a full production web application: data modeling, authentication, a REST-style API, a component-driven front end, image handling, and a real test suite.
 
----
+**Live site:** https://www.discnest.com
 
-## 🧭 Overview
+## What it does
 
-DiscNest consists of several core modules:
+**Bag Builder.** Track every disc you own and organize it between a shelf and an active bag. The bag view shows how your collection breaks down by speed and stability so you can see the gaps, and you can share a read-only view of your bag with a link.
 
-- **Listings** — CRUD interface for creating and browsing discs  
-- **Messages** — Chat system for buyer-seller communication  
-- **My Bag** — Personal disc collection management  
-- **Map Integration** — Displays listings on a map based on geolocation  
-- **Admin Tools** — Internal utilities for seeding data and managing content  
-- **Authentication** — Handled through NextAuth, with optional auto-login in development  
+**Disc Catalog.** A searchable database of discs from the major brands, each with its flight numbers (speed, glide, turn, fade). Filter and compare molds before you throw or buy.
 
----
+**Handicap Calculator.** Enter PDGA round ratings, UDisc ratings, or plain scores and get a rating and a handicap in throws. It works without an account, and signing in saves your rounds and charts your progress over time. The rating math combines the PDGA round-rating formula with the World Handicap System's "best 8 of 20" selection, which holds up better against self-reported scores than a simple average.
 
-## 🧩 Project Structure
-```
-disc-nest/
-├── src/
-│ ├── app/
-│ │ ├── api/ # Next.js API routes
-│ │ │ ├── listings/ # Listing CRUD endpoints
-│ │ │ ├── users/ # User-related routes
-│ │ │ ├── messages/ # Messaging endpoints
-│ │ │ └── ...
-│ │ ├── listings/ # Listing pages (list view, detail, etc.)
-│ │ ├── messages/ # User chat interface
-│ │ ├── admin/ # Admin-only tools (seed, moderation)
-│ │ ├── layout.tsx # Global layout wrapper
-│ │ └── page.tsx # Home page
-│ │
-│ ├── components/ # Reusable UI and functional components
-│ │ ├── forms/ # Form components (CreateListingForm, etc.)
-│ │ ├── modals/ # Modal components (ChatModal, etc.)
-│ │ └── ui/ # Shared UI elements (buttons, cards, etc.)
-│ │
-│ ├── lib/ # Utilities (MongoDB, auth, geocoding, etc.)
-│ ├── models/ # Mongoose models (Listing, User, Thread, etc.)
-│ ├── types/ # TypeScript definitions
-│ └── styles/ # Tailwind setup and global styles
-│
-├── public/ # Static assets (images, icons)
-├── docs/ # Project documentation
-│   └── testing/ # Testing documentation
-├── .env.local # Local environment variables
-├── next.config.js # Next.js config
-├── package.json
-├── tsconfig.json
-└── README.md
-```
+A buy-and-sell marketplace also exists in the codebase (listings, storefronts, messaging, and seller reviews). It is switched off by default and can be re-enabled with a single environment variable. See [Feature flags](#feature-flags) below.
 
----
-
-## ⚙️ Tech Stack
+## Tech stack
 
 | Layer | Tools |
-|-------|--------|
-| **Frontend** | Next.js 14 (App Router), React, Tailwind CSS |
-| **Backend** | Node.js, Next.js API Routes, Mongoose |
-| **Database** | MongoDB Atlas |
-| **Auth** | NextAuth.js |
-| **Image Handling** | `browser-image-compression`, custom NSFW filter |
-| **Email** | Resend API |
-| **Maps / Geolocation** | OpenCage API for reverse geocoding |
+|-------|-------|
+| Framework | Next.js (App Router), React, TypeScript |
+| Styling | Tailwind CSS |
+| Data | MongoDB with Mongoose |
+| Auth | NextAuth.js |
+| Images | browser-image-compression, plus a lightweight NSFW image check |
+| Email | Resend |
+| Maps | Leaflet with OpenCage for reverse geocoding |
+| Testing | Vitest, Testing Library, Playwright |
+| Hosting | Vercel and MongoDB Atlas |
 
----
+## Project structure
 
-## 🧠 Environment Variables
-
-All secrets are managed locally in `.env.local` and **should not be committed**.  
-
-### Required Variables
-- **MONGODB_URI** = <your_mongodb_connection_string>
-- **NEXTAUTH_SECRET** = <your_nextauth_secret>
-- **NEXTAUTH_URL** = http://localhost:3000 (or your production URL)
-- **CLOUDINARY_CLOUD_NAME** = <your_cloudinary_cloud_Name>
-- **CLOUDINARY_API_KEY** = <your_cloudinary_api_key>
-- **CLOUDINARY_API_SECRET** = <your-cloudinary_api_secret>
-- **ADMIN_EMAIL** = <your_email_for_moderation_and_contact>
-  - **Required:** Email address where admin notifications are sent
-  - Used for: Contact form submissions, error alerts, listing review requests
-- **RESEND_API_KEY** = <resend_api_key>
-- **RESEND_FROM_PROD** = <production_sender_email> (e.g., noreply@discnest.com)
-  - **Required for production:** Must be from a verified domain in Resend
-  - Used when `NODE_ENV=production` for all outgoing emails
-  - See [Resend Domain Verification](#email-setup-resend) below
-- **RESEND_FROM_DEV** = <development_sender_email> (e.g., onboarding@resend.dev)
-  - **Required for development:** Can use Resend's sandbox domain for testing
-  - Used when `NODE_ENV=development` or `NODE_ENV=test`
-  - Default sandbox: `onboarding@resend.dev` (works without verification)
-- **OPENCAGE_API_KEY** = <for_reverse_geocoding>
-- **FROM_ALERT_EMAIL** = <alert_sender_email> (optional)
-  - **Optional:** From email address specifically for alert notifications
-  - Used for: Error alerts, listing review notifications, system alerts
-  - **Falls back to:** `RESEND_FROM_PROD` (production) or `RESEND_FROM_DEV` (development) if not set
-  - **Note:** If you want alerts to come from a different address than regular emails, set this variable
-
-### SEO Variables
-- **NEXT_PUBLIC_BASE_URL** = http://localhost:3000 (for development) or https://discnest.com (for production)
-  - Used for SEO metadata, sitemap, and canonical URLs
-  - Falls back to `https://discnest.com` if not set
-  - **Note:** Must be prefixed with `NEXT_PUBLIC_` to be accessible in client components
-
-### Analytics Variables
-- **NEXT_PUBLIC_GA_MEASUREMENT_ID** = <your_google_analytics_4_measurement_id> (optional)
-  - Google Analytics 4 measurement ID (format: G-XXXXXXXXXX)
-  - Analytics tracking is disabled if not set
-  - Get your measurement ID from [Google Analytics](https://analytics.google.com/)
-  - **Note:** Must be prefixed with `NEXT_PUBLIC_` to be accessible in client components
-
-### Optional Variables
-- **GOOGLE_CLIENT_ID** = <optional>
-  - Required only if using Google OAuth login
-  - Get from [Google Cloud Console](https://console.cloud.google.com/)
-- **GOOGLE_CLIENT_SECRET** = <optional>
-  - Required only if using Google OAuth login
-  - Get from [Google Cloud Console](https://console.cloud.google.com/)
-
-### Automatic Variables (No setup needed)
-- **NODE_ENV** - Automatically set by Next.js ('development', 'production', or 'test')
-  - Determines which email sender to use (`RESEND_FROM_PROD` vs `RESEND_FROM_DEV`)
-
----
-
-## 🧑‍💻 Development Setup
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/<your-org>/disc-nest.git
-cd disc-nest
 ```
-### 2. Install dependencies
+src/
+  app/
+    api/         REST-style route handlers
+    catalog/     Disc catalog pages
+    gear/        Bag builder
+    handicap/    Handicap calculator and shared-rating pages
+    marketplace/ Buy/sell listings (currently disabled)
+    admin/       Internal moderation and seeding tools
+  components/     UI and feature components
+  lib/           Database, auth, and domain logic (handicap engine, etc.)
+  models/        Mongoose schemas
+  types/         Shared TypeScript types
+tests/
+  unit/          Domain logic (the handicap math, validation, and more)
+  component/     React component tests
+  integration/   API route tests
+  e2e/           Playwright end-to-end tests
+```
+
+## A few things worth a look
+
+If you are reading this to get a sense of the code, these are the parts I would point to first:
+
+- `src/lib/handicap/` holds the rating engine. It is pure and framework-free, so the exact same math runs in the browser for a logged-out visitor and on the server for saved rounds. The reasoning behind each rule is written out in the comments, and `tests/unit/handicap.test.ts` pins the tricky sign conventions in place.
+- `src/lib/features.ts` is the single switch that deactivates the marketplace across navigation, routing, sitemap, and metadata without deleting any of it.
+- `tests/` covers the domain logic, components, API routes, and a set of end-to-end flows.
+
+## Getting started
+
+You will need Node.js and a MongoDB connection string (a free MongoDB Atlas cluster works).
+
 ```bash
+git clone https://github.com/BrandonClark65/DiscNest.git
+cd DiscNest
 npm install
 ```
 
-### 3. Add .env.local
-Create a `.env.local` file in the root directory and fill in the required keys above.
+Create a `.env.local` file in the project root with at least the required variables below, then start the dev server:
 
-**Email Setup (Resend):**
-- For **development**, you can use Resend's sandbox domain: `RESEND_FROM_DEV=onboarding@resend.dev`
-- For **production**, you must:
-  1. Verify your domain in [Resend Dashboard](https://resend.com/domains)
-  2. Add DNS records (SPF, DKIM) as instructed by Resend
-  3. Wait for domain verification (usually minutes to hours)
-  4. Use a verified email: `RESEND_FROM_PROD=noreply@yourdomain.com`
-
-### 4. Run MongoDB
-If using MongoDB Atlas, make sure your connection string is valid.
-For local development, ensure mongod is running.
-
-### 5. Start the development server
 ```bash
 npm run dev
 ```
 
-Once running, open:
-👉 http://localhost:3000
+The app runs at http://localhost:3000.
 
-## Common Commands
-| Command         | Description                              |
-| --------------- | ---------------------------------------- |
-| `npm run dev`   | Start dev server on localhost:3000       |
-| `npm run build` | Build production bundle                  |
-| `npm run start` | Serve built app                          |
-| `npm run lint`  | Run ESLint checks                        |
-| `npm run seed`  | Run data seeding script (if implemented) |
+### Environment variables
 
-## 📚 Documentation
+Required:
 
-Additional documentation is available in the [`docs/`](./docs/) directory:
+- `MONGODB_URI`: MongoDB connection string
+- `NEXTAUTH_SECRET`: secret used to sign session tokens (32+ characters)
+- `NEXTAUTH_URL`: base URL of the app (for example `http://localhost:3000`)
 
-- **[Testing Documentation](./docs/testing/)** - Coverage, testing recommendations, and performance reports
-  - [Coverage Guide](./docs/testing/COVERAGE.md) - Test coverage setup and tracking
-  - [Testing Recommendations](./docs/testing/TESTING_RECOMMENDATIONS.md) - Testing roadmap
-  - [Performance Report](./docs/testing/PERFORMANCE_REPORT.md) - API performance benchmarks
+Optional, enabling specific features:
 
-## Internal Admin Utilities
-- Seeding Discs: Admin can seed a base set of discs for development or testing.
-- Moderation: Basic filters and admin checks for images and listings.
-- Access: /admin route is protected by a simple internal login gate (not public-facing).
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: image uploads
+- `RESEND_API_KEY`, `RESEND_FROM_PROD`, `RESEND_FROM_DEV`: transactional email
+- `OPENCAGE_API_KEY`: reverse geocoding for location features
+- `ADMIN_EMAIL`: where admin and contact notifications are sent
+- `NEXT_PUBLIC_BASE_URL`: canonical URL used for metadata, sitemap, and links
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID`: Google Analytics 4 (analytics is off if unset)
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: Google sign-in
+- `NEXT_PUBLIC_MARKETPLACE_ENABLED`: set to `true` to turn the marketplace back on
 
-## Deployment Notes
-- Target: Vercel
-- Database: MongoDB Atlas
-- Email: Resend API
-- Environment variables must be configured in Vercel before deployment.
-- Disable development auto-login in production (via cookie or env flag).
+## Feature flags
 
-# Private Use
-This project is for internal DiscNest development only.
-Do not distribute, fork publicly, or reuse without team approval.
-All source code and assets are proprietary to the DiscNest development team
+The buy-and-sell marketplace is deactivated by default. The code stays in the tree rather than being removed, so it can be brought back without a rewrite.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-## Deploy on Vercel
+Setting `NEXT_PUBLIC_MARKETPLACE_ENABLED=true` restores the marketplace links in the navigation and footer, re-enables the listing, storefront, request, and messaging routes, and adds the marketplace back to the sitemap. With the flag unset or set to anything else, those routes redirect to the home page.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the dev server at localhost:3000 |
+| `npm run build` | Build the production bundle |
+| `npm run start` | Serve the production build |
+| `npm run lint` | Run ESLint |
+| `npm run test` | Run the unit and component test suite |
+| `npm run test:e2e` | Run the Playwright end-to-end tests |
+| `npm run test:coverage` | Run tests with a coverage report |
+| `npm run seed` | Seed a base set of discs for local development |
+
+## Testing
+
+The project uses Vitest and Testing Library for unit and component tests, and Playwright for end-to-end tests. More detail lives in [`docs/testing/`](./docs/testing/), including coverage setup and a performance report.
+
+```bash
+npm run test
+npm run test:e2e
+```
+
+## License and use
+
+This is a personal portfolio project. The source is public so it can be read and reviewed. It is not licensed for reuse or redistribution, and the DiscNest name and assets are not open for reuse. If something here is useful to you or you would like to talk about it, feel free to get in touch.

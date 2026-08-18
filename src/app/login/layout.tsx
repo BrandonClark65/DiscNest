@@ -4,7 +4,7 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
 
 export const metadata: Metadata = {
   title: 'Login | DiscNest',
-  description: 'Login to your DiscNest account to buy, sell, and manage disc golf discs.',
+  description: 'Log in to your DiscNest account to manage your disc golf bag and track your handicap.',
   robots: {
     index: false,
     follow: false,

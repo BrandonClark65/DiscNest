@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Shield, CheckCircle2, User } from 'lucide-react';
+import { Zap, CheckCircle2, User } from 'lucide-react';
 import TrustCard from './TrustCard';
 
 export default function HomeTrustSignals() {
@@ -15,22 +15,22 @@ export default function HomeTrustSignals() {
           transition={{ duration: 0.6 }}
           className="text-center space-y-8"
         >
-          <h2 className="h2">Trusted by Disc Golfers</h2>
+          <h2 className="h2">Built for disc golfers</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <TrustCard
-              icon={<Shield className="w-10 h-10" />}
-              title="Secure Platform"
-              description="Your data and transactions are protected with industry-standard security measures."
+              icon={<Zap className="w-10 h-10" />}
+              title="Free to use"
+              description="Browse the catalog, build your bag, and run the handicap calculator without paying anything."
             />
             <TrustCard
               icon={<CheckCircle2 className="w-10 h-10" />}
-              title="Easy to Use"
-              description="Intuitive interface designed for players of all skill levels. Get started in minutes."
+              title="Simple to pick up"
+              description="A clean interface that works for players of any skill level. There is nothing to learn before you start."
             />
             <TrustCard
               icon={<User className="w-10 h-10" />}
-              title="Community Driven"
-              description="Built by disc golfers, for disc golfers. Connect with players who share your passion."
+              title="Made by a player"
+              description="A personal project built by someone who plays the game, and shaped by how disc golfers actually use their gear."
             />
           </div>
         </motion.div>

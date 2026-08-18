@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ShoppingCart, Package, BookOpen, MessageSquare } from 'lucide-react';
+import { Package, BookOpen, Target, BarChart3 } from 'lucide-react';
 import FeatureCard from './FeatureCard';
 
 export default function HomeFeatures() {
@@ -15,36 +15,36 @@ export default function HomeFeatures() {
           transition={{ duration: 0.6 }}
           className="text-center space-y-6 mb-12"
         >
-          <h2 className="h2">Everything You Need</h2>
+          <h2 className="h2">What you can do</h2>
           <p className="text-lg text-muted max-w-2xl mx-auto">
-            Powerful features designed specifically for disc golf players
+            Tools built around the parts of disc golf you actually keep track of
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <FeatureCard
-            href="/marketplace"
-            title="Disc Golf Marketplace"
-            description="Buy and sell used disc golf discs from players nationwide. Filter by brand, condition, and location."
-            Icon={ShoppingCart}
+            href="/gear"
+            title="Bag Builder"
+            description="Organize your discs between shelf and bag, track your inventory, and keep your collection in one place."
+            Icon={Package}
           />
           <FeatureCard
             href="/gear"
-            title="Disc Golf Bag Builder"
-            description="Build and manage your disc golf bag. Organize between shelf and bag, track your inventory, and optimize your collection."
-            Icon={Package}
+            title="Bag Stats"
+            description="See how your bag breaks down by speed and stability, and where it has gaps to fill."
+            Icon={BarChart3}
           />
           <FeatureCard
             href="/catalog"
             title="Disc Catalog"
-            description="Browse thousands of discs from all major brands. Filter by speed, stability, and type."
+            description="Browse discs from every major brand. Filter by speed, stability, and type to compare molds."
             Icon={BookOpen}
           />
           <FeatureCard
-            href="/messages"
-            title="Messaging"
-            description="Connect directly with buyers and sellers. Secure, real-time communication built in."
-            Icon={MessageSquare}
+            href="/handicap"
+            title="Handicap Calculator"
+            description="Get your rating and handicap from PDGA or UDisc ratings, or from raw scores, and track it over time."
+            Icon={Target}
           />
         </div>
       </div>

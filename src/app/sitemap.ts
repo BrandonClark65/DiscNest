@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { connectToDatabase } from '@/lib/mongodb';
 import Listing from '@/models/Listing';
+import { MARKETPLACE_ENABLED } from '@/lib/features';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Use the canonical production domain by default to avoid redirect warnings
@@ -21,12 +22,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.9,
     },
-    {
-      url: `${baseUrl}/marketplace`,
-      lastModified: new Date(),
-      changeFrequency: 'hourly',
-      priority: 0.9,
-    },
+    // Marketplace is only listed while it is enabled.
+    ...(MARKETPLACE_ENABLED
+      ? [
+          {
+            url: `${baseUrl}/marketplace`,
+            lastModified: new Date(),
+            changeFrequency: 'hourly' as const,
+            priority: 0.9,
+          },
+        ]
+      : []),
     {
       url: `${baseUrl}/handicap`,
       lastModified: new Date(),
@@ -41,9 +47,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Dynamic listing pages
+  // Dynamic listing pages (marketplace only)
   let listingPages: MetadataRoute.Sitemap = [];
-  try {
+  if (MARKETPLACE_ENABLED) try {
     // Add timeout to prevent hanging on connection issues
     const connectionPromise = connectToDatabase();
     const timeoutPromise = new Promise((_, reject) =>

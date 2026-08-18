@@ -31,11 +31,11 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.discnest.com';
 
 export const metadata: Metadata = {
   title: {
-    default: 'DiscNest - Buy, Sell & Manage Disc Golf Discs',
+    default: 'DiscNest - Disc Golf Bag Builder, Catalog & Handicap Calculator',
     template: '%s | DiscNest',
   },
-  description: 'The ultimate disc golf marketplace and bag builder. Buy and sell used disc golf discs, manage your bag, explore the catalog, and connect with players nationwide.',
-  keywords: ['disc golf', 'frisbee golf', 'disc golf marketplace', 'used disc golf marketplace', 'disc golf bag builder', 'disc golf bag', 'disc golf catalog', 'buy disc golf discs', 'sell disc golf discs', 'disc golf buy sell', 'used disc golf discs'],
+  description: 'A toolkit for disc golfers. Build and manage your disc golf bag, browse a full disc catalog with flight numbers, and calculate your rating and handicap.',
+  keywords: ['disc golf', 'frisbee golf', 'disc golf bag builder', 'disc golf bag', 'disc golf catalog', 'disc golf flight numbers', 'disc golf handicap', 'disc golf handicap calculator', 'disc golf rating calculator'],
   authors: [{ name: 'DiscNest' }],
   creator: 'DiscNest',
   publisher: 'DiscNest',
@@ -45,21 +45,21 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: baseUrl,
     siteName: 'DiscNest',
-    title: 'DiscNest - Buy, Sell & Manage Disc Golf Discs',
-    description: 'The ultimate disc golf marketplace and bag builder. Buy and sell used disc golf discs, manage your bag, explore the catalog, and connect with players nationwide.',
+    title: 'DiscNest - Disc Golf Bag Builder, Catalog & Handicap Calculator',
+    description: 'A toolkit for disc golfers. Build and manage your disc golf bag, browse a full disc catalog with flight numbers, and calculate your rating and handicap.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'DiscNest - Disc Golf Marketplace',
+        alt: 'DiscNest - Disc Golf Bag Builder and Tools',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'DiscNest - Buy, Sell & Manage Disc Golf Discs',
-    description: 'The ultimate disc golf marketplace and bag builder. Buy and sell used disc golf discs.',
+    title: 'DiscNest - Disc Golf Bag Builder, Catalog & Handicap Calculator',
+    description: 'Build and manage your disc golf bag, browse the catalog, and calculate your handicap.',
     images: ['/og-image.png'],
     creator: '@discnest',
   },
