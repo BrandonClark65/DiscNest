@@ -13,27 +13,27 @@ interface FAQ {
 const faqs: FAQ[] = [
   {
     question: 'What is DiscNest?',
-    answer: 'DiscNest is the ultimate disc golf marketplace and bag builder. You can buy and sell used disc golf discs in our marketplace, build and manage your disc golf bag, browse a comprehensive catalog of discs, and connect with other players in the community.',
-  },
-  {
-    question: 'How do I buy discs on DiscNest?',
-    answer: 'Browse our marketplace to find discs for sale from other players. Use filters to search by brand, condition, or location. When you find a disc you like, message the seller directly through our built-in messaging system to arrange the purchase.',
-  },
-  {
-    question: 'Can I sell my discs on DiscNest?',
-    answer: 'Yes! Create a free account and list your discs for sale. Include photos, condition details, and your location. Buyers can find your listings and message you directly to make a purchase.',
+    answer: 'DiscNest is a set of tools for disc golfers. You can build and manage your disc golf bag, browse a catalog of discs with their flight numbers, and calculate your rating and handicap from the rounds you play.',
   },
   {
     question: 'What is the disc golf bag builder?',
-    answer: 'The disc golf bag builder helps you build and manage your disc golf collection. Organize discs between your shelf and active bag, track which discs you own, analyze your bag composition, and share your bag with friends. It\'s a complete inventory management system for your disc golf gear.',
+    answer: 'The bag builder helps you manage your disc golf collection. Organize discs between your shelf and your active bag, track which discs you own, see how your bag breaks down by speed and stability, and share your setup with friends.',
   },
   {
-    question: 'How do I find discs near me?',
-    answer: 'Our marketplace includes a map view that shows listings based on location. When browsing, you can see discs available in your area and filter by proximity. This makes it easy to find local sellers and avoid shipping costs.',
+    question: 'What is in the disc catalog?',
+    answer: 'The catalog covers discs from every major brand, each with its speed, glide, turn, and fade. You can filter by flight numbers and type, which makes it easy to compare molds before you throw or buy.',
+  },
+  {
+    question: 'How does the handicap calculator work?',
+    answer: 'Enter your PDGA round ratings, your UDisc ratings, or plain scores. DiscNest turns them into a rating and a handicap in throws. Sign in and it saves your rounds and charts your progress over time. No account is needed to try it.',
+  },
+  {
+    question: 'Do I need an account?',
+    answer: 'You can browse the catalog and use the handicap calculator without an account. Creating a free account lets you save your bag, keep your rounds, and track your rating as it changes.',
   },
   {
     question: 'Is DiscNest free to use?',
-    answer: 'Yes, DiscNest is free to use! You can create an account, browse the catalog, manage your bag, buy and sell discs, and connect with other players at no cost.',
+    answer: 'Yes. Browsing the catalog, building your bag, and running the handicap calculator are all free.',
   },
 ];
 

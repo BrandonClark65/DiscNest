@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Disc as DiscIcon, ShoppingCart } from 'lucide-react';
+import { Package, Target } from 'lucide-react';
 import GradientButton from '@/components/ui/GradientButton';
 
 export default function HomeCTA() {
@@ -14,21 +14,21 @@ export default function HomeCTA() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="h2">Ready to Get Started?</h2>
+          <h2 className="h2">Ready to get started?</h2>
           <p className="text-lg text-muted mb-8">
-            Join the DiscNest community today and take your disc golf game to the next level.
+            Build your bag or check your handicap. Both are free, and you can start right now.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <GradientButton
-              label="Browse Marketplace"
-              href="/marketplace"
-              icon={<ShoppingCart className="w-5 h-5" />}
+              label="Build Your Bag"
+              href="/gear"
+              icon={<Package className="w-5 h-5" />}
               variant="primary"
             />
             <GradientButton
-              label="Explore Catalog"
-              href="/catalog"
-              icon={<DiscIcon className="w-5 h-5" />}
+              label="Check Your Handicap"
+              href="/handicap"
+              icon={<Target className="w-5 h-5" />}
               variant="accent"
             />
           </div>

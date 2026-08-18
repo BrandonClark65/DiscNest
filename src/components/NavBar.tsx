@@ -21,6 +21,7 @@ import { usePathname } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
 import NavLogo from '@/components/NavLogo';
 import useUnreadMessages from '@/hooks/useUnreadMessages';
+import { MARKETPLACE_ENABLED } from '@/lib/features';
 
 export default function NavBar() {
   const { data: session, status } = useSession();
@@ -34,7 +35,9 @@ export default function NavBar() {
 
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/marketplace', label: 'Marketplace', icon: Store },
+    ...(MARKETPLACE_ENABLED
+      ? [{ href: '/marketplace', label: 'Marketplace', icon: Store }]
+      : []),
     { href: '/gear', label: 'Bag Builder', icon: ShoppingBag },
     { href: '/catalog', label: 'Catalog', icon: Disc },
     { href: '/handicap', label: 'Handicap', icon: Target },
@@ -96,7 +99,7 @@ export default function NavBar() {
           )}
 
           {/* 💬 Messages */}
-          {status === 'authenticated' && (
+          {MARKETPLACE_ENABLED && status === 'authenticated' && (
             <Link
               href="/messages"
               className="ml-2 relative flex items-center justify-center bg-gradient-brand text-white rounded-full p-2 hover:scale-105 transition-transform shadow-md"
@@ -219,7 +222,7 @@ export default function NavBar() {
                 </Link>
               )}
 
-              {status === 'authenticated' && (
+              {MARKETPLACE_ENABLED && status === 'authenticated' && (
                 <Link
                   href="/messages"
                   onClick={() => setMenuOpen(false)}

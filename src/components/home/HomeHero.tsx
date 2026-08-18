@@ -1,10 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Disc as DiscIcon, ShoppingCart } from 'lucide-react';
+import { Disc as DiscIcon, Package } from 'lucide-react';
 import DiscbagDisplay from '@/components/DiscbagDisplay';
 import GradientButton from '@/components/ui/GradientButton';
-import SiteAnnouncement from '@/components/SiteAnnouncement';
 
 export default function HomeHero() {
   return (
@@ -16,17 +15,17 @@ export default function HomeHero() {
         className="text-center space-y-4 max-w-3xl"
       >
         <h1 className="h1">
-          The Ultimate <span className="text-gradient-brand">Disc Golf Marketplace</span> & Bag Builder
+          Manage your <span className="text-gradient-brand">disc golf bag</span>, look up any disc, track your rating
         </h1>
         <p className="p text-lg max-w-2xl mx-auto text-muted">
-          Buy and sell used disc golf discs in our marketplace, build and manage your disc golf bag, explore our comprehensive catalog, and connect with players nationwide. Everything you need for your disc golf journey in one place.
+          DiscNest is a set of tools for disc golfers. Build and organize your bag, browse a full catalog of discs with their flight numbers, and work out your handicap from the rounds you play.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <GradientButton
-            label="Browse Marketplace"
-            href="/marketplace"
-            icon={<ShoppingCart className="w-5 h-5" />}
+            label="Build Your Bag"
+            href="/gear"
+            icon={<Package className="w-5 h-5" />}
             variant="primary"
           />
           <GradientButton
@@ -35,7 +34,6 @@ export default function HomeHero() {
             icon={<DiscIcon className="w-5 h-5" />}
             variant="accent"
           />
-          {/* <SiteAnnouncement /> */}
         </div>
       </motion.div>
 

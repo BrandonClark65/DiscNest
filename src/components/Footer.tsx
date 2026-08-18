@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { MARKETPLACE_ENABLED } from '@/lib/features';
 
 export default function Footer() {
   return (
@@ -16,11 +17,13 @@ export default function Footer() {
                   Disc Catalog
                 </Link>
               </li>
-              <li>
-                <Link href="/marketplace" className="hover:text-primary transition-colors">
-                  Marketplace
-                </Link>
-              </li>
+              {MARKETPLACE_ENABLED && (
+                <li>
+                  <Link href="/marketplace" className="hover:text-primary transition-colors">
+                    Marketplace
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/handicap" className="hover:text-primary transition-colors">
                   Handicap Calculator

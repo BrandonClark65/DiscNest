@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { MARKETPLACE_ENABLED } from '@/lib/features';
 
 type Props = {
   activeTab: 'basic' | 'disc' | 'play' | 'store';
@@ -10,7 +11,10 @@ export default function ProfileTabs({ activeTab, setActiveTab }: Props) {
     { key: 'basic', label: 'Basic Info' },
     { key: 'disc', label: 'Disc Golf Info' },
     { key: 'play', label: 'Play Style' },
-    { key: 'store', label: 'Store Settings' },
+    // Store settings only matter when the marketplace is live.
+    ...(MARKETPLACE_ENABLED
+      ? ([{ key: 'store', label: 'Store Settings' }] as const)
+      : []),
   ] as const;
 
   return (
