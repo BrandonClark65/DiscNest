@@ -72,7 +72,7 @@ export default async function SharedHandicapPage({
   const playerName = user.name || 'A DiscNest player';
   const shareUrl = `${baseUrl}/share/handicap/${id}`;
 
-  // Unsigned on purpose — see the comment in HandicapSummary. "+8" reads as
+  // Unsigned on purpose - see the comment in HandicapSummary. "+8" reads as
   // better than scratch in golf, which is the opposite of what it means here.
   const throws = result.handicapThrows ?? 0;
   const throwsLabel = throws < 0 ? 'Throws given back' : 'Throws received';
@@ -103,7 +103,7 @@ export default async function SharedHandicapPage({
       <section className={cardClass}>
         {result.rating == null ? (
           <p className="text-[var(--foreground)]/70">
-            Not enough rounds yet to show a rating — DiscNest needs a few before the
+            Not enough rounds yet to show a rating - DiscNest needs a few before the
             number means anything.
           </p>
         ) : (
@@ -183,7 +183,7 @@ export default async function SharedHandicapPage({
           Work out your own handicap
         </h2>
         <p className="text-[var(--foreground)]/70 mb-4">
-          Free, no account needed — enter PDGA or UDisc round ratings, or plain scores.
+          Free, no account needed - enter PDGA or UDisc round ratings, or plain scores.
         </p>
         <GradientButton
           label="Open the handicap calculator"

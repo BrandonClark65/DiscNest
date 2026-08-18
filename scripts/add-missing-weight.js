@@ -19,7 +19,7 @@ dotenv.config();
     console.log(`🧮 Found ${discsWithoutWeight.length} discs without a weight field.`);
 
     if (discsWithoutWeight.length === 0) {
-      console.log("✅ Nothing to update — all discs already have a weight field.");
+      console.log("✅ Nothing to update - all discs already have a weight field.");
       process.exit(0);
     }
 

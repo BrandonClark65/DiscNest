@@ -14,7 +14,7 @@ const ErrorLogSchema = new Schema(
     metadata: { type: Object },
     resolved: { type: Boolean, default: false },
 
-    // ✅ NEW — distinguishes error origin
+    // ✅ NEW - distinguishes error origin
     source: {
       type: String,
       enum: ["server", "client"],

@@ -40,11 +40,11 @@ function analyzeBagGaps(bag: Disc[]) {
 
   if (avgSpeed && parseFloat(avgSpeed) > 9)
     suggestions.push(
-      'Your average speed is high — consider adding a slower disc for control shots.'
+      'Your average speed is high - consider adding a slower disc for control shots.'
     );
   if (avgSpeed && parseFloat(avgSpeed) < 6)
     suggestions.push(
-      'Your bag leans slow — consider adding a faster driver for extra distance.'
+      'Your bag leans slow - consider adding a faster driver for extra distance.'
     );
 
   return { missing, overrepresented, avgSpeed, suggestions };

@@ -37,7 +37,7 @@ export default function RoundsList({
   onDelete,
   title = 'Your rounds',
   caption = 'A star marks the rounds currently counting toward your rating.',
-  emptyMessage = 'No rounds yet — add one above to get started.',
+  emptyMessage = 'No rounds yet - add one above to get started.',
 }: RoundsListProps) {
   const counted = new Set(countedIndices);
 
@@ -92,7 +92,7 @@ export default function RoundsList({
                     </span>
                   </td>
                   <td className="py-2 pr-3 text-[var(--foreground)]">
-                    {round.courseName || '—'}
+                    {round.courseName || '-'}
                     {round.layoutName && (
                       <span className="text-[var(--foreground)]/60">
                         {' '}

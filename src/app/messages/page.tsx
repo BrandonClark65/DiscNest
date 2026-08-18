@@ -7,7 +7,7 @@ import type { ThreadDB, ThreadUI } from "@/types/thread";
 import type { MessageDB, MessageUI } from "@/types/message";
 
 /* -------------------------------------------------------
-   MESSAGE MAPPER — handles system messages + user messages
+   MESSAGE MAPPER - handles system messages + user messages
 -------------------------------------------------------- */
 function mapMessageDBtoUI(msg: MessageDB): MessageUI {
   const SYSTEM_ID = "000000000000000000000000";
@@ -50,7 +50,7 @@ function mapMessageDBtoUI(msg: MessageDB): MessageUI {
 }
 
 /* -------------------------------------------------------
-   THREAD MAPPER — handles listingId AND requestId
+   THREAD MAPPER - handles listingId AND requestId
 -------------------------------------------------------- */
 function mapThreadDBtoUI(thread: ThreadDB): ThreadUI {
   return {

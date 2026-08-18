@@ -170,6 +170,6 @@ export const SOURCE_META: Record<
   score_par: {
     label: 'Score + par',
     trust: 'rough',
-    note: 'Par is a weak difficulty signal in disc golf — many courses list a flat 54. Treat as rough.',
+    note: 'Par is a weak difficulty signal in disc golf - many courses list a flat 54. Treat as rough.',
   },
 };

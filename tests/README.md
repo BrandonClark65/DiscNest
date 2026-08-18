@@ -125,7 +125,7 @@ test("handles upload failure", async () => {
 1. **Use test utilities** - Don't duplicate mock setup code
 2. **Reset mocks** - Always reset mocks in `afterEach`
 3. **Clean database** - Use `await resetTestDb()` in an `async afterEach` (it must be awaited, or its deletes land inside the next test)
-   - Call `connectTestDb`/`closeTestDb` once per **file**, not once per `describe` — mongoose is a process-wide singleton
+   - Call `connectTestDb`/`closeTestDb` once per **file**, not once per `describe` - mongoose is a process-wide singleton
 4. **Test isolation** - Each test should be independent
 5. **Descriptive names** - Test names should clearly describe what they test
 6. **Document complex tests** - Add JSDoc comments for complex scenarios

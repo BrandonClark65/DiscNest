@@ -17,7 +17,7 @@ export const HANDICAP_FAQ: { question: string; answer: string }[] = [
   {
     question: 'What is a good disc golf handicap?',
     answer:
-      'On the 1000-point scale, recreational players typically sit between 700 and 850, intermediate players between 850 and 925, advanced players between 925 and 975, and touring professionals above 1000. Expressed as throws against a scratch (1000) target, a recreational player receives about 15 or more throws, an intermediate player 8 to 15, an advanced player 3 to 8, and a professional receives none — a player rated above 1000 gives throws back instead.',
+      'On the 1000-point scale, recreational players typically sit between 700 and 850, intermediate players between 850 and 925, advanced players between 925 and 975, and touring professionals above 1000. Expressed as throws against a scratch (1000) target, a recreational player receives about 15 or more throws, an intermediate player 8 to 15, an advanced player 3 to 8, and a professional receives none - a player rated above 1000 gives throws back instead.',
   },
   {
     question: 'How many rounds do I need before my handicap is accurate?',
@@ -27,7 +27,7 @@ export const HANDICAP_FAQ: { question: string; answer: string }[] = [
   {
     question: 'Can I use my UDisc rating instead of a PDGA rating?',
     answer:
-      'Yes. UDisc round ratings use a separate 1–300 scale and UDisc does not publish an official conversion to the PDGA 1000 scale, so we convert with a community-derived formula and mark those rounds as estimated. If you have PDGA round ratings, use those instead — they are exact.',
+      'Yes. UDisc round ratings use a separate 1–300 scale and UDisc does not publish an official conversion to the PDGA 1000 scale, so we convert with a community-derived formula and mark those rounds as estimated. If you have PDGA round ratings, use those instead - they are exact.',
   },
   {
     question: 'Is a DiscNest Rating the same as a PDGA rating?',
@@ -68,7 +68,7 @@ export default function HandicapGuide() {
         <p className="mt-3">
           Disc golf has no governing body issuing handicaps the way golf does. The PDGA
           issues <em>ratings</em>, and most leagues convert those ratings into throws
-          themselves. That conversion is what this calculator automates — and it works
+          themselves. That conversion is what this calculator automates - and it works
           whether or not you have a PDGA number.
         </p>
       </section>
@@ -98,7 +98,7 @@ export default function HandicapGuide() {
         </h3>
         <p>
           On a short, open course everyone&apos;s scores bunch together, so a single throw
-          represents a bigger difference in skill — around 13 rating points. On a long,
+          represents a bigger difference in skill - around 13 rating points. On a long,
           punishing course scores spread out and a throw is worth closer to 6 points. A
           typical 18-hole layout sits near 10 points per throw. This is disc golf&apos;s
           version of golf&apos;s Slope Rating, and it is why you cannot fairly compare a
@@ -135,7 +135,7 @@ export default function HandicapGuide() {
           So we borrow the selection method from golf&apos;s World Handicap System
           instead: the average of your best 8 round ratings from your most recent 20. It
           measures what you are capable of rather than what you average, and adding a bad
-          round can never help you — it can only push out an older, worse one. UDisc
+          round can never help you - it can only push out an older, worse one. UDisc
           arrived at the same design for their player ratings.
         </p>
         <p className="mt-3">
@@ -211,7 +211,7 @@ export default function HandicapGuide() {
               <tr>
                 <td className="py-2 pr-4">Professional</td>
                 <td className="py-2 pr-4">1000+</td>
-                <td className="py-2">None — gives throws back</td>
+                <td className="py-2">None - gives throws back</td>
               </tr>
             </tbody>
           </table>
