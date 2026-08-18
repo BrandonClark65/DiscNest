@@ -413,7 +413,7 @@ Without this there is no way to tell whether the feature moved anything.
 | `PDGA_API_PASSWORD` | only for `pdga_api` | As above. |
 
 Add all four to `src/lib/env.ts` (optional-with-validation, matching the existing
-pattern) and to `docs/Deployment/ENV_VALIDATION.md`.
+pattern) and document them in the environment-variables section of the root `README.md`.
 
 ---
 
@@ -487,7 +487,7 @@ src/components/admin/{TabsNav,AdminDashboard}.tsx  # 'pros' tab
 src/lib/analytics.ts                  # new event names/params
 src/lib/env.ts                        # new env vars
 src/app/sitemap.ts                    # /handicap/pros
-docs/Deployment/ENV_VALIDATION.md
+README.md                             # document the new env vars
 ```
 
 ---
