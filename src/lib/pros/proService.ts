@@ -60,7 +60,11 @@ function serialize(doc: ProDoc): SerializedPro {
  */
 export async function getActivePros(): Promise<SerializedPro[]> {
   await connectToDatabase();
-  const docs = await ProPlayer.find({ active: true })
+  // The public pages (/handicap and /handicap/pros) show the admin-curated set:
+  // active AND featured, in displayOrder. A pro can be imported but left
+  // unfeatured so it exists for admin tools and share links without appearing
+  // on the public pages.
+  const docs = await ProPlayer.find({ active: true, featured: true })
     .sort({ displayOrder: 1, name: 1 })
     .lean<ProDoc[]>();
   return docs.map(serialize);

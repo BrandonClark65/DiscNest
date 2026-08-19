@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import { getProsBySlugs } from "@/lib/pros/proService";
 import type { SerializedPro } from "@/lib/pros/proService";
+import { throwsFromPro } from "@/lib/handicap/proComparison";
+import { RATING_FLOOR, RATING_CEILING } from "@/app/constants/handicapConfig";
 
 // Mongoose is used to look up the pros, so this runs on the Node runtime.
 export const runtime = "nodejs";
@@ -18,11 +20,20 @@ const CACHE_HEADERS = {
 };
 
 const MAX_PROS = 10;
+const DEFAULT_REFERENCE = 900;
 
-function delta(pro: SerializedPro): number | null {
+/** Rating movement since the last update, or null when it has not moved. */
+function ratingDelta(pro: SerializedPro): number | null {
   if (pro.previousRating == null) return null;
   const d = pro.rating - pro.previousRating;
   return d === 0 ? null : d;
+}
+
+function clampReference(raw: string | null): number {
+  if (raw == null) return DEFAULT_REFERENCE;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < RATING_FLOOR || n > RATING_CEILING) return DEFAULT_REFERENCE;
+  return Math.round(n);
 }
 
 /** Latest "as of" date across the shown pros, for the subtitle. */
@@ -42,23 +53,24 @@ function Arrow({ up }: { up: boolean }) {
         display: "flex",
         width: 0,
         height: 0,
-        borderLeft: "13px solid transparent",
-        borderRight: "13px solid transparent",
+        borderLeft: "9px solid transparent",
+        borderRight: "9px solid transparent",
         ...(up
-          ? { borderBottom: `20px solid ${UP_GREEN}` }
-          : { borderTop: `20px solid ${DOWN_RED}` }),
+          ? { borderBottom: `14px solid ${UP_GREEN}` }
+          : { borderTop: `14px solid ${DOWN_RED}` }),
       }}
     />
   );
 }
 
 /**
- * GET /api/og/pros-update?pros=<slug,slug,...>&title=<text>&format=og|square
+ * GET /api/og/pros-update?pros=<slug,slug,...>&r=<rating>&title=<text>&format=og|square
  *
- * A shareable card listing chosen pros with their current rating and the
- * up/down move since the last update. Built for posting when the monthly PDGA
- * ratings land. The generator lives in the admin dashboard; this route only
- * renders public rating data.
+ * A shareable card built around the hook that actually travels: how many throws
+ * a typical player (rating `r`, default 900) would get from each chosen pro.
+ * The rating and its up/down move stay as small context. Deliberately light on
+ * branding so it reads as an interesting stat, not an advert. The generator
+ * lives in the admin dashboard; this route only renders public data.
  */
 export async function GET(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
@@ -67,13 +79,15 @@ export async function GET(req: Request): Promise<Response> {
     .map((s) => s.trim())
     .filter(Boolean)
     .slice(0, MAX_PROS);
+  const reference = clampReference(searchParams.get("r"));
   const square = searchParams.get("format") === "square";
-  const title = (searchParams.get("title") ?? "Pro Ratings Update").slice(0, 60);
+  const title = (searchParams.get("title") ?? "How many throws would you get?").slice(0, 70);
 
   const width = square ? 1080 : 1200;
   const height = square ? 1080 : 630;
 
   const pros = await getProsBySlugs(slugs);
+  const many = pros.length > 6;
 
   return new ImageResponse(
     (
@@ -85,22 +99,16 @@ export async function GET(req: Request): Promise<Response> {
           flexDirection: "column",
           padding: 64,
           backgroundColor: RICH_BLACK,
-          backgroundImage: `radial-gradient(circle at 85% 12%, rgba(60,145,230,0.22), transparent 45%), radial-gradient(circle at 8% 92%, rgba(241,115,0,0.20), transparent 45%)`,
+          backgroundImage: `radial-gradient(circle at 85% 12%, rgba(60,145,230,0.20), transparent 45%), radial-gradient(circle at 8% 92%, rgba(241,115,0,0.18), transparent 45%)`,
         }}
       >
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 44, fontWeight: 800, color: OFF_WHITE }}>
-              {title}
-            </div>
-            <div style={{ display: "flex", fontSize: 26, color: OFF_WHITE, opacity: 0.6, marginTop: 6 }}>
-              PDGA ratings, as of {asOf(pros)}
-            </div>
+        {/* Header: the hook leads, not the brand. */}
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", fontSize: 52, fontWeight: 800, color: OFF_WHITE }}>
+            {title}
           </div>
-          <div style={{ display: "flex", fontSize: 34, fontWeight: 700 }}>
-            <span style={{ color: TUFTS_BLUE }}>Disc</span>
-            <span style={{ color: SAFETY_ORANGE }}>Nest</span>
+          <div style={{ display: "flex", fontSize: 26, color: OFF_WHITE, opacity: 0.6, marginTop: 8 }}>
+            Throws a {reference}-rated player gets from each pro · {asOf(pros)} ratings
           </div>
         </div>
 
@@ -111,8 +119,8 @@ export async function GET(req: Request): Promise<Response> {
             flexDirection: "column",
             flex: 1,
             justifyContent: "center",
-            gap: pros.length > 6 ? 10 : 18,
-            marginTop: 28,
+            gap: many ? 10 : 16,
+            marginTop: 24,
           }}
         >
           {pros.length === 0 ? (
@@ -121,7 +129,9 @@ export async function GET(req: Request): Promise<Response> {
             </div>
           ) : (
             pros.map((pro) => {
-              const d = delta(pro);
+              const d = ratingDelta(pro);
+              const throws = throwsFromPro(reference, pro.rating).throws;
+              const sign = throws >= 0 ? "+" : "-";
               return (
                 <div
                   key={pro.slug}
@@ -130,39 +140,50 @@ export async function GET(req: Request): Promise<Response> {
                     alignItems: "center",
                     justifyContent: "space-between",
                     borderBottom: "1px solid rgba(249,250,251,0.12)",
-                    paddingBottom: pros.length > 6 ? 8 : 14,
+                    paddingBottom: many ? 8 : 14,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{ display: "flex", fontSize: 22, color: OFF_WHITE, opacity: 0.5, width: 64 }}>
-                      {pro.division}
+                  {/* Identity + small rating/movement */}
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{ display: "flex", fontSize: 20, color: OFF_WHITE, opacity: 0.45, width: 58 }}>
+                        {pro.division}
+                      </div>
+                      <div style={{ display: "flex", fontSize: many ? 34 : 40, fontWeight: 700, color: OFF_WHITE }}>
+                        {pro.name}
+                      </div>
                     </div>
-                    <div style={{ display: "flex", fontSize: 40, fontWeight: 700, color: OFF_WHITE }}>
-                      {pro.name}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 72, marginTop: 2 }}>
+                      <div style={{ display: "flex", fontSize: 20, color: OFF_WHITE, opacity: 0.5 }}>
+                        {pro.rating} rated
+                      </div>
+                      {d != null && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 5,
+                            color: d > 0 ? UP_GREEN : DOWN_RED,
+                            fontSize: 20,
+                            fontWeight: 700,
+                          }}
+                        >
+                          <Arrow up={d > 0} />
+                          {Math.abs(d)}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                    <div style={{ display: "flex", fontSize: 46, fontWeight: 800, color: OFF_WHITE }}>
-                      {pro.rating}
+                  {/* The headline: throws you would get. */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <div style={{ display: "flex", fontSize: many ? 56 : 68, fontWeight: 800, color: SAFETY_ORANGE, lineHeight: 1 }}>
+                      {sign}
+                      {Math.abs(throws)}
                     </div>
-                    {d != null && (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          width: 96,
-                          color: d > 0 ? UP_GREEN : DOWN_RED,
-                          fontSize: 34,
-                          fontWeight: 700,
-                        }}
-                      >
-                        <Arrow up={d > 0} />
-                        {Math.abs(d)}
-                      </div>
-                    )}
-                    {d == null && <div style={{ display: "flex", width: 96 }} />}
+                    <div style={{ display: "flex", fontSize: 18, color: OFF_WHITE, opacity: 0.55, marginTop: 2 }}>
+                      throws
+                    </div>
                   </div>
                 </div>
               );
@@ -170,9 +191,13 @@ export async function GET(req: Request): Promise<Response> {
           )}
         </div>
 
-        {/* Footer */}
-        <div style={{ display: "flex", fontSize: 26, color: OFF_WHITE, opacity: 0.7 }}>
-          discnest.com/handicap
+        {/* Footer: quiet attribution, no call to action. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 22, opacity: 0.6 }}>
+          <div style={{ display: "flex", fontWeight: 700 }}>
+            <span style={{ color: TUFTS_BLUE }}>Disc</span>
+            <span style={{ color: SAFETY_ORANGE }}>Nest</span>
+          </div>
+          <div style={{ display: "flex", color: OFF_WHITE }}>discnest.com/handicap</div>
         </div>
       </div>
     ),

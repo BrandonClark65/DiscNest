@@ -62,8 +62,9 @@ export default function ProsTab() {
 
   // Shareable ratings image
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [imageTitle, setImageTitle] = useState('Pro Ratings Update');
+  const [imageTitle, setImageTitle] = useState('How many throws would you get?');
   const [imageFormat, setImageFormat] = useState<'og' | 'square'>('og');
+  const [imageReference, setImageReference] = useState('900');
   const [origin, setOrigin] = useState('');
   const [downloading, setDownloading] = useState(false);
 
@@ -181,6 +182,41 @@ export default function ProsTab() {
     }
   };
 
+  /** One-off PATCH for a single field (featured toggle, reorder), then reload. */
+  const quickPatch = async (updates: Array<{ id: string } & Record<string, unknown>>) => {
+    try {
+      for (const body of updates) {
+        const res = await fetch('/api/admin/pros', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error('Update failed');
+      }
+      await load();
+    } catch {
+      toast.error('Could not save the change.');
+    }
+  };
+
+  const toggleFeatured = (pro: AdminPro) =>
+    quickPatch([{ id: pro.id, featured: !pro.featured }]);
+
+  /**
+   * Move a pro one place up or down by swapping displayOrder with its neighbor
+   * in the current list. The table is sorted by displayOrder, so index +/- 1 is
+   * the visual neighbor.
+   */
+  const move = (index: number, dir: -1 | 1) => {
+    const a = pros[index];
+    const b = pros[index + dir];
+    if (!a || !b) return;
+    quickPatch([
+      { id: a.id, displayOrder: b.displayOrder },
+      { id: b.id, displayOrder: a.displayOrder },
+    ]);
+  };
+
   const createPro = async () => {
     if (!newPro.name.trim() || !newPro.rating) {
       toast.error('Name and rating are required.');
@@ -224,7 +260,8 @@ export default function ProsTab() {
   const imagePath =
     selectedSlugs.length > 0
       ? `/api/og/pros-update?pros=${encodeURIComponent(selectedSlugs.join(','))}` +
-        `&title=${encodeURIComponent(imageTitle)}&format=${imageFormat}`
+        `&title=${encodeURIComponent(imageTitle)}&r=${encodeURIComponent(imageReference)}` +
+        `&format=${imageFormat}`
       : '';
   const imageUrl = imagePath ? `${origin}${imagePath}` : '';
 
@@ -247,7 +284,7 @@ export default function ProsTab() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `discnest-pro-ratings-${imageFormat}.png`;
+      a.download = `discnest-pro-handicap-${imageFormat}.png`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -403,11 +440,12 @@ export default function ProsTab() {
 
       {/* Shareable ratings image */}
       <section className="border rounded p-4 bg-white space-y-3">
-        <h3 className="font-semibold">Shareable ratings image</h3>
+        <h3 className="font-semibold">Shareable handicap image</h3>
         <p className="text-sm text-gray-500">
-          Tick pros in the table below to include them, then download a card showing their
-          rating and how it moved (▲/▼) since the last update. Great to post when the
-          monthly PDGA ratings drop.
+          Tick pros in the table below to include them, then download a card showing how
+          many throws a typical player (the rating you set) would get from each pro, with
+          their rating and its ▲/▼ move as small print. The hook is the throws, not the
+          rating, so it travels as a fun stat rather than a lookup.
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="text-sm">
@@ -416,6 +454,15 @@ export default function ProsTab() {
               className="px-2 py-1 border rounded text-sm w-64"
               value={imageTitle}
               onChange={(e) => setImageTitle(e.target.value)}
+            />
+          </label>
+          <label className="text-sm">
+            <span className="block text-gray-600 mb-1">Typical player rating</span>
+            <input
+              className="px-2 py-1 border rounded text-sm w-32"
+              value={imageReference}
+              inputMode="numeric"
+              onChange={(e) => setImageReference(e.target.value)}
             />
           </label>
           <label className="text-sm">
@@ -475,6 +522,11 @@ export default function ProsTab() {
       </section>
 
       {/* Table */}
+      <p className="text-sm text-gray-500">
+        The <strong>Shown</strong> checkbox and the ↑/↓ order controls set exactly which
+        pros appear, and in what order, on the public /handicap and /handicap/pros pages.
+      </p>
+
       <div className="overflow-x-auto border rounded shadow-sm bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-100">
@@ -486,14 +538,14 @@ export default function ProsTab() {
               <th className="px-3 py-2 text-left">Rating</th>
               <th className="px-3 py-2 text-left">Override</th>
               <th className="px-3 py-2 text-left">Order</th>
-              <th className="px-3 py-2 text-left">Featured</th>
+              <th className="px-3 py-2 text-left" title="Shown on the public handicap pages">Shown</th>
               <th className="px-3 py-2 text-left">Active</th>
               <th className="px-3 py-2 text-left">Last sync</th>
               <th className="px-3 py-2 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {pros.map((pro) => {
+            {pros.map((pro, index) => {
               const editing = editingId === pro.id && draft;
               return (
                 <tr key={pro.id} className={`border-t ${pro.active ? '' : 'opacity-50'}`}>
@@ -551,7 +603,25 @@ export default function ProsTab() {
                         onChange={(e) => setDraft({ ...draft, displayOrder: e.target.value })}
                       />
                     ) : (
-                      pro.displayOrder
+                      <div className="flex items-center gap-1">
+                        <span className="w-6 text-right">{pro.displayOrder}</span>
+                        <button
+                          onClick={() => move(index, -1)}
+                          disabled={index === 0}
+                          className="px-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                          title="Move up"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          onClick={() => move(index, 1)}
+                          disabled={index === pros.length - 1}
+                          className="px-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                          title="Move down"
+                        >
+                          ↓
+                        </button>
+                      </div>
                     )}
                   </td>
                   <td className="px-3 py-2">
@@ -561,7 +631,14 @@ export default function ProsTab() {
                         checked={draft.featured}
                         onChange={(e) => setDraft({ ...draft, featured: e.target.checked })}
                       />
-                    ) : pro.featured ? 'Yes' : 'No'}
+                    ) : (
+                      <input
+                        type="checkbox"
+                        checked={pro.featured}
+                        onChange={() => toggleFeatured(pro)}
+                        title="Show on the public handicap pages"
+                      />
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     {editing ? (
