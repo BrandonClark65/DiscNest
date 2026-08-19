@@ -37,7 +37,6 @@ interface Draft {
   rating: string;
   manualOverride: string;
   blurb: string;
-  displayOrder: string;
   featured: boolean;
   active: boolean;
 }
@@ -46,6 +45,8 @@ const emptyNewPro = { name: '', division: 'MPO', pdgaNumber: '', rating: '', blu
 
 export default function ProsTab() {
   const [pros, setPros] = useState<AdminPro[]>([]);
+  // Local working copy for drag-free reordering; resynced whenever pros reload.
+  const [ordered, setOrdered] = useState<AdminPro[]>([]);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
@@ -85,6 +86,11 @@ export default function ProsTab() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Keep the local ordering in step with whatever the server last returned.
+  useEffect(() => {
+    setOrdered(pros);
+  }, [pros]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -135,7 +141,6 @@ export default function ProsTab() {
       rating: String(pro.rating),
       manualOverride: pro.manualOverride == null ? '' : String(pro.manualOverride),
       blurb: pro.blurb ?? '',
-      displayOrder: String(pro.displayOrder),
       featured: pro.featured,
       active: pro.active,
     });
@@ -148,8 +153,6 @@ export default function ProsTab() {
     if (Number.isFinite(ratingNum)) body.rating = ratingNum;
     body.manualOverride = draft.manualOverride.trim() === '' ? null : Number(draft.manualOverride);
     body.blurb = draft.blurb;
-    const orderNum = Number(draft.displayOrder);
-    if (Number.isFinite(orderNum)) body.displayOrder = orderNum;
     body.featured = draft.featured;
     body.active = draft.active;
 
@@ -203,18 +206,32 @@ export default function ProsTab() {
     quickPatch([{ id: pro.id, featured: !pro.featured }]);
 
   /**
-   * Move a pro one place up or down by swapping displayOrder with its neighbor
-   * in the current list. The table is sorted by displayOrder, so index +/- 1 is
-   * the visual neighbor.
+   * Persist a new ordering. Applies it locally at once so the table responds
+   * instantly, then writes the whole sequence in one call. On failure it
+   * reloads to resync with the server, so the UI never lies.
    */
-  const move = (index: number, dir: -1 | 1) => {
-    const a = pros[index];
-    const b = pros[index + dir];
-    if (!a || !b) return;
-    quickPatch([
-      { id: a.id, displayOrder: b.displayOrder },
-      { id: b.id, displayOrder: a.displayOrder },
-    ]);
+  const persistOrder = async (list: AdminPro[]) => {
+    setOrdered(list);
+    try {
+      const res = await fetch('/api/admin/pros/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: list.map((p) => p.id) }),
+      });
+      if (!res.ok) throw new Error('reorder failed');
+    } catch {
+      toast.error('Could not save the new order.');
+      await load();
+    }
+  };
+
+  /** Move the pro at `from` to position `to`, then persist the whole order. */
+  const reorder = (from: number, to: number) => {
+    if (to < 0 || to >= ordered.length || from === to) return;
+    const list = [...ordered];
+    const [item] = list.splice(from, 1);
+    list.splice(to, 0, item);
+    persistOrder(list);
   };
 
   const createPro = async () => {
@@ -255,7 +272,7 @@ export default function ProsTab() {
   }, []);
 
   // Selected slugs in table (display) order, so the card matches the list.
-  const selectedSlugs = pros.filter((p) => selected.has(p.slug)).map((p) => p.slug);
+  const selectedSlugs = ordered.filter((p) => selected.has(p.slug)).map((p) => p.slug);
 
   const imagePath =
     selectedSlugs.length > 0
@@ -545,7 +562,7 @@ export default function ProsTab() {
             </tr>
           </thead>
           <tbody>
-            {pros.map((pro, index) => {
+            {ordered.map((pro, index) => {
               const editing = editingId === pro.id && draft;
               return (
                 <tr key={pro.id} className={`border-t ${pro.active ? '' : 'opacity-50'}`}>
@@ -596,33 +613,41 @@ export default function ProsTab() {
                     )}
                   </td>
                   <td className="px-3 py-2">
-                    {editing ? (
-                      <input
-                        className="w-16 px-2 py-1 border rounded"
-                        value={draft.displayOrder}
-                        onChange={(e) => setDraft({ ...draft, displayOrder: e.target.value })}
-                      />
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <span className="w-6 text-right">{pro.displayOrder}</span>
-                        <button
-                          onClick={() => move(index, -1)}
-                          disabled={index === 0}
-                          className="px-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
-                          title="Move up"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          onClick={() => move(index, 1)}
-                          disabled={index === pros.length - 1}
-                          className="px-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
-                          title="Move down"
-                        >
-                          ↓
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-0.5">
+                      <span className="w-5 text-right text-gray-400 mr-1">{index + 1}</span>
+                      <button
+                        onClick={() => reorder(index, 0)}
+                        disabled={index === 0}
+                        className="px-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                        title="Move to top"
+                      >
+                        ⤒
+                      </button>
+                      <button
+                        onClick={() => reorder(index, index - 1)}
+                        disabled={index === 0}
+                        className="px-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                        title="Move up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={() => reorder(index, index + 1)}
+                        disabled={index === ordered.length - 1}
+                        className="px-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        onClick={() => reorder(index, ordered.length - 1)}
+                        disabled={index === ordered.length - 1}
+                        className="px-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                        title="Move to bottom"
+                      >
+                        ⤓
+                      </button>
+                    </div>
                   </td>
                   <td className="px-3 py-2">
                     {editing ? (
@@ -693,7 +718,7 @@ export default function ProsTab() {
                 </tr>
               );
             })}
-            {pros.length === 0 && !loading && (
+            {ordered.length === 0 && !loading && (
               <tr>
                 <td colSpan={11} className="px-4 py-6 text-center text-gray-500">
                   No pros yet. Run <code>npm run seed:pros</code> or add one above.
