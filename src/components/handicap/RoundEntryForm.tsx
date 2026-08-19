@@ -268,7 +268,7 @@ export default function RoundEntryForm({
           <p className="mt-1 text-xs text-[var(--foreground)]/60">
             {form.source === 'pdga'
               ? 'Find this on your player page at pdga.com under each event.'
-              : 'UDisc ratings use a 1–300 scale. We convert it to the 1000 scale — see the note above.'}
+              : 'UDisc ratings use a 1–300 scale. We convert it to the 1000 scale - see the note above.'}
           </p>
         </div>
       )}

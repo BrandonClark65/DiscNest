@@ -1,10 +1,20 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { connectToDatabase } from '@/lib/mongodb';
 import Listing from '@/models/Listing';
+import { MARKETPLACE_ENABLED } from '@/lib/features';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
 
 export async function generateMetadata(): Promise<Metadata> {
+  // While the marketplace is off, keep the route out of search results.
+  if (!MARKETPLACE_ENABLED) {
+    return {
+      title: 'DiscNest',
+      robots: { index: false, follow: false },
+    };
+  }
+
   // Fetch listing count for metadata
   let listingCount = 0;
   try {
@@ -44,6 +54,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function MarketplaceLayout({ children }: { children: React.ReactNode }) {
+  // The marketplace is deactivated. Send every route under it back to the home
+  // page rather than rendering an empty shell. Flip NEXT_PUBLIC_MARKETPLACE_ENABLED
+  // to restore it.
+  if (!MARKETPLACE_ENABLED) {
+    redirect('/');
+  }
+
   return <>{children}</>;
 }
-

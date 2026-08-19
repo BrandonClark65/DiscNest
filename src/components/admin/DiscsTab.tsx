@@ -81,9 +81,9 @@ export default function DiscsTab() {
               <tr key={i} className="border-t hover:bg-gray-50">
                 <td className="px-4 py-2">{disc.name}</td>
                 <td className="px-4 py-2">{disc.brand}</td>
-                <td className="px-4 py-2">{disc.type || '—'}</td>
+                <td className="px-4 py-2">{disc.type || '-'}</td>
                 <td className="px-4 py-2">
-                  {disc.addedAt ? new Date(disc.addedAt).toLocaleDateString() : '—'}
+                  {disc.addedAt ? new Date(disc.addedAt).toLocaleDateString() : '-'}
                 </td>
               </tr>
             ))}

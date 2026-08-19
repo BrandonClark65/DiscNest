@@ -1,7 +1,13 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import { redirect } from 'next/navigation';
+import { MARKETPLACE_ENABLED } from '@/lib/features';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  if (!MARKETPLACE_ENABLED) {
+    return { title: 'DiscNest', robots: { index: false, follow: false } };
+  }
+
   const { id } = await params;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
 
@@ -49,10 +55,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function ListingLayout({ 
   children,
   params 
-}: { 
+}: {
   children: React.ReactNode;
   params: Promise<{ id: string }>;
 }) {
+  // Listing detail pages belong to the deactivated marketplace.
+  if (!MARKETPLACE_ENABLED) {
+    redirect('/');
+  }
+
   const { id } = await params;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://discnest.com';
 

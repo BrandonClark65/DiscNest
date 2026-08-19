@@ -8,7 +8,7 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.discnest.com';
 export const metadata: Metadata = {
   title: 'Disc Golf Handicap Calculator - Free Rating & Handicap Tool',
   description:
-    'Free disc golf handicap calculator. Enter PDGA or UDisc round ratings, or plain scores, to get your rating and handicap in throws — and track your progress over time.',
+    'Free disc golf handicap calculator. Enter PDGA or UDisc round ratings, or plain scores, to get your rating and handicap in throws - and track your progress over time.',
   keywords: [
     'disc golf handicap calculator',
     'disc golf handicap',

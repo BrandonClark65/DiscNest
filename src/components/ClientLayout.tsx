@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { logClientError } from '@/lib/clientLogger';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
+import RouteAnalytics from '@/components/analytics/RouteAnalytics';
 import { Toaster } from 'react-hot-toast';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -43,6 +44,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <SessionProvider>
+      <RouteAnalytics />
       <Toaster position="bottom-center" />
       <NavBar />
       {/* 👇 Add top padding to clear fixed navbar */}

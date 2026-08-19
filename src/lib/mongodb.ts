@@ -24,10 +24,12 @@ interface Cached {
   promise: Promise<typeof mongoose> | null;
 }
 
-// Use a global cache in dev to avoid creating multiple connections
-interface GlobalWithMongoose extends NodeJS.Global {
+// Use a global cache in dev to avoid creating multiple connections.
+// `NodeJS.Global` was removed in @types/node v20+, so extend globalThis instead
+// (SWC ignores the old type at build time, but ts-node type-checks and fails on it).
+type GlobalWithMongoose = typeof globalThis & {
   mongoose?: Cached;
-}
+};
 
 const globalForMongoose = global as GlobalWithMongoose;
 

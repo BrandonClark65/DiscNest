@@ -61,7 +61,7 @@ export default function HandicapSummary({
         <p className="text-[var(--foreground)]/70">
           {rounds === 0
             ? `Add ${MIN_ROUNDS_PROVISIONAL} rounds to see your rating and handicap.`
-            : `${needed} more round${needed === 1 ? '' : 's'} to go — we need at least ${MIN_ROUNDS_PROVISIONAL} before showing a number.`}
+            : `${needed} more round${needed === 1 ? '' : 's'} to go - we need at least ${MIN_ROUNDS_PROVISIONAL} before showing a number.`}
         </p>
         <p className="mt-2 text-xs text-[var(--foreground)]/60">
           We deliberately won&apos;t show a handicap off one or two rounds. It would be

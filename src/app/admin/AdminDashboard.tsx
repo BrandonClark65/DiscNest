@@ -11,12 +11,13 @@ import PendingListingsTab from '@/components/admin/PendingListingsTab';
 import ErrorsTab from '@/components/admin/ErrorsTab';
 import FlaggedMessagesTab from '@/components/admin/FlaggedMessagesTab';
 import UserReportsTab from '@/components/admin/UserReportsTab';
+import ProsTab from '@/components/admin/ProsTab';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] =
-    useState<'stats' | 'discs' | 'users' | 'pending' | 'errors' | 'flagged' | 'reports'>('stats');
+    useState<'stats' | 'discs' | 'users' | 'pending' | 'errors' | 'flagged' | 'reports' | 'pros'>('stats');
 
   useEffect(() => {
     if (status !== 'loading' && (session?.user as { role?: string })?.role !== 'admin') {
@@ -37,6 +38,7 @@ export default function AdminDashboard() {
       {activeTab === 'errors' && <ErrorsTab />}
       {activeTab === 'flagged' && <FlaggedMessagesTab />}
       {activeTab === 'reports' && <UserReportsTab />}
+      {activeTab === 'pros' && <ProsTab />}
     </div>
   );
 }

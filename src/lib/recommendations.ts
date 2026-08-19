@@ -65,7 +65,7 @@ export function recommendDiscs(
       score += 4;
       reasons.push({
         type: 'missing_category',
-        explanation: `You don't have a ${candidate.type} yet — this could fill that slot.`,
+        explanation: `You don't have a ${candidate.type} yet - this could fill that slot.`,
       });
     }
 

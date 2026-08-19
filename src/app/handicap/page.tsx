@@ -18,7 +18,7 @@ export default function HandicapPage() {
         </h1>
         <p className="mt-3 text-[var(--foreground)]/80 leading-relaxed">
           Work out your disc golf handicap from your PDGA round ratings, your UDisc
-          ratings, or plain scores. Free, no account needed — and if you sign in,
+          ratings, or plain scores. Free, no account needed - and if you sign in,
           DiscNest saves your rounds and charts your progress over time.
         </p>
       </header>

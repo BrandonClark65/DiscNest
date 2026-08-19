@@ -36,7 +36,7 @@ export default function SiteAnnouncement() {
         </p>
 
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 italic">
-          Your input helps shape the future of DiscNest — thank you for being part of it!
+          Your input helps shape the future of DiscNest - thank you for being part of it!
         </p>
       </div>
     </motion.div>

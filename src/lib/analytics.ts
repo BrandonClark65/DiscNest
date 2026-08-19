@@ -39,7 +39,10 @@ export type GA4EventName =
   | 'page_view'
   | 'share_bag'
   | 'contact_form_submit'
-  | 'admin_action';
+  | 'admin_action'
+  | 'pro_comparison_view'
+  | 'pro_comparison_select'
+  | 'share_pro_handicap';
 
 // GA4 Event Parameters
 export interface GA4EventParams {

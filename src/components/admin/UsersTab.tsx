@@ -112,10 +112,10 @@ export default function UsersTab() {
                   {user.moderationFlags || 0}
                 </td>
                 <td className="px-4 py-2">
-                  {user.lastFlaggedAt ? new Date(user.lastFlaggedAt).toLocaleDateString() : '—'}
+                  {user.lastFlaggedAt ? new Date(user.lastFlaggedAt).toLocaleDateString() : '-'}
                 </td>
                 <td className="px-4 py-2 text-gray-600 text-sm">
-                  {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : '—'}
+                  {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : '-'}
                 </td>
               </tr>
             ))}

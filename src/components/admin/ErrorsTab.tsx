@@ -89,7 +89,7 @@ export default function ErrorsTab() {
                     <td className="px-4 py-2 max-w-xs truncate" title={log.message}>
                       {log.message}
                     </td>
-                    <td className="px-4 py-2">{log.route || '—'}</td>
+                    <td className="px-4 py-2">{log.route || '-'}</td>
                     <td className="px-4 py-2">
                       <span
                         className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -119,7 +119,7 @@ export default function ErrorsTab() {
                     <td className="px-4 py-2">
                       {log.userId?.name
                         ? `${log.userId.name} (${log.userId.email})`
-                        : '—'}
+                        : '-'}
                     </td>
                     <td className="px-4 py-2 text-gray-600 text-sm">
                       {new Date(log.createdAt).toLocaleString()}
@@ -172,10 +172,10 @@ export default function ErrorsTab() {
             <h3 className="text-lg font-semibold mb-4">Error Details</h3>
             <div className="space-y-2 text-sm">
               <p><strong>Message:</strong> {selectedLog.message}</p>
-              <p><strong>Route:</strong> {selectedLog.route || '—'}</p>
+              <p><strong>Route:</strong> {selectedLog.route || '-'}</p>
               <p><strong>Severity:</strong> {selectedLog.severity}</p>
               <p><strong>Date:</strong> {new Date(selectedLog.createdAt).toLocaleString()}</p>
-              <p><strong>User:</strong> {selectedLog.userId?.name || '—'}</p>
+              <p><strong>User:</strong> {selectedLog.userId?.name || '-'}</p>
               {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
                 <div>
                   <strong>Metadata:</strong>

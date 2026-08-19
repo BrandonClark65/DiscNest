@@ -10,5 +10,6 @@ import "./ErrorLog";
 import "./Rating";
 import "./HandicapRound";
 import "./HandicapSnapshot";
+import "./ProPlayer";
 
 export {};

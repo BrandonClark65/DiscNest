@@ -23,7 +23,7 @@ export default function HomePageLayout({ children }: { children: React.ReactNode
     name: 'DiscNest',
     url: baseUrl,
     logo: `${baseUrl}/og-image.png`,
-    description: 'The ultimate disc golf marketplace and bag builder. Buy and sell used disc golf discs, manage your bag, explore the catalog, and connect with players nationwide.',
+    description: 'A toolkit for disc golfers. Build and manage your disc golf bag, browse a full disc catalog with flight numbers, and calculate your rating and handicap.',
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Customer Service',
@@ -40,12 +40,12 @@ export default function HomePageLayout({ children }: { children: React.ReactNode
     '@type': 'WebSite',
     name: 'DiscNest',
     url: baseUrl,
-    description: 'Disc golf marketplace and bag builder. Buy and sell used disc golf discs, build and manage your disc golf bag, and explore the catalog.',
+    description: 'A toolkit for disc golfers. Build and manage your disc golf bag, browse the disc catalog, and calculate your rating and handicap.',
     potentialAction: {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `${baseUrl}/marketplace?search={search_term_string}`,
+        urlTemplate: `${baseUrl}/catalog?search={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
     },

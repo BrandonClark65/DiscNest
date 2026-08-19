@@ -233,7 +233,7 @@ export function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
       };
     }
 
-    // Fallback: unknown object / primitive — try to safely unwrap _id if present
+    // Fallback: unknown object / primitive - try to safely unwrap _id if present
     if (typeof l === "object" && l !== null && "_id" in l) {
       const anyListing = l as { _id?: unknown; title?: unknown; imageUrls?: unknown };
       const id =
@@ -288,7 +288,7 @@ export function mapThreadDBtoUI(t: ThreadDB): ThreadUI {
         };
       }
 
-      // Fallback: unknown object / primitive — try to safely unwrap _id if present
+      // Fallback: unknown object / primitive - try to safely unwrap _id if present
       if (typeof r === "object" && r !== null && "_id" in r) {
         const anyRequest = r as { _id?: unknown; title?: unknown };
         const id =
