@@ -60,6 +60,13 @@ export default function ProsTab() {
   const [newPro, setNewPro] = useState(emptyNewPro);
   const [creating, setCreating] = useState(false);
 
+  // Shareable ratings image
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [imageTitle, setImageTitle] = useState('Pro Ratings Update');
+  const [imageFormat, setImageFormat] = useState<'og' | 'square'>('og');
+  const [origin, setOrigin] = useState('');
+  const [downloading, setDownloading] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -207,6 +214,61 @@ export default function ProsTab() {
     }
   };
 
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  // Selected slugs in table (display) order, so the card matches the list.
+  const selectedSlugs = pros.filter((p) => selected.has(p.slug)).map((p) => p.slug);
+
+  const imagePath =
+    selectedSlugs.length > 0
+      ? `/api/og/pros-update?pros=${encodeURIComponent(selectedSlugs.join(','))}` +
+        `&title=${encodeURIComponent(imageTitle)}&format=${imageFormat}`
+      : '';
+  const imageUrl = imagePath ? `${origin}${imagePath}` : '';
+
+  const toggleSelect = (slug: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  };
+
+  const downloadImage = async () => {
+    if (!imagePath) return;
+    setDownloading(true);
+    try {
+      const res = await fetch(imagePath);
+      if (!res.ok) throw new Error('Image not ready');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `discnest-pro-ratings-${imageFormat}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Could not download the image.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const copyImageUrl = async () => {
+    if (!imageUrl) return;
+    try {
+      await navigator.clipboard.writeText(imageUrl);
+      toast.success('Image URL copied.');
+    } catch {
+      toast.error('Could not copy the URL.');
+    }
+  };
+
   const inputClass = 'w-full px-2 py-1 border rounded text-sm';
 
   return (
@@ -339,11 +401,85 @@ export default function ProsTab() {
         </div>
       </section>
 
+      {/* Shareable ratings image */}
+      <section className="border rounded p-4 bg-white space-y-3">
+        <h3 className="font-semibold">Shareable ratings image</h3>
+        <p className="text-sm text-gray-500">
+          Tick pros in the table below to include them, then download a card showing their
+          rating and how it moved (▲/▼) since the last update. Great to post when the
+          monthly PDGA ratings drop.
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="text-sm">
+            <span className="block text-gray-600 mb-1">Title</span>
+            <input
+              className="px-2 py-1 border rounded text-sm w-64"
+              value={imageTitle}
+              onChange={(e) => setImageTitle(e.target.value)}
+            />
+          </label>
+          <label className="text-sm">
+            <span className="block text-gray-600 mb-1">Size</span>
+            <select
+              className="px-2 py-1 border rounded text-sm"
+              value={imageFormat}
+              onChange={(e) => setImageFormat(e.target.value as 'og' | 'square')}
+            >
+              <option value="og">Landscape (1200x630)</option>
+              <option value="square">Square (1080x1080)</option>
+            </select>
+          </label>
+          <span className="text-sm text-gray-500">{selectedSlugs.length} selected</span>
+          {selected.size > 0 && (
+            <button
+              onClick={() => setSelected(new Set())}
+              className="text-sm text-gray-500 hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {selectedSlugs.length === 0 ? (
+          <p className="text-sm text-gray-400">
+            Select at least one pro below to preview the image.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {/* Preview. The route is public, so a plain img works. */}
+            {imagePath && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imagePath}
+                alt="Pro ratings card preview"
+                className="w-full max-w-2xl border rounded"
+              />
+            )}
+            <div className="flex gap-3 flex-wrap">
+              <button
+                onClick={downloadImage}
+                disabled={downloading}
+                className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-60"
+              >
+                {downloading ? 'Preparing…' : 'Download image'}
+              </button>
+              <button
+                onClick={copyImageUrl}
+                className="px-4 py-2 rounded border text-sm hover:bg-gray-50"
+              >
+                Copy image URL
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
       {/* Table */}
       <div className="overflow-x-auto border rounded shadow-sm bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-100">
             <tr>
+              <th className="px-3 py-2 text-left" title="Include in the shareable image">Card</th>
               <th className="px-3 py-2 text-left">Name</th>
               <th className="px-3 py-2 text-left">Div</th>
               <th className="px-3 py-2 text-left">PDGA#</th>
@@ -361,6 +497,13 @@ export default function ProsTab() {
               const editing = editingId === pro.id && draft;
               return (
                 <tr key={pro.id} className={`border-t ${pro.active ? '' : 'opacity-50'}`}>
+                  <td className="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(pro.slug)}
+                      onChange={() => toggleSelect(pro.slug)}
+                    />
+                  </td>
                   <td className="px-3 py-2">
                     {pro.name}
                     {pro.blurb && !editing && (
@@ -475,7 +618,7 @@ export default function ProsTab() {
             })}
             {pros.length === 0 && !loading && (
               <tr>
-                <td colSpan={10} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={11} className="px-4 py-6 text-center text-gray-500">
                   No pros yet. Run <code>npm run seed:pros</code> or add one above.
                 </td>
               </tr>
