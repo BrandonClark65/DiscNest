@@ -72,3 +72,16 @@ export async function getProBySlug(slug: string): Promise<SerializedPro | null> 
   const doc = await ProPlayer.findOne({ slug, active: true }).lean<ProDoc | null>();
   return doc ? serialize(doc) : null;
 }
+
+/**
+ * Several pros by slug, returned in the exact order the slugs were given (so a
+ * caller-chosen ordering survives), skipping any slug that does not resolve.
+ * Includes inactive pros: an admin building a ratings card may pick one.
+ */
+export async function getProsBySlugs(slugs: string[]): Promise<SerializedPro[]> {
+  if (slugs.length === 0) return [];
+  await connectToDatabase();
+  const docs = await ProPlayer.find({ slug: { $in: slugs } }).lean<ProDoc[]>();
+  const bySlug = new Map(docs.map((d) => [d.slug, serialize(d)]));
+  return slugs.map((s) => bySlug.get(s)).filter((p): p is SerializedPro => Boolean(p));
+}
