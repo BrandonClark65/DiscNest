@@ -96,6 +96,9 @@ Optional, enabling specific features:
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID`: Google Analytics 4 (analytics is off if unset)
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: Google sign-in
 - `NEXT_PUBLIC_MARKETPLACE_ENABLED`: set to `true` to turn the marketplace back on
+- `CRON_SECRET`: bearer token that authorizes the scheduled pro-ratings sync (`/api/cron/pros/sync`)
+- `PRO_RATING_PROVIDER`: source for pro ratings, `manual` (default) or `pdga_api`
+- `PDGA_API_USERNAME`, `PDGA_API_PASSWORD`: PDGA member login, only needed once `PRO_RATING_PROVIDER=pdga_api`
 
 ## Feature flags
 

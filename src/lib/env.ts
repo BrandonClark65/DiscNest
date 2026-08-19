@@ -194,6 +194,34 @@ const envVars: EnvVar[] = [
     required: false,
     description: 'eBay Finding API App ID (Client ID). Optional - if not provided, the eBay price research feature will generate search URLs instead of using the API',
   },
+
+  // Optional - Pro handicap comparison
+  {
+    name: 'CRON_SECRET',
+    required: false,
+    description: 'Bearer token authorizing the scheduled pro-ratings sync (/api/cron/pros/sync). Set this in Vercel so cron requests are authenticated.',
+  },
+  {
+    name: 'PRO_RATING_PROVIDER',
+    required: false,
+    description: 'Source for pro ratings: "manual" (default) or "pdga_api" (once implemented and access is granted).',
+    validate: (value) => {
+      if (value && value !== 'manual' && value !== 'pdga_api') {
+        return 'PRO_RATING_PROVIDER must be "manual" or "pdga_api"';
+      }
+      return true;
+    },
+  },
+  {
+    name: 'PDGA_API_USERNAME',
+    required: false,
+    description: 'PDGA member username for the future PDGA API provider. Only needed when PRO_RATING_PROVIDER=pdga_api.',
+  },
+  {
+    name: 'PDGA_API_PASSWORD',
+    required: false,
+    description: 'PDGA member password for the future PDGA API provider. Only needed when PRO_RATING_PROVIDER=pdga_api.',
+  },
 ];
 
 /**

@@ -2,7 +2,7 @@
 
 import { Dispatch, SetStateAction } from 'react';
 
-type TabType = 'stats' | 'discs' | 'users' | 'pending' | 'errors' | 'flagged' | 'reports';
+type TabType = 'stats' | 'discs' | 'users' | 'pending' | 'errors' | 'flagged' | 'reports' | 'pros';
 
 type TabsNavProps = {
   activeTab: TabType;
@@ -17,6 +17,7 @@ const tabs: Array<{ key: TabType; label: string }> = [
   { key: 'errors', label: 'Errors' },
   { key: 'flagged', label: 'Flagged Messages' },
   { key: 'reports', label: 'User Reports' },
+  { key: 'pros', label: 'Pro Players' },
 ];
 
 export default function TabsNav({ activeTab, setActiveTab }: TabsNavProps) {

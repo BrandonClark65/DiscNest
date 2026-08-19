@@ -64,8 +64,10 @@ const ProPlayerSchema = new Schema(
       default: "manual",
     },
 
-    // Admin-entered value that overrides a synced rating. Null/undefined means
-    // "trust the synced rating".
+    // Admin-entered pin that overrides the synced/imported rating at READ time
+    // (see proService: displayed rating = manualOverride ?? rating). Kept
+    // separate from `rating` on purpose, so the real synced value is preserved
+    // underneath and reappears the moment the pin is cleared.
     manualOverride: { type: Number },
 
     // Shown in the default set on /handicap.
@@ -87,16 +89,5 @@ const ProPlayerSchema = new Schema(
 
 // The list query is "active, featured pros in display order".
 ProPlayerSchema.index({ active: 1, featured: 1, displayOrder: 1 });
-
-/**
- * A manual override is the source of truth for the displayed rating when set,
- * so `rating` reflects it and stays consistent everywhere it is read.
- */
-ProPlayerSchema.pre("save", function proPlayerPreSave(next) {
-  if (this.manualOverride != null && this.rating !== this.manualOverride) {
-    this.rating = this.manualOverride;
-  }
-  next();
-});
 
 export default models.ProPlayer || model("ProPlayer", ProPlayerSchema);

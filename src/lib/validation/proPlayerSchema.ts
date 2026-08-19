@@ -31,6 +31,20 @@ export const proPlayerSchema = z.object({
   featured: z.boolean().optional(),
   displayOrder: z.number().int().optional(),
   active: z.boolean().optional(),
+  // Admin display pin; null clears it.
+  manualOverride: rating.nullable().optional(),
 });
 
 export type ProPlayerInput = z.infer<typeof proPlayerSchema>;
+
+/**
+ * Partial shape for editing an existing pro. Every field optional except the
+ * id that names the pro to update. `slug` is intentionally not editable here -
+ * changing it would break any share link already in the wild.
+ */
+export const proPlayerUpdateSchema = proPlayerSchema
+  .partial()
+  .omit({ slug: true })
+  .extend({ id: z.string().min(1) });
+
+export type ProPlayerUpdate = z.infer<typeof proPlayerUpdateSchema>;

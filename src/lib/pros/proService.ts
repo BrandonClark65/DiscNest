@@ -22,6 +22,7 @@ type ProDoc = {
   name: string;
   division: string;
   rating: number;
+  manualOverride?: number;
   previousRating?: number;
   ratingUpdatedAt?: Date;
   lastSyncedAt?: Date;
@@ -36,7 +37,8 @@ function serialize(doc: ProDoc): SerializedPro {
     slug: doc.slug,
     name: doc.name,
     division: doc.division,
-    rating: doc.rating,
+    // The admin pin wins over the stored rating at display time.
+    rating: doc.manualOverride ?? doc.rating,
     previousRating: doc.previousRating ?? null,
     ratingUpdatedAt: doc.ratingUpdatedAt
       ? new Date(doc.ratingUpdatedAt).toISOString()
