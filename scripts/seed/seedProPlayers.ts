@@ -7,45 +7,48 @@ import { proPlayerSchema } from '../../src/lib/validation/proPlayerSchema';
 /**
  * Seed a starter set of touring pros for the handicap-comparison feature.
  *
- * IMPORTANT - two deliberate omissions:
+ * `pdgaNumber` and `rating` below come from the official PDGA player stats page
+ * (pdga.com/players/stats), reflecting the 2026 ratings. Because the source
+ * lists players by first initial, the full first names were expanded by hand:
+ * double-check any name against the PDGA page before relying on it, since a
+ * wrong name is what a visitor sees. The PDGA numbers are the exact figures
+ * from that page and are what a future API sync keys on.
  *
- *  1. `pdgaNumber` is intentionally NOT set here. The numbers must be looked up
- *     and verified against pdga.com before they are trusted, because a wrong
- *     number would make the future API sync pull a different player's rating.
- *     Fill them in (verified) once a PDGA membership and API access are in
- *     place. Until then the pros run entirely on the manual ratings below.
- *
- *  2. The ratings are SEED PLACEHOLDERS, not live official ratings. They put
- *     the feature in a usable state on day one. Update them by hand (or, later,
- *     from the PDGA API) so they reflect the current published numbers.
- *
- * Re-running is safe: existing pros are matched by slug and left untouched, so
- * this never clobbers a rating you have since corrected. Only missing pros are
- * inserted.
+ * Update ratings by hand (or, later, from the PDGA API) each time the monthly
+ * PDGA update publishes. Re-running is safe: existing pros are matched by slug
+ * and left untouched, so this never clobbers a value you have since corrected.
+ * Only missing pros are inserted.
  */
 const seedPros: Array<{
   name: string;
   slug: string;
   division: 'MPO' | 'FPO';
+  pdgaNumber: number;
   rating: number;
   blurb: string;
   displayOrder: number;
 }> = [
-  // --- MPO ---
-  { name: 'Gannon Buhr', slug: 'gannon-buhr', division: 'MPO', rating: 1054, blurb: 'Top-ranked MPO tour player.', displayOrder: 1 },
-  { name: 'Calvin Heimburg', slug: 'calvin-heimburg', division: 'MPO', rating: 1049, blurb: 'Elite MPO touring pro and major contender.', displayOrder: 2 },
-  { name: 'Paul McBeth', slug: 'paul-mcbeth', division: 'MPO', rating: 1047, blurb: 'Multiple-time World Champion.', displayOrder: 3 },
-  { name: 'Isaac Robinson', slug: 'isaac-robinson', division: 'MPO', rating: 1043, blurb: 'Consistent MPO tour standout.', displayOrder: 4 },
-  { name: 'Ricky Wysocki', slug: 'ricky-wysocki', division: 'MPO', rating: 1040, blurb: 'Two-time World Champion.', displayOrder: 5 },
-  { name: 'Eagle McMahon', slug: 'eagle-mcmahon', division: 'MPO', rating: 1038, blurb: 'Distance specialist and major winner.', displayOrder: 6 },
+  // --- MPO (rating order) ---
+  { name: 'Gannon Buhr', slug: 'gannon-buhr', division: 'MPO', pdgaNumber: 75412, rating: 1062, blurb: 'Currently the top-rated MPO player.', displayOrder: 1 },
+  { name: 'Ricky Wysocki', slug: 'ricky-wysocki', division: 'MPO', pdgaNumber: 38008, rating: 1053, blurb: 'Two-time World Champion.', displayOrder: 2 },
+  { name: 'Calvin Heimburg', slug: 'calvin-heimburg', division: 'MPO', pdgaNumber: 45971, rating: 1052, blurb: 'Elite MPO touring pro.', displayOrder: 3 },
+  { name: 'Paul McBeth', slug: 'paul-mcbeth', division: 'MPO', pdgaNumber: 27523, rating: 1048, blurb: 'Multiple-time World Champion.', displayOrder: 4 },
+  { name: 'Isaac Robinson', slug: 'isaac-robinson', division: 'MPO', pdgaNumber: 50670, rating: 1048, blurb: 'Elite MPO touring pro.', displayOrder: 5 },
+  { name: 'Eagle McMahon', slug: 'eagle-mcmahon', division: 'MPO', pdgaNumber: 37817, rating: 1045, blurb: 'Distance specialist and major winner.', displayOrder: 6 },
+  { name: 'Chris Dickerson', slug: 'chris-dickerson', division: 'MPO', pdgaNumber: 62467, rating: 1043, blurb: 'Elite MPO touring pro.', displayOrder: 7 },
+  { name: 'Niklas Anttila', slug: 'niklas-anttila', division: 'MPO', pdgaNumber: 91249, rating: 1042, blurb: 'Finnish MPO tour standout.', displayOrder: 8 },
+  { name: 'Adam Hammes', slug: 'adam-hammes', division: 'MPO', pdgaNumber: 57365, rating: 1039, blurb: 'MPO tour standout.', displayOrder: 9 },
+  { name: 'Anthony Barela', slug: 'anthony-barela', division: 'MPO', pdgaNumber: 44382, rating: 1038, blurb: 'MPO tour standout.', displayOrder: 10 },
 
-  // --- FPO ---
-  { name: 'Kristin Tattar', slug: 'kristin-tattar', division: 'FPO', rating: 1006, blurb: 'Multiple-time FPO World Champion.', displayOrder: 7 },
-  { name: 'Missy Gannon', slug: 'missy-gannon', division: 'FPO', rating: 990, blurb: 'Top-ranked FPO tour player.', displayOrder: 8 },
-  { name: 'Holyn Handley', slug: 'holyn-handley', division: 'FPO', rating: 986, blurb: 'FPO tour title contender.', displayOrder: 9 },
-  { name: 'Ohn Scoggins', slug: 'ohn-scoggins', division: 'FPO', rating: 980, blurb: 'Veteran FPO touring pro.', displayOrder: 10 },
-  { name: 'Hailey King', slug: 'hailey-king', division: 'FPO', rating: 978, blurb: 'FPO tour standout.', displayOrder: 11 },
-  { name: 'Paige Pierce', slug: 'paige-pierce', division: 'FPO', rating: 976, blurb: 'Five-time World Champion.', displayOrder: 12 },
+  // --- FPO (rating order) ---
+  { name: 'Silva Saarinen', slug: 'silva-saarinen', division: 'FPO', pdgaNumber: 107335, rating: 991, blurb: 'Finnish FPO tour standout.', displayOrder: 11 },
+  { name: 'Ohn Scoggins', slug: 'ohn-scoggins', division: 'FPO', pdgaNumber: 48976, rating: 989, blurb: 'Veteran FPO touring pro.', displayOrder: 12 },
+  { name: 'Eveliina Salonen', slug: 'eveliina-salonen', division: 'FPO', pdgaNumber: 64927, rating: 988, blurb: 'Finnish FPO tour star.', displayOrder: 13 },
+  { name: 'Missy Gannon', slug: 'missy-gannon', division: 'FPO', pdgaNumber: 85942, rating: 986, blurb: 'Top FPO tour contender.', displayOrder: 14 },
+  { name: 'Holyn Handley', slug: 'holyn-handley', division: 'FPO', pdgaNumber: 133547, rating: 984, blurb: 'FPO tour title contender.', displayOrder: 15 },
+  { name: 'Valerie Mandujano', slug: 'valerie-mandujano', division: 'FPO', pdgaNumber: 62879, rating: 972, blurb: 'FPO tour standout.', displayOrder: 16 },
+  { name: 'Henna Blomroos', slug: 'henna-blomroos', division: 'FPO', pdgaNumber: 59227, rating: 968, blurb: 'Finnish FPO touring pro.', displayOrder: 17 },
+  { name: 'Catrina Allen', slug: 'catrina-allen', division: 'FPO', pdgaNumber: 44184, rating: 968, blurb: 'Veteran FPO touring pro.', displayOrder: 18 },
 ];
 
 async function seedProPlayers() {
@@ -82,7 +85,7 @@ async function seedProPlayers() {
   }
 
   console.log(`✅ Pro players seeded: ${inserted} inserted, ${skipped} already present.`);
-  console.log('ℹ️  Remember: ratings are placeholders and pdgaNumbers are unset. See the header comment.');
+  console.log('ℹ️  Ratings reflect the 2026 PDGA stats page. Re-running never overwrites existing pros.');
   process.exit(0);
 }
 
