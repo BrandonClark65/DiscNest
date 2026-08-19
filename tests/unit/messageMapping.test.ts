@@ -59,7 +59,7 @@ function makeThreadDB(overrides: Partial<ThreadDB> = {}): ThreadDB {
 }
 
 /* -------------------------------------------------------
-   TESTS — mapMessageDBtoUI
+   TESTS - mapMessageDBtoUI
 -------------------------------------------------------- */
 
 describe("mapMessageDBtoUI", () => {
@@ -123,7 +123,7 @@ describe("mapMessageDBtoUI", () => {
 });
 
 /* -------------------------------------------------------
-   TESTS — mapThreadDBtoUI
+   TESTS - mapThreadDBtoUI
 -------------------------------------------------------- */
 
 describe("mapThreadDBtoUI", () => {

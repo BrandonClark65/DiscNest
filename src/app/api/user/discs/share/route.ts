@@ -11,7 +11,7 @@ import type { Session } from "next-auth";
  *
  * Ensures the logged-in user has a unique, stable shareableBagId
  * and returns the correct share URL (dev or prod).
- * Does NOT toggle visibility — this simply guarantees the share link exists.
+ * Does NOT toggle visibility - this simply guarantees the share link exists.
  */
 const shareBagHandler = async (req: Request, session: Session) => {
   await connectToDatabase();

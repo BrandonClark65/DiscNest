@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { Listing } from '@/types/listing';
 import { useSession } from 'next-auth/react';
 
-// NEW — include 'requests' as a valid tab
+// NEW - include 'requests' as a valid tab
 export type MarketplaceTab = 'market' | 'myListings' | 'requests';
 
 export function useMarketplaceData() {

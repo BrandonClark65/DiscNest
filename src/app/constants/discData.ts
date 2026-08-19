@@ -1,6 +1,6 @@
 // src/constants/discData.ts
 
-// — Brands —
+// - Brands -
 // Not exhaustive, but covers many major disc manufacturers.  
 // You can add more over time (e.g. specialty, boutique, secondary brands).
 export const DiscBrands = [
@@ -45,7 +45,7 @@ export const DiscBrands = [
 export type DiscBrand = typeof DiscBrands[number];
 
 
-// — Plastics —
+// - Plastics -
 // This is a curated list of common plastic blends across various brands,
 // drawn from plastic-type guides and databases. :contentReference[oaicite:0]{index=0}
 export const DiscPlastics = [
@@ -257,7 +257,7 @@ export const DiscPlastics = [
 
 export type DiscPlastic = typeof DiscPlastics[number];
 
-// — Plastics by Brand —
+// - Plastics by Brand -
 // Maps each brand to its available plastic types.
 // This structure is used for grouped display in picklists.
 export const DiscPlasticsByBrand: Record<DiscBrand, DiscPlastic[]> = {

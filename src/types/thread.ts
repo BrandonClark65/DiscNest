@@ -27,7 +27,7 @@ export type RequestRef = {
 };
 
 /* -------------------------------------------------------
-   THREAD (UI — returned to frontend)
+   THREAD (UI - returned to frontend)
 -------------------------------------------------------- */
 export type ThreadUI = {
   _id: string;
@@ -42,7 +42,7 @@ export type ThreadUI = {
 };
 
 /* -------------------------------------------------------
-   THREAD (DB — stored in Mongo)
+   THREAD (DB - stored in Mongo)
 -------------------------------------------------------- */
 export type ThreadDB = {
   _id: Types.ObjectId;

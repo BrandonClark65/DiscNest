@@ -7,7 +7,7 @@ import { withErrorHandling } from "@/lib/withErrorHandling";
 import type { PipelineStage } from "mongoose";
 
 //
-// GET — fetch disc requests (optionally sorted by distance)
+// GET - fetch disc requests (optionally sorted by distance)
 //
 const GET_handler = async (req: Request) => {
   await connectToDatabase();
@@ -104,7 +104,7 @@ export const GET = withErrorHandling(
 
 
 //
-// POST — create a disc request (Authenticated)
+// POST - create a disc request (Authenticated)
 //
 const POST_handler = withUserAuth(async (req, session) => {
   await connectToDatabase();

@@ -1,6 +1,6 @@
 # Pro Player Handicap Comparison ("How many throws do you get from the pros?")
 
-**Status:** Plan — not yet implemented
+**Status:** Plan - not yet implemented
 **Owner:** Brandon
 **Related:** `src/components/handicap/`, `src/lib/handicap/`, `src/app/api/handicap/`
 
@@ -10,16 +10,16 @@
 
 Show the current ratings of a curated set of touring pros on the handicap page, and
 tell the visitor how many throws they would receive from each one. The number is
-personal, instantly understandable, slightly humbling, and screenshot-shaped — which
+personal, instantly understandable, slightly humbling, and screenshot-shaped - which
 is exactly what makes it shareable.
 
 Three goals, in priority order:
 
-1. **Engagement** — give visitors a reason to open `/handicap` even when they have no
+1. **Engagement** - give visitors a reason to open `/handicap` even when they have no
    new round to enter, and a reason to come back monthly when pro ratings move.
-2. **Shareability** — one tap produces a link and an image good enough to post to
+2. **Shareability** - one tap produces a link and an image good enough to post to
    Reddit, a Facebook league group, or Instagram Stories, with a DiscNest branded card.
-3. **Acquisition** — every shared card is a landing page for "what's my disc golf
+3. **Acquisition** - every shared card is a landing page for "what's my disc golf
    handicap", pointing back at the calculator.
 
 ### The math already exists
@@ -34,7 +34,7 @@ courseHandicap(rating, { ppt }, targetRating, allowance)
 
 "Throws you get from Calvin" is just `targetRating = Calvin's rating`. The existing
 `targetRating` input in `HandicapSummary` is the same lever, exposed as a number box.
-This feature replaces that abstract box with named faces — same engine underneath, so
+This feature replaces that abstract box with named faces - same engine underneath, so
 the numbers can never disagree with the rest of the page.
 
 ---
@@ -45,7 +45,7 @@ the numbers can never disagree with the rest of the page.
 |---|---|---|
 | 1 | Works logged out | The calculator already does. A visitor with no account must get a number and a share link. |
 | 2 | Works with zero rounds entered | Let them type a rating directly ("I'm about 900"). Requiring 3 rounds first kills the funnel. |
-| 3 | Pro ratings update automatically | See the honesty note below — official ratings move **monthly**, not per tournament. |
+| 3 | Pro ratings update automatically | See the honesty note below - official ratings move **monthly**, not per tournament. |
 | 4 | Ratings never silently go stale | If the sync fails, the UI says when the number was last refreshed. |
 | 5 | One-tap share, image included | Link + auto-written text + a generated card image. |
 | 6 | No new runtime dependencies | `next/og` ships with Next 15; `chart.js` is already installed. |
@@ -66,7 +66,7 @@ is not a downside if we lean into it:
 
 - The sync runs on the second Tuesday, so DiscNest is current the day ratings drop.
 - **Ratings day becomes a recurring social moment.** "Ratings update: Gannon +7, Paul
-  −4 — how many throws do you get now?" is a free monthly post, every month, forever.
+  −4 - how many throws do you get now?" is a free monthly post, every month, forever.
 - Show the delta since last month (▲ +7) and the sparkline, so returning visitors see
   something new even when their own rating hasn't moved.
 
@@ -83,12 +83,12 @@ number.
 
 | Option | Verdict |
 |---|---|
-| **PDGA REST API** (`https://api.pdga.com`) — player search returns rating for current members | ⭐ **Preferred.** Official, structured, stable. |
-| Scraping `pdga.com/player/<number>` | ❌ **No.** Same conclusion as `EBAY_SOLD_LISTINGS_ALTERNATIVES.md` — brittle, and against site terms. |
+| **PDGA REST API** (`https://api.pdga.com`) - player search returns rating for current members | ⭐ **Preferred.** Official, structured, stable. |
+| Scraping `pdga.com/player/<number>` | ❌ **No.** Same conclusion as `EBAY_SOLD_LISTINGS_ALTERNATIVES.md` - brittle, and against site terms. |
 | Manual admin entry | ✅ **Required fallback**, and the day-one shipping path. 12 numbers, once a month, is a two-minute job. |
 | Third-party stats sites (Statmando, UDisc Live) | Later, and only for flavour data (last event, finish), not for the rating itself. |
 
-### 1.2 PDGA API access — do this first, it has a lead time
+### 1.2 PDGA API access - do this first, it has a lead time
 
 The API is documented at [pdga.com/dev](https://www.pdga.com/dev) with
 [auth](https://www.pdga.com/dev/api/rest/v1/auth) and
@@ -96,7 +96,7 @@ The API is documented at [pdga.com/dev](https://www.pdga.com/dev) with
 
 - Auth is a session login: `POST /services/json/user/login` with PDGA member
   credentials, returning a session id + token used on subsequent calls.
-- Player search returns rating **only for currently-current members** — fine, touring
+- Player search returns rating **only for currently-current members** - fine, touring
   pros are always current.
 - Access requires **reading and signing the PDGA API license agreement** and emailing
   **dev@pdga.com** before launch so they can review the implementation.
@@ -139,9 +139,9 @@ single wrong number can be corrected instantly from the admin panel.
 
 ```ts
 {
-  pdgaNumber:      Number,  // unique, indexed — the stable identity
+  pdgaNumber:      Number,  // unique, indexed - the stable identity
   name:            String,  // "Calvin Heimburg"
-  slug:            String,  // unique, indexed — "calvin-heimburg", used in share URLs
+  slug:            String,  // unique, indexed - "calvin-heimburg", used in share URLs
   division:        String,  // enum: 'MPO' | 'FPO'
   rating:          Number,  // current official rating
   previousRating:  Number,  // for the ▲/▼ delta
@@ -151,7 +151,7 @@ single wrong number can be corrected instantly from the admin panel.
   manualOverride:  Number,  // set by admin; wins over synced value when present
   featured:        Boolean, // shows in the default set on /handicap
   displayOrder:    Number,
-  active:          Boolean, // soft delete — keeps old share links resolvable
+  active:          Boolean, // soft delete - keeps old share links resolvable
   blurb:           String,  // maxlength 140, e.g. "2024 World Champion"
   history: [{ rating: Number, effectiveDate: Date }],  // capped to last 24 entries
 }
@@ -167,11 +167,11 @@ total. It feeds the existing `RatingChart` component directly.
 **`active` instead of delete.** A shared link naming a pro we later remove must still
 render, or every card posted to Reddit rots.
 
-### 2.2 Seed script — `scripts/seed/seedProPlayers.ts`
+### 2.2 Seed script - `scripts/seed/seedProPlayers.ts`
 
 Follows `scripts/seed/seedDiscs.ts`. Seeds ~12 pros (6 MPO, 6 FPO) with PDGA numbers,
 names, blurbs and a starting rating, so the feature is fully functional on day one with
-zero external access. Keeping FPO at parity with MPO in the default set is deliberate —
+zero external access. Keeping FPO at parity with MPO in the default set is deliberate -
 it widens the audience and it is the right thing to do.
 
 ---
@@ -202,7 +202,7 @@ cron response can show what happened.
   accept an admin session, so the admin "Sync now" button reuses the same path.
 - Returns the `ProSyncReport` as JSON.
 
-### 3.3 Scheduling — new `vercel.json`
+### 3.3 Scheduling - new `vercel.json`
 
 The repo has no `vercel.json` yet; this feature introduces one.
 
@@ -214,7 +214,7 @@ The repo has no `vercel.json` yet; this feature introduces one.
 }
 ```
 
-`0 15 8-14 * 2` = 15:00 UTC on the Tuesday falling between the 8th and 14th — i.e.
+`0 15 8-14 * 2` = 15:00 UTC on the Tuesday falling between the 8th and 14th - i.e.
 **exactly the second Tuesday of each month**, a few hours after PDGA publishes. Once
 per day at most, so it stays inside Hobby-plan cron limits.
 
@@ -225,18 +225,18 @@ an update that lands late.
 
 ## 4. API surface
 
-### 4.1 `GET /api/pros` — public
+### 4.1 `GET /api/pros` - public
 
 Returns the active pros with `{ slug, name, division, rating, previousRating,
 ratingUpdatedAt, blurb, featured, displayOrder }`. Never returns `manualOverride` or
 sync internals.
 
-Cached aggressively — the data changes monthly:
+Cached aggressively - the data changes monthly:
 `Cache-Control: public, s-maxage=3600, stale-while-revalidate=86400`. Note this is the
 opposite of the `no-store` used on `/api/handicap/rounds`, and correctly so: this
 response is identical for every visitor and contains nothing personal.
 
-### 4.2 `GET/POST/PATCH/DELETE /api/admin/pros` — admin only
+### 4.2 `GET/POST/PATCH/DELETE /api/admin/pros` - admin only
 
 Wrapped in `withAdminAuth` (`src/lib/auth/withAdminAuth.ts`). Add a pro by PDGA number,
 edit blurb/order/featured, set or clear `manualOverride`, deactivate. Zod schema in
@@ -245,7 +245,7 @@ edit blurb/order/featured, set or clear `manualOverride`, deactivate. Zod schema
 ### 4.3 No new endpoint for the comparison itself
 
 The throws calculation runs in the browser from the `/api/pros` payload and the rating
-the calculator already holds — same as the existing local recompute in
+the calculator already holds - same as the existing local recompute in
 `HandicapCalculator`. Zero server round-trips when the visitor flips between pros.
 
 ---
@@ -263,7 +263,7 @@ export function throwsFromPro(
 ): { throws: number; unrounded: number; perHoles: number | null }
 ```
 
-Implemented on top of `courseHandicap(playerRating, { ppt }, proRating, allowance)` —
+Implemented on top of `courseHandicap(playerRating, { ppt }, proRating, allowance)` -
 no duplicated formula.
 
 Two decisions worth stating:
@@ -278,7 +278,7 @@ comment, so the choice is visible rather than accidental.
 is right for league play and wrong for a share card. Show the whole number big, and
 "11.5 over 18 holes" in the fine print.
 
-**`perHoles`** — `Math.min(18, Math.round(unrounded))`, phrased as "that's a throw on
+**`perHoles`** - `Math.min(18, Math.round(unrounded))`, phrased as "that's a throw on
 12 of 18 holes". It makes an abstract number physical, and it is the line people quote.
 
 **Direction matters.** Follow the existing convention in `HandicapSummary` and never
@@ -289,9 +289,9 @@ give back", not "−3".
 
 ## 6. UI
 
-### 6.1 On `/handicap` — `src/components/handicap/ProComparison.tsx`
+### 6.1 On `/handicap` - `src/components/handicap/ProComparison.tsx`
 
-A card placed **directly under `HandicapSummary`**, above "Add a round" — high enough
+A card placed **directly under `HandicapSummary`**, above "Add a round" - high enough
 that a first-time visitor sees it, below their own number so it reads as a consequence
 of it.
 
@@ -299,13 +299,13 @@ of it.
 - Headline: **"You'd get 11 throws from Calvin Heimburg"** with the per-hole line under
   it.
 - If the visitor has no rating yet: a single "My rating is ___" input, defaulted to 900,
-  with a note that entering rounds gives a real number. This is the funnel — the
+  with a note that entering rounds gives a real number. This is the funnel - the
   comparison works before they have committed anything.
 - If they *do* have a rating, that is used automatically.
 - Footer: "Ratings from the PDGA, updated <relative date>." Staleness is visible; if
   `lastSyncedAt` is more than 45 days old, say "may be out of date".
 
-### 6.2 Dedicated page — `/handicap/pros`
+### 6.2 Dedicated page - `/handicap/pros`
 
 Server-rendered, indexable, `export const revalidate = 3600`. This is the SEO play:
 "disc golf handicap vs pro", "what rating is Calvin Heimburg", "how many throws behind
@@ -313,16 +313,16 @@ a pro am I". It carries:
 
 - The full pro grid, all divisions, with sparklines from `history` via `RatingChart`.
 - The interactive comparison (same component as 6.1).
-- "Which pro are you closest to?" — the nearest rating in either direction. This is the
+- "Which pro are you closest to?" - the nearest rating in either direction. This is the
   friendliest possible framing of the feature and the most likely thing to be shared by
   someone who is *not* a beginner.
-- Deep links: `/handicap/pros?vs=calvin-heimburg&r=942` — pro and rating in the query,
+- Deep links: `/handicap/pros?vs=calvin-heimburg&r=942` - pro and rating in the query,
   so **the shared URL is stateless and needs no account on either end**. That is the
   single most important decision for virality in this whole plan.
 - `Breadcrumbs`, metadata + `StructuredData` mirroring `src/app/handicap/layout.tsx`,
   and an entry added to `src/app/sitemap.ts` (priority 0.8, `changeFrequency: 'monthly'`).
 
-### 6.3 Admin — `src/components/admin/ProsTab.tsx`
+### 6.3 Admin - `src/components/admin/ProsTab.tsx`
 
 New tab in `TabsNav` (`'pros'` added to `TabType`), following `DiscsTab.tsx`:
 table of pros, inline edit, featured toggle, drag order, manual rating override, plus a
@@ -344,11 +344,11 @@ recipient lands on a page that immediately invites them to compute their own.
 
 For signed-in players who want their real record attached, keep the existing
 `shareableHandicapId` route and add the pro as a query param:
-`/share/handicap/<id>?vs=calvin-heimburg` — no new share-id plumbing needed.
+`/share/handicap/<id>?vs=calvin-heimburg` - no new share-id plumbing needed.
 
-### 7.2 Dynamic share image — `src/app/api/og/pro-handicap/route.tsx`
+### 7.2 Dynamic share image - `src/app/api/og/pro-handicap/route.tsx`
 
-Use `ImageResponse` from `next/og` (built into Next 15 — no new dependency; `canvas`
+Use `ImageResponse` from `next/og` (built into Next 15 - no new dependency; `canvas`
 and Cloudinary are not needed here). Params `?vs=<slug>&r=<rating>&format=og|square`.
 
 - `og` → 1200×630 for link previews on X / Facebook / Discord / Reddit.
@@ -359,24 +359,24 @@ player's rating and the pro's rating, `discnest.com/handicap`. Brand gradient
 background matching `text-gradient-brand`.
 
 Wire it into `generateMetadata` on `/handicap/pros` so the OG/Twitter image is derived
-from the query params — **every shared link previews with that person's own number**,
+from the query params - **every shared link previews with that person's own number**,
 which is what makes it stop a thumb in a feed.
 
 Cache the route (`s-maxage=31536000, immutable` keyed by the params) since a given
 rating/pro pair renders identically forever.
 
-### 7.3 `ShareMenu` — extending `src/components/ui/ShareButton.tsx`
+### 7.3 `ShareMenu` - extending `src/components/ui/ShareButton.tsx`
 
 The current `ShareButton` is `navigator.share` + clipboard fallback. Add a sibling
 `ShareMenu` (leaving `ShareButton` untouched for its existing callers) offering:
 
-- **Copy link** — existing behaviour.
+- **Copy link** - existing behaviour.
 - **Share sheet** including the image: `navigator.share({ files: [pngFile], ... })` when
   `navigator.canShare({ files })` is true. This is what enables a one-tap post to
   Instagram Stories from a phone, and it is the highest-value item on this list.
 - **X / Facebook / Reddit intent links.** Reddit and Facebook groups are where disc golf
-  actually congregates — r/discgolf and local league groups will out-perform X here.
-- **Download image** — the fallback that always works, for people who post manually.
+  actually congregates - r/discgolf and local league groups will out-perform X here.
+- **Download image** - the fallback that always works, for people who post manually.
 
 Auto-written text, e.g.:
 > I'd get 11 throws from Calvin Heimburg 😅 What about you? → discnest.com/handicap/pros
@@ -394,11 +394,11 @@ Without this there is no way to tell whether the feature moved anything.
 | Risk | Mitigation |
 |---|---|
 | **PDGA API is non-commercial-only** and DiscNest may not qualify | Email dev@pdga.com before building the provider. Manual provider ships regardless; the feature does not block on the answer. |
-| **Player likeness / photos** | **Do not use pro headshots in v1.** Names, PDGA numbers and ratings are facts and fine to display with attribution; photographs are licensed works. Use initials/disc-silhouette avatars — which also keeps the OG image self-contained and fast. |
+| **Player likeness / photos** | **Do not use pro headshots in v1.** Names, PDGA numbers and ratings are facts and fine to display with attribution; photographs are licensed works. Use initials/disc-silhouette avatars - which also keeps the OG image self-contained and fast. |
 | Implying pro endorsement | Footer on `/handicap/pros`: ratings sourced from the PDGA; DiscNest is not affiliated with the PDGA or with any player. |
 | A wrong rating goes public | `manualOverride` + admin edit, correctable in seconds without a deploy. |
 | Sync failure blanks the page | Sync never writes null; UI shows the last-known value plus a staleness note. |
-| DiscNest rating ≠ PDGA rating | The comparison mixes a self-reported DiscNest rating with an official PDGA rating. Carry the existing `HandicapSummary` disclaimer into this card verbatim — it is already written and already honest. |
+| DiscNest rating ≠ PDGA rating | The comparison mixes a self-reported DiscNest rating with an official PDGA rating. Carry the existing `HandicapSummary` disclaimer into this card verbatim - it is already written and already honest. |
 | Cron never fires / silently dies | Admin tab surfaces `lastSyncedAt`; a >45-day-old sync shows a warning badge in the public UI too. |
 
 ---
@@ -433,27 +433,27 @@ pattern) and document them in the environment-variables section of the root `REA
 
 Each phase is independently shippable and independently useful.
 
-**Phase 1 — Data + comparison (no external dependency)**
+**Phase 1 - Data + comparison (no external dependency)**
 `ProPlayer` model, seed script, `GET /api/pros`, `proComparison.ts` + unit tests,
 `ProComparison` card on `/handicap`. Ratings are seeded and updated by hand.
 → *The feature is live and usable at the end of this phase.*
 
-**Phase 2 — Sharing**
+**Phase 2 - Sharing**
 `/handicap/pros` page with query-param deep links, `next/og` share image, `ShareMenu`,
 analytics events, sitemap + metadata.
 → *This is the phase that produces the growth; do not defer it.*
 
-**Phase 3 — Automation**
+**Phase 3 - Automation**
 `proSync.ts` + manual provider, cron route + `vercel.json`, admin `ProsTab`,
 `pdgaApiProvider` once PDGA responds.
 → *Removes the monthly manual task.*
 
-**Phase 4 — Extras (pick by what analytics shows)**
+**Phase 4 - Extras (pick by what analytics shows)**
 "Closest pro to you", ratings-day delta callouts and a monthly social post, pro
 sparklines, per-hole visual, FPO/MPO filtering, "gap to close" framing
 ("38 rating points from Kristin Tattar").
 
-**Start dev@pdga.com in parallel with Phase 1** — it is the longest-lead item and
+**Start dev@pdga.com in parallel with Phase 1** - it is the longest-lead item and
 nothing else waits on it.
 
 ---
@@ -495,8 +495,8 @@ README.md                             # document the new env vars
 ## References
 
 - [PDGA Developer Program](https://www.pdga.com/dev)
-- [PDGA REST API — Authentication](https://www.pdga.com/dev/api/rest/v1/auth)
-- [PDGA REST API — Services](https://www.pdga.com/dev/api/rest/v1/services)
-- [PDGA Ratings FAQ](https://www.pdga.com/faq/ratings-0) — second-Tuesday monthly update cadence
+- [PDGA REST API - Authentication](https://www.pdga.com/dev/api/rest/v1/auth)
+- [PDGA REST API - Services](https://www.pdga.com/dev/api/rest/v1/services)
+- [PDGA Ratings FAQ](https://www.pdga.com/faq/ratings-0) - second-Tuesday monthly update cadence
 - [PDGA Ratings System Guide](https://www.pdga.com/ratings/guide)
 - Internal precedent for "use the official API, never scrape": `docs/Feature Enhancements/EBAY_SOLD_LISTINGS_ALTERNATIVES.md`

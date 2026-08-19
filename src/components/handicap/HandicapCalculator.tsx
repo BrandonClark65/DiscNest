@@ -9,6 +9,7 @@ import RoundEntryForm from './RoundEntryForm';
 import HandicapSummary from './HandicapSummary';
 import RoundsList, { type DisplayRound } from './RoundsList';
 import SnapshotHistory, { type Snapshot } from './SnapshotHistory';
+import ProComparison from './ProComparison';
 import {
   computeHandicap,
   ratingHistory,
@@ -385,7 +386,7 @@ export default function HandicapCalculator() {
         {shareUrl ? (
           <ShareButton
             title="My disc golf handicap"
-            text={`My DiscNest rating is ${result.rating} — see my rounds and handicap.`}
+            text={`My DiscNest rating is ${result.rating} - see my rounds and handicap.`}
             url={shareUrl}
             label="Share my handicap"
           />
@@ -404,6 +405,9 @@ export default function HandicapCalculator() {
         targetRating={targetRating}
         onTargetRatingChange={setTargetRating}
       />
+
+      <ProComparison playerRating={result.rating} />
+
 
       <div className={cardClass}>
         <h2 className="font-heading text-xl font-semibold text-[var(--foreground)] mb-4">
@@ -440,7 +444,7 @@ export default function HandicapCalculator() {
             </h2>
             <p className="text-[var(--foreground)]/70 mb-4">
               {rounds.length > 0
-                ? `Your ${rounds.length} round${rounds.length === 1 ? '' : 's'} are saved in this browser, so signing in won't lose them — we'll offer to move them to your account. Create a free account and DiscNest will recalculate your handicap as you add rounds and chart your progress over time.`
+                ? `Your ${rounds.length} round${rounds.length === 1 ? '' : 's'} are saved in this browser, so signing in won't lose them - we'll offer to move them to your account. Create a free account and DiscNest will recalculate your handicap as you add rounds and chart your progress over time.`
                 : 'Create a free account and DiscNest will store your rounds, recalculate your handicap as you add them, and chart your progress over time.'}
             </p>
             <div className="flex gap-3 justify-center flex-wrap">

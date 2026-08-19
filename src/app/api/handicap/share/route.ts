@@ -10,7 +10,7 @@ import type { Session } from "next-auth";
  * POST /api/handicap/share
  *
  * Ensures the logged-in user has a stable, unguessable shareableHandicapId and
- * returns the share URL for it. Mirrors /api/user/discs/share — the id is
+ * returns the share URL for it. Mirrors /api/user/discs/share - the id is
  * created once and reused, so a link someone already sent keeps working.
  */
 const shareHandicapHandler = async (req: Request, session: Session) => {

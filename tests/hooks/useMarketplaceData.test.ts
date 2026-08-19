@@ -60,7 +60,7 @@ describe("useMarketplaceData", () => {
     const { result } = renderHook(() => useMarketplaceData());
     await flush();
 
-    // UPDATED EXPECTATION — excludeUserId=user1 is always added
+    // UPDATED EXPECTATION - excludeUserId=user1 is always added
     expect(global.fetch).toHaveBeenCalledWith(
       "/api/listings?mode=marketplace&page=1&limit=20&excludeUserId=user1"
     );
@@ -164,7 +164,7 @@ describe("useMarketplaceData", () => {
     renderHook(() => useMarketplaceData());
     await flush();
 
-    // UPDATED EXPECTATION — excludeUserId=user1 appended
+    // UPDATED EXPECTATION - excludeUserId=user1 appended
     expect(global.fetch).toHaveBeenCalledWith(
       "/api/listings?mode=marketplace&page=1&limit=20&lat=33&lng=-118&excludeUserId=user1"
     );
