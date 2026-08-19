@@ -254,9 +254,9 @@ export default function HandicapGuide() {
           <Link href="/catalog" className="text-[var(--primary)] underline">
             disc catalog
           </Link>
-          , or find discs near you in the{' '}
-          <Link href="/marketplace" className="text-[var(--primary)] underline">
-            marketplace
+          , or see how many throws you would get from the{' '}
+          <Link href="/handicap/pros" className="text-[var(--primary)] underline">
+            touring pros
           </Link>
           .
         </p>

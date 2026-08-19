@@ -35,6 +35,9 @@ export default function ProsExplorer({ pros, initialVs, initialR }: ProsExplorer
 
   useEffect(() => {
     setOrigin(window.location.origin);
+    trackEvent('pro_comparison_view', { results_count: pros.length });
+    // Fire once on mount; pros is stable for the life of the page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const effectiveRating = useMemo(() => {
